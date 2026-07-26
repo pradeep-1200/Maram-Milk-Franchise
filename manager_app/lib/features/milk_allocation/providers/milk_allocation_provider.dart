@@ -3,25 +3,30 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class RouteMilkAllocation {
   final int qty1LBottle;
   final int qtyHalfLBottle;
+  final int qtyHalfLPacket;
 
   const RouteMilkAllocation({
     this.qty1LBottle = 0,
     this.qtyHalfLBottle = 0,
+    this.qtyHalfLPacket = 0,
   });
 
   RouteMilkAllocation copyWith({
     int? qty1LBottle,
     int? qtyHalfLBottle,
+    int? qtyHalfLPacket,
   }) {
     return RouteMilkAllocation(
       qty1LBottle: qty1LBottle ?? this.qty1LBottle,
       qtyHalfLBottle: qtyHalfLBottle ?? this.qtyHalfLBottle,
+      qtyHalfLPacket: qtyHalfLPacket ?? this.qtyHalfLPacket,
     );
   }
 
   double get totalVolume {
-    return (qty1LBottle * 1.0) +
-        (qtyHalfLBottle * 0.5);
+    return (qty1LBottle * 1.0) + 
+        (qtyHalfLBottle * 0.5) +
+        (qtyHalfLPacket * 0.5);
   }
 }
 
@@ -59,10 +64,10 @@ class MilkAllocationNotifier extends Notifier<MilkAllocationState> {
     state = state.copyWith(allocations: newAllocations);
   }
 
-  void initAllocation(String routeId, int initial1L, int initialHalfL) {
+  void initAllocation(String routeId, int initial1L, int initialHalfL, int initialHalfLPacket) {
     if (!state.allocations.containsKey(routeId)) {
       final newAllocations = Map<String, RouteMilkAllocation>.from(state.allocations);
-      newAllocations[routeId] = RouteMilkAllocation(qty1LBottle: initial1L, qtyHalfLBottle: initialHalfL);
+      newAllocations[routeId] = RouteMilkAllocation(qty1LBottle: initial1L, qtyHalfLBottle: initialHalfL, qtyHalfLPacket: initialHalfLPacket);
       state = state.copyWith(allocations: newAllocations);
     }
   }
@@ -77,14 +82,24 @@ class MilkAllocationNotifier extends Notifier<MilkAllocationState> {
   }
 
   void updateHalfLBottle(String routeId, int diff, {int? maxLimit}) {
-    _updateAllocation(routeId, (a) {
+    final allocations = Map<String, RouteMilkAllocation>.from(state.allocations);
+    allocations.update(routeId, (a) {
       final newQty = a.qtyHalfLBottle + diff;
-      if (newQty < 0) return a;
-      if (maxLimit != null && newQty > maxLimit) return a;
+      if (newQty < 0 || (maxLimit != null && newQty > maxLimit)) return a;
       return a.copyWith(qtyHalfLBottle: newQty);
-    });
+    }, ifAbsent: () => RouteMilkAllocation(qtyHalfLBottle: diff));
+    state = state.copyWith(allocations: allocations);
   }
-
+  
+  void updateHalfLPacket(String routeId, int diff, {int? maxLimit}) {
+    final allocations = Map<String, RouteMilkAllocation>.from(state.allocations);
+    allocations.update(routeId, (a) {
+      final newQty = a.qtyHalfLPacket + diff;
+      if (newQty < 0 || (maxLimit != null && newQty > maxLimit)) return a;
+      return a.copyWith(qtyHalfLPacket: newQty);
+    }, ifAbsent: () => RouteMilkAllocation(qtyHalfLPacket: diff));
+    state = state.copyWith(allocations: allocations);
+  }
 }
 
 final milkAllocationProvider =

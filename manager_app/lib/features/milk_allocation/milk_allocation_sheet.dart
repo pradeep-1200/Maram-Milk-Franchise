@@ -34,12 +34,16 @@ class MilkAllocationSheet extends ConsumerWidget {
     final inventoryState = ref.watch(inventoryProvider).value;
     int max1L = 0;
     int maxHalfL = 0;
+    int maxHalfLPacket = 0;
     if (inventoryState != null) {
-      final item1L = inventoryState.items.where((i) => i.name.toLowerCase().contains('1l')).firstOrNull;
-      final itemHalfL = inventoryState.items.where((i) => i.name.toLowerCase().contains('500') || i.name.toLowerCase().contains('half')).firstOrNull;
+      final item1L = inventoryState.items.where((i) => i.unit == '1L' && i.material == 'Bottle').firstOrNull;
+      final itemHalfL = inventoryState.items.where((i) => i.unit == '500ml' && i.material == 'Bottle').firstOrNull;
+      final itemHalfLPacket = inventoryState.items.where((i) => i.unit == '500ml' && i.material == 'Packet').firstOrNull;
+      
       // Max limit is current available stock + what was already allocated to this route previously
       max1L = (item1L?.currentStock.toInt() ?? 0) + route.qty1LBottle;
       maxHalfL = (itemHalfL?.currentStock.toInt() ?? 0) + route.qtyHalfLBottle;
+      maxHalfLPacket = (itemHalfLPacket?.currentStock.toInt() ?? 0) + route.qtyHalfLPacket;
     }
 
     return Column(
@@ -106,6 +110,14 @@ class MilkAllocationSheet extends ConsumerWidget {
                 onDecrement: () => notifier.updateHalfLBottle(route.id, -1),
                 onIncrement: () => notifier.updateHalfLBottle(route.id, 1, maxLimit: maxHalfL),
               ),
+              _ProductRow(
+                icon: Icons.shopping_bag,
+                title: 'Half L Packet',
+                subtitle: 'Plastic Pouch',
+                quantity: routeAllocation.qtyHalfLPacket,
+                onDecrement: () => notifier.updateHalfLPacket(route.id, -1),
+                onIncrement: () => notifier.updateHalfLPacket(route.id, 1, maxLimit: maxHalfLPacket),
+              ),
             ],
           ),
         ),
@@ -165,6 +177,7 @@ class MilkAllocationSheet extends ConsumerWidget {
                         totalVolume,
                         qty1LBottle: routeAllocation.qty1LBottle,
                         qtyHalfLBottle: routeAllocation.qtyHalfLBottle,
+                        qtyHalfLPacket: routeAllocation.qtyHalfLPacket,
                       );
                     } else {
                       await ref.read(routeProvider.notifier).updateRouteAllocationLitres(
@@ -172,6 +185,7 @@ class MilkAllocationSheet extends ConsumerWidget {
                         totalVolume,
                         qty1LBottle: routeAllocation.qty1LBottle,
                         qtyHalfLBottle: routeAllocation.qtyHalfLBottle,
+                        qtyHalfLPacket: routeAllocation.qtyHalfLPacket,
                       );
                     }
 

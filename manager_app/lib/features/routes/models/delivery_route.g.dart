@@ -19,6 +19,7 @@ _DeliveryRoute _$DeliveryRouteFromJson(Map<String, dynamic> json) =>
       allocationId: json['allocationId'] as String?,
       qty1LBottle: (json['qty1LBottle'] as num?)?.toInt() ?? 0,
       qtyHalfLBottle: (json['qtyHalfLBottle'] as num?)?.toInt() ?? 0,
+      qtyHalfLPacket: (json['qtyHalfLPacket'] as num?)?.toInt() ?? 0,
       fixedPetrolAllowance:
           (json['fixedPetrolAllowance'] as num?)?.toInt() ?? 80,
       isPetrolAllowanceComplete:
@@ -44,6 +45,7 @@ Map<String, dynamic> _$DeliveryRouteToJson(_DeliveryRoute instance) =>
       'allocationId': instance.allocationId,
       'qty1LBottle': instance.qty1LBottle,
       'qtyHalfLBottle': instance.qtyHalfLBottle,
+      'qtyHalfLPacket': instance.qtyHalfLPacket,
       'fixedPetrolAllowance': instance.fixedPetrolAllowance,
       'isPetrolAllowanceComplete': instance.isPetrolAllowanceComplete,
       'petrolAllowanceGiven': instance.petrolAllowanceGiven,

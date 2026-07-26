@@ -154,7 +154,7 @@ class RouteAllocationScreen extends ConsumerWidget {
   }
 
   void _showAssignSheet(BuildContext context, WidgetRef ref, DeliveryRoute route) {
-    ref.read(milkAllocationProvider.notifier).initAllocation(route.id, route.qty1LBottle, route.qtyHalfLBottle);
+    ref.read(milkAllocationProvider.notifier).initAllocation(route.id, route.qty1LBottle, route.qtyHalfLBottle, route.qtyHalfLPacket);
     
     showModalBottomSheet(
       context: context,

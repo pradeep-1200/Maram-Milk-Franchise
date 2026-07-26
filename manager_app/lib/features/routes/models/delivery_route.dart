@@ -17,6 +17,7 @@ abstract class DeliveryRoute with _$DeliveryRoute {
     String? allocationId,
     @Default(0) int qty1LBottle,
     @Default(0) int qtyHalfLBottle,
+    @Default(0) int qtyHalfLPacket,
     @Default(80) int fixedPetrolAllowance,
     @Default(false) bool isPetrolAllowanceComplete,
     int? petrolAllowanceGiven,

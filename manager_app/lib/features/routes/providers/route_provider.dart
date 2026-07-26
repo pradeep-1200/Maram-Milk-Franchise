@@ -69,6 +69,7 @@ class RouteNotifier extends AsyncNotifier<RouteState> {
       // Fallback for null fields coming from backend
       json['qty1LBottle'] = json['qty1LBottle'] ?? 0;
       json['qtyHalfLBottle'] = json['qtyHalfLBottle'] ?? 0;
+      json['qtyHalfLPacket'] = json['qtyHalfLPacket'] ?? 0;
       return DeliveryRoute.fromJson(json);
     }).toList();
 
@@ -89,7 +90,7 @@ class RouteNotifier extends AsyncNotifier<RouteState> {
     }
   }
 
-  Future<void> assignRoute(String routeId, String dpId, String dpName, double litresAllocated, {int? qty1LBottle, int? qtyHalfLBottle, int? petrolAllowanceGiven}) async {
+  Future<void> assignRoute(String routeId, String dpId, String dpName, double litresAllocated, {int? qty1LBottle, int? qtyHalfLBottle, int? qtyHalfLPacket, int? petrolAllowanceGiven}) async {
     final dio = ref.read(apiClientProvider);
     final date = _getLocalToday();
 
@@ -119,6 +120,7 @@ class RouteNotifier extends AsyncNotifier<RouteState> {
           'status': 'ASSIGNED',
           if (qty1LBottle != null) 'qty1LBottle': qty1LBottle,
           if (qtyHalfLBottle != null) 'qtyHalfLBottle': qtyHalfLBottle,
+          if (qtyHalfLPacket != null) 'qtyHalfLPacket': qtyHalfLPacket,
           if (petrolAllowanceGiven != null) 'petrolAllowanceGiven': petrolAllowanceGiven,
         },
       );
@@ -132,7 +134,7 @@ class RouteNotifier extends AsyncNotifier<RouteState> {
     }
   }
 
-  Future<void> updateRouteAllocationLitres(String routeId, double litresAllocated, {int? qty1LBottle, int? qtyHalfLBottle, int? petrolAllowanceGiven}) async {
+  Future<void> updateRouteAllocationLitres(String routeId, double litresAllocated, {int? qty1LBottle, int? qtyHalfLBottle, int? qtyHalfLPacket, int? petrolAllowanceGiven}) async {
     final dio = ref.read(apiClientProvider);
     final date = _getLocalToday();
 
@@ -165,6 +167,7 @@ class RouteNotifier extends AsyncNotifier<RouteState> {
           'status': 'ASSIGNED',
           if (qty1LBottle != null) 'qty1LBottle': qty1LBottle,
           if (qtyHalfLBottle != null) 'qtyHalfLBottle': qtyHalfLBottle,
+          if (qtyHalfLPacket != null) 'qtyHalfLPacket': qtyHalfLPacket,
           if (petrolAllowanceGiven != null) 'petrolAllowanceGiven': petrolAllowanceGiven,
         },
       );

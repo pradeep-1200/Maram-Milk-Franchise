@@ -121,6 +121,7 @@ model RouteAllocation {
   litresAllocated Float
   qty1LBottle     Int                   @default(0)
   qtyHalfLBottle  Int                   @default(0)
+  qtyHalfLPacket  Int                   @default(0)
   petrolAllowanceGiven Int?
   status          RouteAllocationStatus
   createdAt       DateTime              @default(now())

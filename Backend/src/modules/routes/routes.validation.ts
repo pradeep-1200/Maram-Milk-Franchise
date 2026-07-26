@@ -11,7 +11,8 @@ export const updateAllocationSchema = z.object({
   dpId: z.string().uuid(),
   litresAllocated: z.number().min(0),
   qty1LBottle: z.number().min(0).optional(),
-  qtyHalfLBottle: z.number().min(0).optional(),
-  petrolAllowanceGiven: z.number().min(0).optional(),
+  qtyHalfLBottle: z.number().int().optional(),
+  qtyHalfLPacket: z.number().int().optional(),
+  petrolAllowanceGiven: z.number().int().optional(),
   status: z.nativeEnum(RouteAllocationStatus),
 });

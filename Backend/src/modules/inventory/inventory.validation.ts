@@ -19,3 +19,9 @@ export const adminStockSchema = z.object({
   inventoryItemId: z.string().uuid(),
   newStockAdded: z.number().min(0),
 });
+
+// TEMPORARY_MANUAL_STOCK_ENTRY
+export const managerStockSchema = z.object({
+  inventoryItemId: z.string().uuid(),
+  newStockAdded: z.number().min(0),
+});

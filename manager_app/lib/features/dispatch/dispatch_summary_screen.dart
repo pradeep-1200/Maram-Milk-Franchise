@@ -9,11 +9,25 @@ import '../../shared/async_value_widget.dart';
 import 'providers/dispatch_provider.dart';
 import 'models/dispatch_summary.dart';
 
-class DispatchSummaryScreen extends ConsumerWidget {
+class DispatchSummaryScreen extends ConsumerStatefulWidget {
   const DispatchSummaryScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DispatchSummaryScreen> createState() => _DispatchSummaryScreenState();
+}
+
+class _DispatchSummaryScreenState extends ConsumerState<DispatchSummaryScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Force a fresh fetch when this screen is opened
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(dispatchProvider.notifier).reload();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dispatchStateAsync = ref.watch(dispatchProvider);
 

@@ -118,3 +118,34 @@ export const addAdminStock = async (date: string, inventoryItemId: string, newSt
 
   return record;
 };
+
+// TEMPORARY_MANUAL_STOCK_ENTRY
+/**
+ * Manager temporary logic: Set new stock directly (overwriting any previous value).
+ */
+export const setManagerStock = async (date: string, inventoryItemId: string, newStockAdded: number) => {
+  // Guarantee the record exists
+  const items = await getInventoryForDate(date);
+  const currentRecord = items.find(i => i.inventoryItemId === inventoryItemId);
+  if (!currentRecord) throw new Error('Item not found');
+
+  // We are setting newStockAdded, so expected becomes carriedOver + newStockAdded
+  const newExpected = (currentRecord.carriedOverStock ?? 0) + newStockAdded;
+  
+  // If the manager hasn't recorded a variance yet (current == expected), keep them in sync
+  const variance = currentRecord.currentStock - currentRecord.expectedStock;
+  const newCurrent = newExpected + variance;
+
+  const record = await prisma.inventoryDailyRecord.update({
+    where: {
+      inventoryItemId_date: { inventoryItemId, date },
+    },
+    data: {
+      expectedStock: newExpected,
+      currentStock: newCurrent,
+      newStockAdded: newStockAdded,
+    },
+  });
+
+  return record;
+};

@@ -331,6 +331,65 @@ class _InventoryRow extends StatelessWidget {
                             ),
                           ],
                         ),
+                        // TEMPORARY_MANUAL_STOCK_ENTRY
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8.0),
+                          child: Divider(height: 1),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'New Stock (Manual)',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: theme.colorScheme.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  'Temp admin override',
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: theme.colorScheme.primary.withAlpha(200),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(
+                              width: 80,
+                              child: Consumer(
+                                builder: (context, ref, child) {
+                                  return Focus(
+                                    onFocusChange: (hasFocus) {
+                                      if (!hasFocus) {
+                                        // The action happens inside the TextField's onSubmitted or onEditingComplete typically,
+                                        // but we can also rely on a check button. 
+                                        // However, providing a dedicated IconButton is better.
+                                      }
+                                    },
+                                    child: TextFormField(
+                                      initialValue: item.newStockAdded.toInt().toString(),
+                                      keyboardType: TextInputType.number,
+                                      decoration: const InputDecoration(
+                                        isDense: true,
+                                        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                        border: OutlineInputBorder(),
+                                      ),
+                                      onFieldSubmitted: (val) {
+                                        final numValue = double.tryParse(val);
+                                        if (numValue != null) {
+                                          ref.read(inventoryProvider.notifier).updateManagerStock(item.id, numValue);
+                                        }
+                                      },
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
                         const Padding(
                           padding: EdgeInsets.symmetric(vertical: 8.0),
                           child: Divider(height: 1),

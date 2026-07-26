@@ -4,6 +4,8 @@ import '../models/delivery_route.dart';
 import '../../attendance/providers/attendance_provider.dart';
 import '../../../core/network/api_client.dart';
 import '../../inventory/providers/inventory_provider.dart';
+import '../../evening_check/providers/evening_check_provider.dart';
+import '../../dispatch/providers/dispatch_provider.dart';
 
 class RouteState {
   final List<DeliveryRoute> routes;
@@ -122,6 +124,8 @@ class RouteNotifier extends AsyncNotifier<RouteState> {
       );
       ref.read(attendanceProvider.notifier).assignRouteToDp(dpId);
       ref.invalidate(inventoryProvider);
+      ref.invalidate(eveningCheckProvider);
+      ref.invalidate(dispatchProvider);
     } catch (e) {
       ref.invalidateSelf();
       rethrow;
@@ -165,6 +169,8 @@ class RouteNotifier extends AsyncNotifier<RouteState> {
         },
       );
       ref.invalidate(inventoryProvider);
+      ref.invalidate(eveningCheckProvider);
+      ref.invalidate(dispatchProvider);
     } catch (e) {
       ref.invalidateSelf();
       rethrow;
@@ -203,6 +209,8 @@ class RouteNotifier extends AsyncNotifier<RouteState> {
           'status': 'UNASSIGNED',
         },
       );
+      ref.invalidate(eveningCheckProvider);
+      ref.invalidate(dispatchProvider);
     } catch (e) {
       ref.invalidateSelf();
     }
@@ -236,6 +244,8 @@ class RouteNotifier extends AsyncNotifier<RouteState> {
             'petrolAllowanceGiven': givenAmount,
           },
         );
+        ref.invalidate(eveningCheckProvider);
+        ref.invalidate(dispatchProvider);
       } catch (e) {
         ref.invalidateSelf();
       }

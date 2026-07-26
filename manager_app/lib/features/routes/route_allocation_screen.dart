@@ -80,7 +80,7 @@ class RouteAllocationScreen extends ConsumerWidget {
                   icon: const Icon(Icons.check),
                   tooltip: 'Finish Dispatch',
                   onPressed: () {
-                    context.go('/dashboard');
+                    context.go('/dispatch');
                   },
                 ),
                 const SizedBox(width: 8),

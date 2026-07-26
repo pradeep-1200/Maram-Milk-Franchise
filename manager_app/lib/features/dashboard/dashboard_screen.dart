@@ -87,14 +87,17 @@ class DashboardScreen extends ConsumerWidget {
                         final String greeting;
                         final IconData icon;
                         
-                        if (hour < 12) {
+                        if (hour >= 5 && hour < 12) {
                           greeting = 'Good Morning';
                           icon = Icons.wb_sunny_outlined;
-                        } else if (hour < 17) {
+                        } else if (hour >= 12 && hour < 17) {
                           greeting = 'Good Afternoon';
                           icon = Icons.wb_cloudy_outlined;
-                        } else {
+                        } else if (hour >= 17 && hour < 21) {
                           greeting = 'Good Evening';
+                          icon = Icons.brightness_3_outlined;
+                        } else {
+                          greeting = 'Good Night';
                           icon = Icons.nights_stay_outlined;
                         }
                         

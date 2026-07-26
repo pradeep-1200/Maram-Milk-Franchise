@@ -29,6 +29,9 @@ export const getDispatchSummary = async (req: Request, res: Response, next: Next
     const totalLitresAllocated = allocations
       .filter(a => a.status === 'ASSIGNED')
       .reduce((sum, a) => sum + a.litresAllocated, 0);
+    const petrolAllowanceTotal = allocations
+      .filter(a => a.status === 'ASSIGNED')
+      .reduce((sum, a) => sum + (a.petrolAllowanceGiven || 0), 0);
 
     // 3. Inventory Stats
     const totalItems = await prisma.inventoryItem.count();
@@ -58,7 +61,7 @@ export const getDispatchSummary = async (req: Request, res: Response, next: Next
         matched: matchCount,
         completedAt: dispatchDay.inventoryCompletedAt,
       },
-      petrolAllowanceTotal: dispatchDay.petrolAllowanceTotal,
+      petrolAllowanceTotal,
     });
   } catch (error: any) {
     if (error.name === 'ZodError') {

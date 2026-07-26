@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../models/attendance_entry.dart';
 import '../models/delivery_person.dart' show AttendanceStatus;
 import '../../../core/network/api_client.dart';
+import '../../dispatch/providers/dispatch_provider.dart';
 
 class AttendanceState {
   final List<AttendanceEntry> persons;
@@ -131,6 +132,7 @@ class AttendanceNotifier extends AsyncNotifier<AttendanceState> {
         queryParameters: {'date': date},
         data: {'status': statusString},
       );
+      ref.invalidate(dispatchProvider);
     } catch (e) {
       // Revert on failure by refetching
       ref.invalidateSelf();

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/network/api_client.dart';
+import '../../dispatch/providers/dispatch_provider.dart';
 
 class InventoryItemState {
   final String id;
@@ -174,6 +175,27 @@ class InventoryNotifier extends AsyncNotifier<InventoryState> {
     );
     
     state = AsyncValue.data(currentState.copyWith(isSaved: true));
+    ref.invalidate(dispatchProvider);
+  }
+
+  // TEMPORARY_MANUAL_STOCK_ENTRY
+  Future<void> updateManagerStock(String inventoryItemId, double newStockAdded) async {
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    final dio = ref.read(apiClientProvider);
+    
+    await dio.put(
+      '/inventory/manager-stock',
+      queryParameters: {'date': _getLocalToday()},
+      data: {
+        'inventoryItemId': inventoryItemId,
+        'newStockAdded': newStockAdded,
+      },
+    );
+    
+    // Refresh to get the new expectedQty and variance recalculated by the server
+    await reload();
   }
 }
 

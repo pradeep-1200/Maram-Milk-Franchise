@@ -4,9 +4,11 @@ import 'package:go_router/go_router.dart';
 import '../../core/constants/app_constants.dart';
 import '../../shared/app_button.dart';
 import '../../shared/app_card.dart';
-import '../../shared/async_value_widget.dart';
 import 'providers/dispatch_provider.dart';
-import 'models/dispatch_summary.dart';
+import '../attendance/providers/attendance_provider.dart';
+import '../attendance/models/delivery_person.dart' show AttendanceStatus;
+import '../inventory/providers/inventory_provider.dart';
+import '../routes/providers/route_provider.dart';
 
 class DispatchReadyScreen extends ConsumerWidget {
   const DispatchReadyScreen({super.key});
@@ -14,7 +16,39 @@ class DispatchReadyScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final dispatchStateAsync = ref.watch(dispatchProvider);
+    final attAsync = ref.watch(attendanceProvider);
+    final invAsync = ref.watch(inventoryProvider);
+    final routeAsync = ref.watch(routeProvider);
+    final dispatchAsync = ref.watch(dispatchProvider);
+
+    final attCount = attAsync.value?.countAll ?? 0;
+    final attPending = attAsync.value?.persons.where((p) => p.status == AttendanceStatus.pending).length ?? 0;
+    final attMarked = attCount - attPending;
+    final attendanceComplete = attCount > 0 && attMarked >= attCount;
+
+    final routesCount = routeAsync.value?.countAll ?? 0;
+    final routesAssigned = routeAsync.value?.countAssigned ?? 0;
+    final routesComplete = routesCount > 0 && routesAssigned >= routesCount;
+
+    // Use dispatch provider for the final completedAt truth on inventory, or local isSaved
+    final inventoryComplete = (invAsync.value?.isSaved == true) || (dispatchAsync.value?.inventory.completedAt != null);
+
+    final bool allComplete = attendanceComplete && inventoryComplete && routesComplete;
+
+    final List<String> pendingItems = [];
+    if (!attendanceComplete) {
+      pendingItems.add('${attCount - attMarked} DP(s) need attendance marked');
+    }
+    if (!inventoryComplete) {
+      pendingItems.add('Inventory count pending');
+    }
+    if (!routesComplete) {
+      pendingItems.add('${routesCount - routesAssigned} route(s) need assignment');
+    }
+    
+    final subtitleText = allComplete 
+        ? 'Great job! You have completed today\'s morning operations.' 
+        : 'Waiting on:\n- ${pendingItems.join('\n- ')}';
 
     return Scaffold(
       appBar: AppBar(
@@ -30,34 +64,9 @@ class DispatchReadyScreen extends ConsumerWidget {
         ),
         title: const Text('Morning Dispatch', style: TextStyle(fontWeight: FontWeight.bold)),
       ),
-      body: AppAsyncWidget<DispatchSummary>(
-        value: dispatchStateAsync,
-        onRetry: () => ref.read(dispatchProvider.notifier).reload(),
-        data: (summary) {
-          final bool attendanceComplete = summary.attendance.completedAt != null;
-          final bool inventoryComplete = summary.inventory.completedAt != null;
-          final bool routesComplete = summary.routes.completedAt != null;
-
-          final bool allComplete = attendanceComplete && inventoryComplete && routesComplete;
-
-          final List<String> pendingItems = [];
-          if (!attendanceComplete) {
-            pendingItems.add('${summary.attendance.totalDps - summary.attendance.marked} DP(s) need attendance marked');
-          }
-          if (!inventoryComplete) {
-            pendingItems.add('Inventory count pending');
-          }
-          if (!routesComplete) {
-            pendingItems.add('${summary.routes.totalRoutes - summary.routes.assigned} route(s) need assignment');
-          }
-          
-          final subtitleText = allComplete 
-              ? 'Great job! You have completed today\'s morning operations.' 
-              : 'Waiting on:\n- ${pendingItems.join('\n- ')}';
-
-          return SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(AppConstants.spacing16),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppConstants.spacing16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -104,7 +113,7 @@ class DispatchReadyScreen extends ConsumerWidget {
                         children: [
                           _ChecklistItem(
                             title: 'Attendance',
-                            subtitle: '${summary.attendance.marked}/${summary.attendance.totalDps} Marked',
+                            subtitle: '${attMarked}/${attCount} Marked',
                             isComplete: attendanceComplete,
                             onTap: () => context.push('/dispatch/attendance'),
                           ),
@@ -118,7 +127,7 @@ class DispatchReadyScreen extends ConsumerWidget {
                           const Divider(),
                           _ChecklistItem(
                             title: 'Routes & Allocations',
-                            subtitle: '${summary.routes.assigned}/${summary.routes.totalRoutes} Assigned',
+                            subtitle: '${routesAssigned}/${routesCount} Assigned',
                             isComplete: routesComplete,
                             onTap: () => context.push('/dispatch/routes'),
                           ),
@@ -138,9 +147,7 @@ class DispatchReadyScreen extends ConsumerWidget {
                 ],
               ),
             ),
-          );
-        },
-      ),
+        ),
     );
   }
 }

@@ -36,9 +36,9 @@ class MilkAllocationSheet extends ConsumerWidget {
     int maxHalfL = 0;
     int maxHalfLPacket = 0;
     if (inventoryState != null) {
-      final item1L = inventoryState.items.where((i) => i.unit == '1L' && i.material == 'Bottle').firstOrNull;
-      final itemHalfL = inventoryState.items.where((i) => i.unit == '500ml' && i.material == 'Bottle').firstOrNull;
-      final itemHalfLPacket = inventoryState.items.where((i) => i.unit == '500ml' && i.material == 'Packet').firstOrNull;
+      final item1L = inventoryState.items.where((i) => i.subtitle.contains('1L') && i.subtitle.contains('Bottle')).firstOrNull;
+      final itemHalfL = inventoryState.items.where((i) => i.subtitle.contains('500ml') && i.subtitle.contains('Bottle')).firstOrNull;
+      final itemHalfLPacket = inventoryState.items.where((i) => i.subtitle.contains('500ml') && i.subtitle.contains('Packet')).firstOrNull;
       
       // Max limit is current available stock + what was already allocated to this route previously
       max1L = (item1L?.currentStock.toInt() ?? 0) + route.qty1LBottle;

@@ -9,6 +9,7 @@ export const getInventory = async (req: Request, res: Response, next: NextFuncti
     res.json(inventory);
   } catch (error: any) {
     if (error.name === 'ZodError') {
+      console.error('Validation failed in getInventory:', JSON.stringify(error.errors, null, 2));
       return res.status(400).json({ error: { message: 'Validation failed', code: 'VALIDATION_ERROR', details: error.errors } });
     }
     next(error);
@@ -24,6 +25,7 @@ export const updateInventory = async (req: Request, res: Response, next: NextFun
     res.json({ success: true, updatedCount: results.length });
   } catch (error: any) {
     if (error.name === 'ZodError') {
+      console.error('Validation failed in updateInventory:', JSON.stringify(error.errors, null, 2));
       return res.status(400).json({ error: { message: 'Validation failed', code: 'VALIDATION_ERROR', details: error.errors } });
     }
     next(error);

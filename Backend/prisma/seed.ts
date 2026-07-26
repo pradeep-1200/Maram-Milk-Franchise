@@ -82,6 +82,23 @@ async function main() {
     }
   }
 
+  // 4. Inventory Items
+  const inventoryData = [
+    { name: 'Milk', unit: '1L', material: 'Bottle' },
+    { name: 'Milk', unit: '500ml', material: 'Bottle' },
+    { name: 'Milk', unit: '500ml', material: 'Packet' },
+  ];
+
+  for (const item of inventoryData) {
+    const existing = await prisma.inventoryItem.findFirst({
+      where: { name: item.name, unit: item.unit, material: item.material }
+    });
+    if (!existing) {
+      await prisma.inventoryItem.create({ data: item });
+      console.log(`Seeded Inventory Item: ${item.name} ${item.unit} ${item.material}`);
+    }
+  }
+
   console.log('Seed completed.');
 }
 

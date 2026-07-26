@@ -37,9 +37,16 @@ export const getInventoryForDate = async (date: string) => {
       const previous = await getPreviousRecord(item.id, date);
       const carriedExpected = previous ? previous.currentStock : 0;
       
-      // Auto-create on the fly
-      record = await prisma.inventoryDailyRecord.create({
-        data: {
+      // Auto-create on the fly using upsert to prevent race conditions
+      record = await prisma.inventoryDailyRecord.upsert({
+        where: {
+          inventoryItemId_date: {
+            inventoryItemId: item.id,
+            date,
+          },
+        },
+        update: {}, // Do nothing if it exists
+        create: {
           inventoryItemId: item.id,
           date,
           expectedStock: carriedExpected,

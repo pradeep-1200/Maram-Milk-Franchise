@@ -20,9 +20,9 @@ class InventoryScreen extends ConsumerWidget {
     final notifier = ref.read(inventoryProvider.notifier);
     final theme = Theme.of(context);
 
-    // Save condition: if there is a negative manual adjustment or negative current stock,
+    // Save condition: must have items, and if there is a negative manual adjustment or negative current stock,
     // a reason must be provided.
-    final bool canSave = !state.items.any((i) {
+    final bool canSave = state.items.isNotEmpty && !state.items.any((i) {
       final needsReason = i.variance != 0 || i.currentStock < 0;
       return needsReason && (i.reason == null || i.reason!.isEmpty);
     });
@@ -87,11 +87,21 @@ class InventoryScreen extends ConsumerWidget {
                 IconButton(
                   icon: const Icon(Icons.arrow_forward),
                   tooltip: 'Save & Next: Routes Assigned',
-                  onPressed: () {
+                  onPressed: () async {
                     if (canSave) {
-                      notifier.saveInventory();
+                      try {
+                        await notifier.saveInventory();
+                        if (context.mounted) {
+                          context.push('/dispatch/routes');
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Save failed: $e'), backgroundColor: Colors.red),
+                          );
+                        }
+                      }
                     }
-                    context.push('/dispatch/routes');
                   },
                 ),
                 const SizedBox(width: 8),
@@ -100,12 +110,22 @@ class InventoryScreen extends ConsumerWidget {
                 IconButton(
                   icon: const Icon(Icons.save),
                   tooltip: 'Save Inventory',
-                  onPressed: () {
+                  onPressed: () async {
                     if (canSave) {
-                      notifier.saveInventory();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Inventory saved')),
-                      );
+                      try {
+                        await notifier.saveInventory();
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Inventory saved')),
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Save failed: $e'), backgroundColor: Colors.red),
+                          );
+                        }
+                      }
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Please provide reasons for shortages')),
@@ -120,6 +140,26 @@ class InventoryScreen extends ConsumerWidget {
         value: inventoryStateAsync,
         onRetry: () => notifier.reload(),
         data: (loadedState) {
+          if (loadedState.items.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey),
+                  const SizedBox(height: 16),
+                  Text('No inventory items found', style: theme.textTheme.titleMedium),
+                  const SizedBox(height: 8),
+                  Text('Wait for backend initialization or check connection.', style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey)),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => notifier.reload(),
+                    child: const Text('Refresh'),
+                  ),
+                ],
+              ),
+            );
+          }
+
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -188,11 +228,21 @@ class InventoryScreen extends ConsumerWidget {
                 width: double.infinity,
                 child: AppButton(
                   text: 'Save Inventory',
-                  onPressed: canSave ? () {
-                    notifier.saveInventory();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Inventory saved successfully!')),
-                    );
+                  onPressed: canSave ? () async {
+                    try {
+                      await notifier.saveInventory();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Inventory saved successfully!')),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Save failed: $e'), backgroundColor: Colors.red),
+                        );
+                      }
+                    }
                   } : null,
                 ),
               ),

@@ -159,7 +159,7 @@ class InventoryNotifier extends AsyncNotifier<InventoryState> {
 
   Future<void> saveInventory() async {
     final currentState = state.value;
-    if (currentState == null) return;
+    if (currentState == null || currentState.items.isEmpty) throw Exception('No items to save');
 
     final dio = ref.read(apiClientProvider);
     
@@ -168,14 +168,18 @@ class InventoryNotifier extends AsyncNotifier<InventoryState> {
       'currentStock': i.currentStock,
     }).toList();
 
-    await dio.put(
-      '/inventory',
-      queryParameters: {'date': _getLocalToday()},
-      data: {'records': records},
-    );
-    
-    state = AsyncValue.data(currentState.copyWith(isSaved: true));
-    ref.invalidate(dispatchProvider);
+    try {
+      await dio.put(
+        '/inventory',
+        queryParameters: {'date': _getLocalToday()},
+        data: {'records': records},
+      );
+      
+      state = AsyncValue.data(currentState.copyWith(isSaved: true));
+      ref.invalidate(dispatchProvider);
+    } catch (e) {
+      rethrow;
+    }
   }
 
   // TEMPORARY_MANUAL_STOCK_ENTRY

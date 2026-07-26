@@ -1,0 +1,200 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  MANAGER
+  ADMIN
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  STANDBY
+}
+
+enum RouteAllocationStatus {
+  ASSIGNED
+  UNASSIGNED
+}
+
+enum LedgerTransactionType {
+  SALARY
+  ADVANCE
+  PETROL_ALLOWANCE
+  SHORTAGE
+  EXTRA_PAID
+  MISC
+}
+
+model Manager {
+  id           String             @id @default(uuid())
+  name         String
+  email        String             @unique
+  passwordHash String
+  role         Role               @default(MANAGER)
+  branchName   String
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  attendanceRecords AttendanceRecord[]
+}
+
+model DeliveryPerson {
+  id                   String   @id @default(uuid())
+  dpCode               String   @unique
+  name                 String
+  role                 String   @default("Delivery Person")
+  mobileNumber         String
+  alternativeMobile    String?
+  whatsappNumber       String?
+  dateOfBirth          String?  // ISO date string or similar
+  address              String?
+  zone                 String?
+  parentNameAndAddress String?
+  parentOrSpouseMobile String?
+  alternativeAddress   String?
+  aadharNumber         String?
+  licenseNumber        String?
+  vehicleNumber        String?
+  aadharCopyUrl        String?
+  licenseCopyUrl       String?
+  photoUrl             String?
+  dateOfJoining        String?
+  gpayNumber           String?
+  upiId                String?
+  bankAccountDetails   String?
+  isActive             Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  attendanceRecords  AttendanceRecord[]
+  routeAllocations   RouteAllocation[]
+  assignedRoutes     Route[]
+  emptyBottleLogs    EmptyBottleLog[]
+  ledgerTransactions LedgerTransaction[]
+}
+
+model Route {
+  id            String   @id @default(uuid())
+  name          String
+  zone          String
+  defaultPetrolAllowance Int @default(0)
+  customerCount Int      @default(0)
+  litres        Float    @default(0)
+  assignedDpId  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  assignedDp       DeliveryPerson?   @relation(fields: [assignedDpId], references: [id])
+  routeAllocations RouteAllocation[]
+  emptyBottleLogs  EmptyBottleLog[]
+  ledgerTransactions LedgerTransaction[]
+}
+
+model AttendanceRecord {
+  id                String           @id @default(uuid())
+  dpId              String
+  date              String           // YYYY-MM-DD
+  status            AttendanceStatus
+  markedByManagerId String
+  createdAt         DateTime         @default(now())
+
+  dp                DeliveryPerson   @relation(fields: [dpId], references: [id])
+  markedByManager   Manager          @relation(fields: [markedByManagerId], references: [id])
+
+  @@unique([dpId, date])
+}
+
+model RouteAllocation {
+  id              String                @id @default(uuid())
+  routeId         String
+  dpId            String
+  date            String                // YYYY-MM-DD
+  litresAllocated Float
+  qty1LBottle     Int                   @default(0)
+  qtyHalfLBottle  Int                   @default(0)
+  petrolAllowanceGiven Int?
+  status          RouteAllocationStatus
+  createdAt       DateTime              @default(now())
+
+  route Route          @relation(fields: [routeId], references: [id])
+  dp    DeliveryPerson @relation(fields: [dpId], references: [id])
+
+  @@unique([routeId, date])
+}
+
+model InventoryItem {
+  id       String  @id @default(uuid())
+  name     String
+  unit     String
+  material String?
+
+  dailyRecords InventoryDailyRecord[]
+}
+
+model InventoryDailyRecord {
+  id              String   @id @default(uuid())
+  inventoryItemId String
+  date            String   // YYYY-MM-DD
+  expectedStock   Float
+  currentStock    Float
+  carriedOverStock Float?
+  newStockAdded   Float?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id])
+
+  @@unique([inventoryItemId, date])
+}
+
+model EmptyBottleLog {
+  id                    String   @id @default(uuid())
+  routeId               String
+  dpId                  String
+  date                  String   // YYYY-MM-DD
+  deliveryCompleted     Boolean  @default(false)
+  oneLBottlesCollected  Int      @default(0)
+  halfLBottlesCollected Int      @default(0)
+  flagIssue             Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  route Route          @relation(fields: [routeId], references: [id])
+  dp    DeliveryPerson @relation(fields: [dpId], references: [id])
+
+  @@unique([routeId, date])
+}
+
+model DispatchDay {
+  id                    String    @id @default(uuid())
+  date                  String    @unique // YYYY-MM-DD
+  attendanceCompletedAt DateTime?
+  inventoryCompletedAt  DateTime?
+  routesCompletedAt     DateTime?
+  petrolAllowanceTotal  Float     @default(0)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+model LedgerTransaction {
+  id        String                @id @default(uuid())
+  dpId      String?
+  type      LedgerTransactionType
+  amount    Float
+  note      String?
+  date      String                // YYYY-MM-DD
+  createdAt DateTime              @default(now())
+
+  dp DeliveryPerson? @relation(fields: [dpId], references: [id])
+  routeId   String?
+  route     Route?   @relation(fields: [routeId], references: [id])
+}

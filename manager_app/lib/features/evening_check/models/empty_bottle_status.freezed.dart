@@ -1,0 +1,301 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// coverage:ignore-file
+// ignore_for_file: type=lint
+// ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
+
+part of 'empty_bottle_status.dart';
+
+// **************************************************************************
+// FreezedGenerator
+// **************************************************************************
+
+// dart format off
+T _$identity<T>(T value) => value;
+
+/// @nodoc
+mixin _$EmptyBottleStatus {
+
+ String get routeId; String get routeName; String? get dpId; String? get dpName; bool get deliveryCompleted; int get oneLBottlesCollected; int get halfLBottlesCollected; bool get flagIssue; String get status;
+/// Create a copy of EmptyBottleStatus
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$EmptyBottleStatusCopyWith<EmptyBottleStatus> get copyWith => _$EmptyBottleStatusCopyWithImpl<EmptyBottleStatus>(this as EmptyBottleStatus, _$identity);
+
+  /// Serializes this EmptyBottleStatus to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is EmptyBottleStatus&&(identical(other.routeId, routeId) || other.routeId == routeId)&&(identical(other.routeName, routeName) || other.routeName == routeName)&&(identical(other.dpId, dpId) || other.dpId == dpId)&&(identical(other.dpName, dpName) || other.dpName == dpName)&&(identical(other.deliveryCompleted, deliveryCompleted) || other.deliveryCompleted == deliveryCompleted)&&(identical(other.oneLBottlesCollected, oneLBottlesCollected) || other.oneLBottlesCollected == oneLBottlesCollected)&&(identical(other.halfLBottlesCollected, halfLBottlesCollected) || other.halfLBottlesCollected == halfLBottlesCollected)&&(identical(other.flagIssue, flagIssue) || other.flagIssue == flagIssue)&&(identical(other.status, status) || other.status == status));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,routeId,routeName,dpId,dpName,deliveryCompleted,oneLBottlesCollected,halfLBottlesCollected,flagIssue,status);
+
+@override
+String toString() {
+  return 'EmptyBottleStatus(routeId: $routeId, routeName: $routeName, dpId: $dpId, dpName: $dpName, deliveryCompleted: $deliveryCompleted, oneLBottlesCollected: $oneLBottlesCollected, halfLBottlesCollected: $halfLBottlesCollected, flagIssue: $flagIssue, status: $status)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $EmptyBottleStatusCopyWith<$Res>  {
+  factory $EmptyBottleStatusCopyWith(EmptyBottleStatus value, $Res Function(EmptyBottleStatus) _then) = _$EmptyBottleStatusCopyWithImpl;
+@useResult
+$Res call({
+ String routeId, String routeName, String? dpId, String? dpName, bool deliveryCompleted, int oneLBottlesCollected, int halfLBottlesCollected, bool flagIssue, String status
+});
+
+
+
+
+}
+/// @nodoc
+class _$EmptyBottleStatusCopyWithImpl<$Res>
+    implements $EmptyBottleStatusCopyWith<$Res> {
+  _$EmptyBottleStatusCopyWithImpl(this._self, this._then);
+
+  final EmptyBottleStatus _self;
+  final $Res Function(EmptyBottleStatus) _then;
+
+/// Create a copy of EmptyBottleStatus
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? routeId = null,Object? routeName = null,Object? dpId = freezed,Object? dpName = freezed,Object? deliveryCompleted = null,Object? oneLBottlesCollected = null,Object? halfLBottlesCollected = null,Object? flagIssue = null,Object? status = null,}) {
+  return _then(_self.copyWith(
+routeId: null == routeId ? _self.routeId : routeId // ignore: cast_nullable_to_non_nullable
+as String,routeName: null == routeName ? _self.routeName : routeName // ignore: cast_nullable_to_non_nullable
+as String,dpId: freezed == dpId ? _self.dpId : dpId // ignore: cast_nullable_to_non_nullable
+as String?,dpName: freezed == dpName ? _self.dpName : dpName // ignore: cast_nullable_to_non_nullable
+as String?,deliveryCompleted: null == deliveryCompleted ? _self.deliveryCompleted : deliveryCompleted // ignore: cast_nullable_to_non_nullable
+as bool,oneLBottlesCollected: null == oneLBottlesCollected ? _self.oneLBottlesCollected : oneLBottlesCollected // ignore: cast_nullable_to_non_nullable
+as int,halfLBottlesCollected: null == halfLBottlesCollected ? _self.halfLBottlesCollected : halfLBottlesCollected // ignore: cast_nullable_to_non_nullable
+as int,flagIssue: null == flagIssue ? _self.flagIssue : flagIssue // ignore: cast_nullable_to_non_nullable
+as bool,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [EmptyBottleStatus].
+extension EmptyBottleStatusPatterns on EmptyBottleStatus {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _EmptyBottleStatus value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _EmptyBottleStatus() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _EmptyBottleStatus value)  $default,){
+final _that = this;
+switch (_that) {
+case _EmptyBottleStatus():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _EmptyBottleStatus value)?  $default,){
+final _that = this;
+switch (_that) {
+case _EmptyBottleStatus() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String routeId,  String routeName,  String? dpId,  String? dpName,  bool deliveryCompleted,  int oneLBottlesCollected,  int halfLBottlesCollected,  bool flagIssue,  String status)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _EmptyBottleStatus() when $default != null:
+return $default(_that.routeId,_that.routeName,_that.dpId,_that.dpName,_that.deliveryCompleted,_that.oneLBottlesCollected,_that.halfLBottlesCollected,_that.flagIssue,_that.status);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String routeId,  String routeName,  String? dpId,  String? dpName,  bool deliveryCompleted,  int oneLBottlesCollected,  int halfLBottlesCollected,  bool flagIssue,  String status)  $default,) {final _that = this;
+switch (_that) {
+case _EmptyBottleStatus():
+return $default(_that.routeId,_that.routeName,_that.dpId,_that.dpName,_that.deliveryCompleted,_that.oneLBottlesCollected,_that.halfLBottlesCollected,_that.flagIssue,_that.status);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String routeId,  String routeName,  String? dpId,  String? dpName,  bool deliveryCompleted,  int oneLBottlesCollected,  int halfLBottlesCollected,  bool flagIssue,  String status)?  $default,) {final _that = this;
+switch (_that) {
+case _EmptyBottleStatus() when $default != null:
+return $default(_that.routeId,_that.routeName,_that.dpId,_that.dpName,_that.deliveryCompleted,_that.oneLBottlesCollected,_that.halfLBottlesCollected,_that.flagIssue,_that.status);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class _EmptyBottleStatus implements EmptyBottleStatus {
+  const _EmptyBottleStatus({required this.routeId, required this.routeName, this.dpId, this.dpName, required this.deliveryCompleted, required this.oneLBottlesCollected, required this.halfLBottlesCollected, required this.flagIssue, required this.status});
+  factory _EmptyBottleStatus.fromJson(Map<String, dynamic> json) => _$EmptyBottleStatusFromJson(json);
+
+@override final  String routeId;
+@override final  String routeName;
+@override final  String? dpId;
+@override final  String? dpName;
+@override final  bool deliveryCompleted;
+@override final  int oneLBottlesCollected;
+@override final  int halfLBottlesCollected;
+@override final  bool flagIssue;
+@override final  String status;
+
+/// Create a copy of EmptyBottleStatus
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$EmptyBottleStatusCopyWith<_EmptyBottleStatus> get copyWith => __$EmptyBottleStatusCopyWithImpl<_EmptyBottleStatus>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$EmptyBottleStatusToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _EmptyBottleStatus&&(identical(other.routeId, routeId) || other.routeId == routeId)&&(identical(other.routeName, routeName) || other.routeName == routeName)&&(identical(other.dpId, dpId) || other.dpId == dpId)&&(identical(other.dpName, dpName) || other.dpName == dpName)&&(identical(other.deliveryCompleted, deliveryCompleted) || other.deliveryCompleted == deliveryCompleted)&&(identical(other.oneLBottlesCollected, oneLBottlesCollected) || other.oneLBottlesCollected == oneLBottlesCollected)&&(identical(other.halfLBottlesCollected, halfLBottlesCollected) || other.halfLBottlesCollected == halfLBottlesCollected)&&(identical(other.flagIssue, flagIssue) || other.flagIssue == flagIssue)&&(identical(other.status, status) || other.status == status));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,routeId,routeName,dpId,dpName,deliveryCompleted,oneLBottlesCollected,halfLBottlesCollected,flagIssue,status);
+
+@override
+String toString() {
+  return 'EmptyBottleStatus(routeId: $routeId, routeName: $routeName, dpId: $dpId, dpName: $dpName, deliveryCompleted: $deliveryCompleted, oneLBottlesCollected: $oneLBottlesCollected, halfLBottlesCollected: $halfLBottlesCollected, flagIssue: $flagIssue, status: $status)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$EmptyBottleStatusCopyWith<$Res> implements $EmptyBottleStatusCopyWith<$Res> {
+  factory _$EmptyBottleStatusCopyWith(_EmptyBottleStatus value, $Res Function(_EmptyBottleStatus) _then) = __$EmptyBottleStatusCopyWithImpl;
+@override @useResult
+$Res call({
+ String routeId, String routeName, String? dpId, String? dpName, bool deliveryCompleted, int oneLBottlesCollected, int halfLBottlesCollected, bool flagIssue, String status
+});
+
+
+
+
+}
+/// @nodoc
+class __$EmptyBottleStatusCopyWithImpl<$Res>
+    implements _$EmptyBottleStatusCopyWith<$Res> {
+  __$EmptyBottleStatusCopyWithImpl(this._self, this._then);
+
+  final _EmptyBottleStatus _self;
+  final $Res Function(_EmptyBottleStatus) _then;
+
+/// Create a copy of EmptyBottleStatus
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? routeId = null,Object? routeName = null,Object? dpId = freezed,Object? dpName = freezed,Object? deliveryCompleted = null,Object? oneLBottlesCollected = null,Object? halfLBottlesCollected = null,Object? flagIssue = null,Object? status = null,}) {
+  return _then(_EmptyBottleStatus(
+routeId: null == routeId ? _self.routeId : routeId // ignore: cast_nullable_to_non_nullable
+as String,routeName: null == routeName ? _self.routeName : routeName // ignore: cast_nullable_to_non_nullable
+as String,dpId: freezed == dpId ? _self.dpId : dpId // ignore: cast_nullable_to_non_nullable
+as String?,dpName: freezed == dpName ? _self.dpName : dpName // ignore: cast_nullable_to_non_nullable
+as String?,deliveryCompleted: null == deliveryCompleted ? _self.deliveryCompleted : deliveryCompleted // ignore: cast_nullable_to_non_nullable
+as bool,oneLBottlesCollected: null == oneLBottlesCollected ? _self.oneLBottlesCollected : oneLBottlesCollected // ignore: cast_nullable_to_non_nullable
+as int,halfLBottlesCollected: null == halfLBottlesCollected ? _self.halfLBottlesCollected : halfLBottlesCollected // ignore: cast_nullable_to_non_nullable
+as int,flagIssue: null == flagIssue ? _self.flagIssue : flagIssue // ignore: cast_nullable_to_non_nullable
+as bool,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+// dart format on

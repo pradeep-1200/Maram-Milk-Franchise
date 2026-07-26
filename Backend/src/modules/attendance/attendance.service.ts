@@ -1,0 +1,76 @@
+import { prisma } from '../../config/db';
+import { AttendanceStatus } from '@prisma/client';
+import { checkAndUpdateAttendanceCompletion } from '../dispatch/dispatch.service';
+
+export const getAttendanceForDate = async (date: string) => {
+  const dps = await prisma.deliveryPerson.findMany({
+    orderBy: { dpCode: 'asc' },
+  });
+  
+  const records = await prisma.attendanceRecord.findMany({
+    where: { date },
+  });
+
+  const recordMap = new Map(records.map(r => [r.dpId, r]));
+
+  return dps.map(dp => {
+    const record = recordMap.get(dp.id);
+    return {
+      dpId: dp.id,
+      dpCode: dp.dpCode,
+      name: dp.name,
+      photoUrl: dp.photoUrl,
+      status: record ? record.status : 'NOT_MARKED',
+      recordId: record ? record.id : null,
+      markedAt: record ? record.createdAt : null,
+    };
+  });
+};
+
+export const updateAttendance = async (dpId: string, date: string, status: AttendanceStatus, managerId: string) => {
+  const record = await prisma.attendanceRecord.upsert({
+    where: {
+      dpId_date: { dpId, date },
+    },
+    update: {
+      status,
+      markedByManagerId: managerId,
+    },
+    create: {
+      dpId,
+      date,
+      status,
+      markedByManagerId: managerId,
+    },
+  });
+
+  await checkAndUpdateAttendanceCompletion(date);
+
+  return record;
+};
+
+export const bulkUpdateAttendance = async (date: string, records: { dpId: string; status: AttendanceStatus }[], managerId: string) => {
+  const results = await prisma.$transaction(
+    records.map(r =>
+      prisma.attendanceRecord.upsert({
+        where: {
+          dpId_date: { dpId: r.dpId, date },
+        },
+        update: {
+          status: r.status,
+          markedByManagerId: managerId,
+        },
+        create: {
+          dpId: r.dpId,
+          date,
+          status: r.status,
+          markedByManagerId: managerId,
+        },
+      })
+    )
+  );
+
+  await checkAndUpdateAttendanceCompletion(date);
+
+  return results;
+};

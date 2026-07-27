@@ -382,6 +382,10 @@ class _EveningCheckSheetState extends ConsumerState<_EveningCheckSheet> {
       deliveryCompleted: _didCompleteDelivery!,
       oneLBottlesCollected: _bottles1L,
       halfLBottlesCollected: _bottlesHalfL,
+      halfLPacketCollected: widget.route.halfLPacketCollected,
+      actualDelivered1L: widget.route.actualDelivered1L,
+      actualDeliveredHalfL: widget.route.actualDeliveredHalfL,
+      actualDeliveredPacket: widget.route.actualDeliveredPacket,
       flagIssue: _flagNoReturn,
     );
 

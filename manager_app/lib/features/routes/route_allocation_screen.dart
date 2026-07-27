@@ -263,28 +263,45 @@ class _RouteCard extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  if (route.isPetrolAllowanceComplete) ...[
+                  if (route.isPetrolAllowanceComplete || route.petrolAllowanceGiven != null) ...[
                     const SizedBox(height: 4),
                     Builder(
                       builder: (context) {
-                        final isShort = route.petrolAllowanceGiven != null && route.petrolAllowanceGiven! < route.fixedPetrolAllowance;
-                        final color = isShort ? Colors.red : Colors.orange;
-                        final text = isShort ? 'SHORT PA' : 'PA COMPLETE';
+                        final expected = route.fixedPetrolAllowance;
+                        final given = route.petrolAllowanceGiven ?? 0;
+                        
+                        String statusText;
+                        Color statusColor;
+                        
+                        if (given < expected) {
+                          statusText = 'Shortage: ₹${(expected - given).toStringAsFixed(0)}';
+                          statusColor = Colors.orange;
+                        } else if (given > expected) {
+                          statusText = 'Extra: ₹${(given - expected).toStringAsFixed(0)}';
+                          statusColor = Colors.teal;
+                        } else {
+                          statusText = 'Fully Paid';
+                          statusColor = Colors.green;
+                        }
 
                         return Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            Text(
+                              'Exp: ₹${expected.toStringAsFixed(0)} / Given: ₹${given.toStringAsFixed(0)} / ',
+                              style: theme.textTheme.bodySmall?.copyWith(fontSize: 10),
+                            ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                               decoration: BoxDecoration(
-                                color: color.withAlpha(25),
+                                color: statusColor.withAlpha(25),
                                 borderRadius: BorderRadius.circular(4),
-                                border: Border.all(color: color),
+                                border: Border.all(color: statusColor),
                               ),
                               child: Text(
-                                text,
+                                statusText,
                                 style: TextStyle(
-                                  color: color,
+                                  color: statusColor,
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -346,6 +363,10 @@ class _RouteCard extends ConsumerWidget {
               const Icon(Icons.local_drink, size: 16, color: Colors.grey),
               const SizedBox(width: AppConstants.spacing4),
               Text('${route.milkQuantity} Ltr', style: const TextStyle(fontSize: 12)),
+              const SizedBox(width: AppConstants.spacing16),
+              const Icon(Icons.keyboard_return, size: 16, color: Colors.grey),
+              const SizedBox(width: AppConstants.spacing4),
+              Text('${route.qty1LBottle + route.qtyHalfLBottle + route.qtyHalfLPacket} Expected', style: const TextStyle(fontSize: 12)),
             ],
           ),
           const SizedBox(height: AppConstants.spacing8),

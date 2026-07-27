@@ -108,36 +108,42 @@ class EmptyBottleListScreen extends ConsumerWidget {
                               const SizedBox(height: 4),
                               Builder(
                                 builder: (context) {
-                                  final totalCollected = status.oneLBottlesCollected + status.halfLBottlesCollected;
-                                  final totalExpected = status.expected1LBottles + status.expectedHalfLBottles;
+                                  final totalCollected = status.oneLBottlesCollected + status.halfLBottlesCollected + status.halfLPacketCollected;
+                                  final totalExpected = status.expected1LBottles + status.expectedHalfLBottles + status.expectedHalfLPacket;
 
                                   String tagText;
                                   Color tagColor;
 
                                   if (totalCollected > totalExpected) {
-                                    tagText = '⚠ Over Expected';
-                                    tagColor = Colors.red;
+                                    tagText = 'Extra: ${totalCollected - totalExpected}';
+                                    tagColor = Colors.teal;
                                   } else if (totalCollected == totalExpected && totalExpected > 0) {
                                     tagText = 'Fully Collected';
                                     tagColor = Colors.green;
                                   } else if (totalCollected > 0 && totalCollected < totalExpected) {
-                                    tagText = 'Partially Collected';
+                                    tagText = 'Shortage: ${totalExpected - totalCollected}';
                                     tagColor = Colors.orange;
+                                  } else if (totalExpected > 0) {
+                                    tagText = 'Shortage: $totalExpected';
+                                    tagColor = Colors.red;
                                   } else {
-                                    tagText = 'Not Collected';
+                                    tagText = 'No Expected Returns';
                                     tagColor = Colors.grey;
                                   }
 
                                   return Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                     decoration: BoxDecoration(
-                                      color: tagColor.withAlpha(25),
-                                      border: Border.all(color: tagColor),
+                                      color: tagColor.withAlpha(20),
                                       borderRadius: BorderRadius.circular(4),
+                                      border: Border.all(color: tagColor.withAlpha(50)),
                                     ),
                                     child: Text(
                                       tagText,
-                                      style: TextStyle(color: tagColor, fontSize: 10, fontWeight: FontWeight.bold),
+                                      style: theme.textTheme.labelSmall?.copyWith(
+                                        color: tagColor,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   );
                                 },

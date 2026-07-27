@@ -151,11 +151,15 @@ class TransactionsScreen extends ConsumerWidget {
                                       Text(
                                         tx.dp?.name ?? 'Unknown DP',
                                         style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
                                         'Route: ${tx.route != null ? tx.route!['name'] : 'N/A'}',
                                         style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                       const SizedBox(height: 4),
                                       Row(
@@ -182,12 +186,22 @@ class TransactionsScreen extends ConsumerWidget {
                                           ),
                                         ],
                                       ),
+                                      if (tx.note != null && tx.note!.isNotEmpty) ...[
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          tx.note!,
+                                          style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
                                     ],
                                   ),
                                 ),
                                 const SizedBox(width: AppConstants.spacing16),
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.end,
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                       Text(
                                         '₹${tx.amount.toStringAsFixed(0)}',
@@ -196,12 +210,7 @@ class TransactionsScreen extends ConsumerWidget {
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
-                                      if (tx.note != null && tx.note!.isNotEmpty)
-                                        Text(
-                                          tx.note!,
-                                          style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                                        )
-                                      else
+                                      if (tx.note == null || tx.note!.isEmpty)
                                         Text(
                                           'of ₹${tx.defaultAllowance.toStringAsFixed(0)}',
                                           style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),

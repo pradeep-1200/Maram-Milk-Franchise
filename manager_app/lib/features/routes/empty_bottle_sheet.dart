@@ -16,8 +16,14 @@ class EmptyBottleSheet extends ConsumerStatefulWidget {
 }
 
 class _EmptyBottleSheetState extends ConsumerState<EmptyBottleSheet> {
+  int _actualDelivered1L = 0;
+  int _actualDeliveredHalfL = 0;
+  int _actualDeliveredPacket = 0;
+
   int _bottles1L = 0;
   int _bottlesHalfL = 0;
+  int _packets = 0;
+  
   bool _flag = false;
   late final TextEditingController _noteController;
 
@@ -25,8 +31,15 @@ class _EmptyBottleSheetState extends ConsumerState<EmptyBottleSheet> {
   void initState() {
     super.initState();
     final status = (ref.read(eveningCheckProvider).value?.statuses ?? []).firstWhere((r) => r.routeId == widget.routeId);
+    
+    _actualDelivered1L = status.actualDelivered1L;
+    _actualDeliveredHalfL = status.actualDeliveredHalfL;
+    _actualDeliveredPacket = status.actualDeliveredPacket;
+
     _bottles1L = status.oneLBottlesCollected;
     _bottlesHalfL = status.halfLBottlesCollected;
+    _packets = status.halfLPacketCollected;
+    
     _flag = status.flagIssue;
     _noteController = TextEditingController(text: '');
   }
@@ -43,6 +56,10 @@ class _EmptyBottleSheetState extends ConsumerState<EmptyBottleSheet> {
       deliveryCompleted: true,
       oneLBottlesCollected: _bottles1L,
       halfLBottlesCollected: _bottlesHalfL,
+      halfLPacketCollected: _packets,
+      actualDelivered1L: _actualDelivered1L,
+      actualDeliveredHalfL: _actualDeliveredHalfL,
+      actualDeliveredPacket: _actualDeliveredPacket,
       flagIssue: _flag,
     );
     context.pop();
@@ -57,6 +74,18 @@ class _EmptyBottleSheetState extends ConsumerState<EmptyBottleSheet> {
     final statuses = ref.watch(eveningCheckProvider).value?.statuses ?? [];
     final status = statuses.firstWhere((r) => r.routeId == widget.routeId);
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
+
+    // Calculate dynamic expected based on Carry Over + Actually Delivered
+    // Wait, the status doesn't have carriedOver, but we know:
+    // Expected (displayed initially) was Carry Over + Allocated.
+    // So Carry Over = status.expected1LBottles - status.actualDelivered1L (which was initialized to allocated)
+    final carryOver1L = status.expected1LBottles - status.actualDelivered1L;
+    final carryOverHalfL = status.expectedHalfLBottles - status.actualDeliveredHalfL;
+    final carryOverPacket = status.expectedHalfLPacket - status.actualDeliveredPacket;
+
+    final currentExpected1L = carryOver1L + _actualDelivered1L;
+    final currentExpectedHalfL = carryOverHalfL + _actualDeliveredHalfL;
+    final currentExpectedPacket = carryOverPacket + _actualDeliveredPacket;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -110,22 +139,69 @@ class _EmptyBottleSheetState extends ConsumerState<EmptyBottleSheet> {
             ),
           ),
           const SizedBox(height: AppConstants.spacing24),
+
+          Text('Actually Delivered', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: AppConstants.spacing8),
           
-          Text('Collected Bottles', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+          _StepperRow(
+            title: '1L Bottles Delivered',
+            value: _actualDelivered1L,
+            onChanged: (val) {
+              setState(() {
+                _actualDelivered1L = val;
+                if (_bottles1L > carryOver1L + _actualDelivered1L) _bottles1L = carryOver1L + _actualDelivered1L;
+              });
+            },
+          ),
+          const Divider(),
+          _StepperRow(
+            title: 'Half L Bottles Delivered',
+            value: _actualDeliveredHalfL,
+            onChanged: (val) {
+              setState(() {
+                _actualDeliveredHalfL = val;
+                if (_bottlesHalfL > carryOverHalfL + _actualDeliveredHalfL) _bottlesHalfL = carryOverHalfL + _actualDeliveredHalfL;
+              });
+            },
+          ),
+          const Divider(),
+          _StepperRow(
+            title: 'Half L Packets Delivered',
+            value: _actualDeliveredPacket,
+            onChanged: (val) {
+              setState(() {
+                _actualDeliveredPacket = val;
+                if (_packets > carryOverPacket + _actualDeliveredPacket) _packets = carryOverPacket + _actualDeliveredPacket;
+              });
+            },
+          ),
+
+          const SizedBox(height: AppConstants.spacing24),
+          Text('Collected Returns', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(height: AppConstants.spacing8),
           
           _StepperRow(
             title: '1L Bottles Collected',
-            subtitle: 'Expected: ${status.expected1LBottles}',
+            subtitle: 'Expected: $currentExpected1L',
             value: _bottles1L,
+            maxValue: currentExpected1L,
             onChanged: (val) => setState(() => _bottles1L = val),
           ),
           const Divider(),
           _StepperRow(
             title: 'Half L Bottles Collected',
-            subtitle: 'Expected: ${status.expectedHalfLBottles}',
+            subtitle: 'Expected: $currentExpectedHalfL',
             value: _bottlesHalfL,
+            maxValue: currentExpectedHalfL,
             onChanged: (val) => setState(() => _bottlesHalfL = val),
+          ),
+          const Divider(),
+          _StepperRow(
+            title: 'Half L Packets Collected',
+            subtitle: 'Expected: $currentExpectedPacket',
+            value: _packets,
+            maxValue: currentExpectedPacket,
+            onChanged: (val) => setState(() => _packets = val),
           ),
           
           const SizedBox(height: AppConstants.spacing24),
@@ -164,18 +240,22 @@ class _StepperRow extends StatelessWidget {
   final String title;
   final String? subtitle;
   final int value;
+  final int? maxValue;
   final ValueChanged<int> onChanged;
 
   const _StepperRow({
     required this.title,
     this.subtitle,
     required this.value,
+    this.maxValue,
     required this.onChanged,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final canIncrement = maxValue == null || value < maxValue!;
+    
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -209,8 +289,8 @@ class _StepperRow extends StatelessWidget {
               ),
               IconButton(
                 icon: const Icon(Icons.add_circle_outline),
-                color: theme.colorScheme.primary,
-                onPressed: () => onChanged(value + 1),
+                color: canIncrement ? theme.colorScheme.primary : theme.disabledColor,
+                onPressed: canIncrement ? () => onChanged(value + 1) : null,
               ),
             ],
           ),

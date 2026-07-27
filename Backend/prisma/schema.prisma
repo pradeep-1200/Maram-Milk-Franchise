@@ -166,7 +166,25 @@ model EmptyBottleLog {
   deliveryCompleted     Boolean  @default(false)
   oneLBottlesCollected  Int      @default(0)
   halfLBottlesCollected Int      @default(0)
+  halfLPacketCollected  Int      @default(0)
   flagIssue             Boolean  @default(false)
+  
+  actualDelivered1L       Int?
+  actualDeliveredHalfL    Int?
+  actualDeliveredPacket   Int?
+  
+  carriedOver1L           Int?
+  carriedOverHalfL        Int?
+  carriedOverPacket       Int?
+  
+  expected1L              Int?
+  expectedHalfL           Int?
+  expectedPacket          Int?
+  
+  outstanding1L           Int?
+  outstandingHalfL        Int?
+  outstandingPacket       Int?
+  
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 

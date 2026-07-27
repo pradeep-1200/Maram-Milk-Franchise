@@ -8,5 +8,9 @@ export const updateEmptyBottleSchema = z.object({
   deliveryCompleted: z.boolean(),
   oneLBottlesCollected: z.number().min(0),
   halfLBottlesCollected: z.number().min(0),
+  halfLPacketCollected: z.number().min(0),
+  actualDelivered1L: z.number().min(0),
+  actualDeliveredHalfL: z.number().min(0),
+  actualDeliveredPacket: z.number().min(0),
   flagIssue: z.boolean(),
 });

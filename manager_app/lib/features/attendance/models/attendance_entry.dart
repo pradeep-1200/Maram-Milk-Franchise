@@ -16,6 +16,7 @@ abstract class AttendanceEntry with _$AttendanceEntry {
     @Default(AttendanceStatus.pending) AttendanceStatus status,
     String? recordId,
     String? markedAt,
+    int? petrolAllowanceGivenToday,
   }) = _AttendanceEntry;
 
   factory AttendanceEntry.fromJson(Map<String, dynamic> json) =>

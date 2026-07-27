@@ -1,0 +1,1251 @@
+# Maram Milk Franchise — Complete Project Context
+
+> **Tech Stack:** Flutter (Dart) + Riverpod front-end · Node.js/TypeScript + Express + Prisma ORM + PostgreSQL back-end · Cloudinary for file storage · JWT auth · Deployed on Render
+
+---
+
+## Table of Contents
+
+1. [High-Level Architecture](#1-high-level-architecture)
+2. [How the Two Sides Talk to Each Other](#2-how-the-two-sides-talk-to-each-other)
+3. [Backend — Every File Explained](#3-backend--every-file-explained)
+4. [Flutter App — Every File Explained](#4-flutter-app--every-file-explained)
+5. [Database Schema (Prisma)](#5-database-schema-prisma)
+6. [Full Daily Workflow — Step by Step](#6-full-daily-workflow--step-by-step)
+7. [Provider Dependency Graph](#7-provider-dependency-graph)
+
+---
+
+## 1. High-Level Architecture
+
+```
+┌──────────────────────────────────────────┐
+│          Flutter Manager App             │
+│  (Android/iOS, Riverpod state mgmt)      │
+│                                          │
+│  core/network ──► Dio HTTP client        │
+│  features/*/providers ──► API calls      │
+│  features/*/screens ──► UI              │
+└─────────────────┬────────────────────────┘
+                  │  HTTPS REST  /api/v1/*
+┌─────────────────▼────────────────────────┐
+│       Express + TypeScript Backend        │
+│  src/modules/*  (controller/service)     │
+│  src/middleware (auth, errors, upload)   │
+│  src/config     (DB, env)                │
+└─────────────────┬────────────────────────┘
+                  │  Prisma ORM (pg adapter)
+┌─────────────────▼────────────────────────┐
+│             PostgreSQL DB                │
+│  (hosted on Render / Neon / Supabase)    │
+└──────────────────────────────────────────┘
+                  │  file uploads
+┌─────────────────▼────────────────────────┐
+│             Cloudinary CDN               │
+│  (photos, aadhar, license copies)        │
+└──────────────────────────────────────────┘
+```
+
+---
+
+## 2. How the Two Sides Talk to Each Other
+
+Every request from Flutter follows this chain:
+
+```
+Screen Widget
+    │ calls notifier method
+    ▼
+Riverpod Provider (AsyncNotifier)
+    │ uses apiClientProvider (Dio)
+    ▼
+AuthInterceptor  ─── reads JWT from FlutterSecureStorage
+    │ adds "Authorization: Bearer <token>" header
+    ▼
+HTTP Request ──────────────────────────────────────────►
+                                                        │
+                                          Express Router
+                                                        │
+                                          authGuard middleware
+                                          (verifies JWT, attaches manager)
+                                                        │
+                                          Controller
+                                          (validates body)
+                                                        │
+                                          Service
+                                          (Prisma queries)
+                                                        │
+◄────────────────────────────────────── JSON Response
+    │
+ErrorInterceptor (watches for 401 → auto logout)
+    │
+Riverpod state updated
+    │
+UI rebuilds
+```
+
+---
+
+## 3. Backend — Every File Explained
+
+### Root Config & Entry
+
+---
+
+#### `Backend/src/server.ts`
+**What it is:** The very first file Node.js runs.
+
+**What it does:**
+- Imports the configured `app` from `app.ts`
+- Reads `PORT` from env (default 3000)
+- Calls `app.listen(PORT)` to start the HTTP server
+- Registers a `SIGTERM` handler for graceful shutdown (e.g., when Render restarts the container)
+
+**Key fact:** Nothing business-logic here. Just "start the engine."
+
+---
+
+#### `Backend/src/app.ts`
+**What it is:** The Express app factory — wires everything together.
+
+**What it does:**
+- Creates the Express `Application`
+- Applies global middleware IN ORDER:
+  - `helmet()` — security headers
+  - `cors()` — allow all origins (Flutter mobile)
+  - `morgan('dev')` — HTTP request logging
+  - `express.json()` + `urlencoded` — parse request bodies
+- Registers a `/health` endpoint (returns `{ status: 'ok' }`)
+- Mounts every feature router at `/api/v1/<module>`
+- Registers the global `errorHandler` **last** (Express requires this)
+
+**Mount table:**
+| Path | Router |
+|------|--------|
+| `/api/v1/auth` | authRouter |
+| `/api/v1/delivery-persons` | dpRouter |
+| `/api/v1/attendance` | attendanceRouter |
+| `/api/v1/routes` | routesRouter |
+| `/api/v1/inventory` | inventoryRouter |
+| `/api/v1/dispatch` | dispatchRouter |
+| `/api/v1/empty-bottles` | emptyBottlesRouter |
+| `/api/v1/ledger` | ledgerRouter |
+| `/api/v1/reports` | reportsRouter |
+
+---
+
+### `Backend/src/config/`
+
+#### `env.ts`
+**What it is:** Environment variable validator and exporter.
+
+**What it does:**
+- Loads `.env` via `dotenv`
+- Defines a Zod schema for all required/optional env vars:
+  - `NODE_ENV`, `PORT`, `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN`
+  - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` (optional)
+- Calls `safeParse` — if any required var is missing, prints error and exits the process (`process.exit(1)`)
+- Exports the typed, validated `env` object
+
+**Key fact:** Any code that needs an env var imports from here, never directly from `process.env`.
+
+---
+
+#### `db.ts`
+**What it is:** Singleton Prisma client configured with the `pg` connection pool adapter.
+
+**What it does:**
+- Creates a `Pool` using `DATABASE_URL`
+- Wraps it with `PrismaPg` driver adapter (allows Prisma to use `pg` instead of its own TCP driver)
+- Creates `PrismaClient` with the adapter
+- In development mode enables query/error logging
+- Uses the `globalThis` singleton pattern to avoid creating multiple connections during hot-reload
+
+**Key fact:** Everywhere in the backend that needs to query the DB does `import { prisma } from '../../config/db'` and uses this single shared client.
+
+---
+
+### `Backend/src/middleware/`
+
+#### `authGuard.ts`
+**What it is:** JWT authentication middleware — protects all non-auth routes.
+
+**What it does:**
+1. Reads the `Authorization` header, expects `Bearer <token>` format
+2. Verifies the token with `jwt.verify(token, JWT_SECRET)` → extracts `{ managerId, role }`
+3. Looks up the manager in the DB to confirm they still exist
+4. Attaches the manager object to `req.manager` so controllers can use it
+5. If anything fails → `401 UNAUTHORIZED`
+
+**Usage:** Every protected router does `router.use(authGuard)` before defining routes.
+
+---
+
+#### `errorHandler.ts`
+**What it is:** Centralized Express error handler (4-argument middleware registered last in `app.ts`).
+
+**What it does:**
+- Reads `err.statusCode` (or defaults to 500)
+- Reads `err.message` (or defaults to `'Internal Server Error'`)
+- Returns a consistent `{ error: { message, code, stack? } }` JSON shape
+- Only includes `stack` trace in development mode
+
+**Key fact:** Services throw objects like `{ statusCode: 400, code: 'INSUFFICIENT_STOCK', message: '...' }` and this handler catches them.
+
+---
+
+#### `upload.ts`
+**What it is:** Multer middleware for handling multipart file uploads.
+
+**What it does:**
+- Uses **memory storage** (files go to `req.file.buffer`, never touch disk)
+- Enforces **5 MB** file size limit
+- Only allows MIME types: `image/jpeg`, `image/png`, `image/webp`, `application/pdf`
+- Used by the delivery-persons routes for photo, Aadhar, and license uploads
+
+---
+
+### `Backend/src/utils/`
+
+#### `date.ts`
+**What it is:** IST (India Standard Time) date utility helpers.
+
+**What it does:**
+- `getISTDateString()` — converts any date to `YYYY-MM-DD` in IST timezone
+- `getISTStartOfWeekString()` — gets Monday of the current IST week
+- `getISTStartOfMonthString()` — gets 1st of the current IST month
+
+**Key fact:** All date strings stored in the DB are IST. This prevents midnight UTC vs IST mismatches (e.g., 11 PM IST = next day UTC).
+
+---
+
+#### `storage.ts`
+**What it is:** Cloudinary file upload wrapper.
+
+**What it does:**
+- Configures Cloudinary SDK with env credentials (if present)
+- Exports `uploadFile(buffer, folder, filename)` — streams a Buffer directly to Cloudinary using a stream pipe
+- If Cloudinary is not configured (e.g., dev env), returns a mock URL so development doesn't break
+- Returns the CDN `secure_url` on success
+
+---
+
+### `Backend/src/modules/auth/`
+
+#### `auth.router.ts`
+Defines two routes:
+- `POST /api/v1/auth/login` → `login` controller
+- `POST /api/v1/auth/logout` → `logout` controller
+
+**Note:** No `authGuard` here — login doesn't need a token.
+
+#### `auth.controller.ts`
+**`login`:**
+1. Validates `email` and `password` are present in body
+2. Finds manager by email in DB
+3. Uses `bcrypt.compare` to check password against the stored hash
+4. Signs a JWT `{ managerId, role }` with `JWT_SECRET` and `JWT_EXPIRES_IN`
+5. Returns `{ token, manager: { name, role, branchName } }`
+
+**`logout`:**
+- Stateless — just returns `{ message: 'Logged out successfully' }`. The Flutter app deletes the token from secure storage.
+
+---
+
+### `Backend/src/modules/delivery-persons/`
+
+This module manages all Delivery Person (DP) CRUD operations and document uploads.
+
+#### `delivery-persons.router.ts`
+All routes are protected by `authGuard`. Key routes:
+- `GET /delivery-persons` — list all (with optional `?search=`)
+- `GET /delivery-persons/:id` — single DP
+- `POST /delivery-persons` — create DP
+- `PUT /delivery-persons/:id` — update DP
+- `DELETE /delivery-persons/:id` — soft delete
+- `POST /delivery-persons/:id/photo` — upload photo
+- `POST /delivery-persons/:id/aadhar` — upload Aadhar copy
+- `POST /delivery-persons/:id/license` — upload license copy
+
+#### `delivery-persons.validation.ts`
+Zod schemas for create/update DP body validation.
+
+#### `delivery-persons.controller.ts`
+Thin layer: parses/validates request, calls service, returns response. Handles `ZodError` as 400. The `handleFileUpload` helper reads `req.file.buffer`, calls `uploadFile` (Cloudinary), then updates the DP record with the returned URL.
+
+#### `delivery-persons.service.ts`
+**`getDeliveryPersons(search?)`** — Finds all active (`isActive: true`) DPs, with optional name/dpCode search. Ordered newest first.
+
+**`getDeliveryPersonById(id)`** — Simple `findUnique`.
+
+**`createDeliveryPerson(data)`** — Uses a **serializable transaction** to:
+1. Find the max `dpCode` (format: `DP1001`, `DP1002`, ...)
+2. Auto-increment it to generate the next `dpCode`
+3. Create the DP record
+This ensures no two DPs get the same code even under concurrent requests.
+
+**`updateDeliveryPerson(id, data)`** — `prisma.deliveryPerson.update`.
+
+**`deleteDeliveryPerson(id)`** — **Soft delete** (sets `isActive = false`). Refuses if the DP has an active `ASSIGNED` route allocation for today.
+
+---
+
+### `Backend/src/modules/attendance/`
+
+#### `attendance.router.ts`
+- `GET /attendance?date=` — get attendance for a date
+- `PUT /attendance/:dpId?date=` — mark/update single DP attendance
+- `PUT /attendance/bulk?date=` — bulk update attendance
+
+#### `attendance.validation.ts`
+Validates that `status` is one of `PRESENT | ABSENT | STANDBY`.
+
+#### `attendance.controller.ts`
+Reads `req.manager.id` (set by authGuard) as `managerId` when marking attendance.
+
+#### `attendance.service.ts`
+**`getAttendanceForDate(date)`** — The most complex getter:
+1. Fetches all active DPs ordered by `dpCode`
+2. Fetches all `AttendanceRecord` for the date → builds a map `dpId → record`
+3. Fetches all `RouteAllocation` for the date (ASSIGNED or COMPLETED) → builds a Set of `dpIds` with routes
+4. Fetches all petrol ledger transactions for the date → calculates total petrol given to each DP
+5. For each DP, **dynamically computes display status**:
+   - DB `PRESENT` + no route assigned → display as `STANDBY`
+   - DB `PRESENT` + route assigned → display as `PRESENT`
+   - DB `ABSENT` → `ABSENT`
+   - No record → `NOT_MARKED`
+
+**`updateAttendance(dpId, date, status, managerId)`** — Upserts (create or update) an `AttendanceRecord`, then calls `checkAndUpdateAttendanceCompletion`.
+
+**`bulkUpdateAttendance(date, records, managerId)`** — Same but in a single DB transaction for all records.
+
+---
+
+### `Backend/src/modules/dispatch/`
+
+#### `dispatch.router.ts`
+- `GET /dispatch/summary?date=` → returns the `DispatchDay` record for a date
+
+#### `dispatch.controller.ts`
+Calls `getOrCreateDispatchDay` and returns it.
+
+#### `dispatch.service.ts`
+**The "checklist" brain of the system.** Three completion checkers are called by other modules:
+
+**`getOrCreateDispatchDay(date)`** — Finds or creates the `DispatchDay` for a given date. This is the central progress record for a dispatch session.
+
+**`checkAndUpdateAttendanceCompletion(date)`** — 
+- Counts total active DPs
+- Counts how many have an `AttendanceRecord` for the date
+- If count matches → stamps `attendanceCompletedAt` on `DispatchDay`
+- If reverted → clears the timestamp
+
+**`checkAndUpdateRoutesCompletion(date)`** —
+- Counts total routes
+- Counts how many have an `ASSIGNED` `RouteAllocation` for the date
+- Same stamp logic
+
+**`checkAndUpdateInventoryCompletion(date)`** —
+- Counts total `InventoryItem` records
+- Counts how many have an `InventoryDailyRecord` for the date
+- Same stamp logic
+
+**Key fact:** These three functions are called as side effects by attendance, routes, and inventory services respectively. They keep `DispatchDay` always in sync.
+
+---
+
+### `Backend/src/modules/routes/`
+
+#### `routes.router.ts`
+- `GET /routes?date=` — get all routes with their today's allocation status
+- `PUT /routes/:routeId/allocation?date=` — assign/update/unassign a route
+
+#### `routes.service.ts`
+**`getRoutesWithAllocation(date)`** — 
+1. Fetches all routes
+2. Fetches all `RouteAllocation` for the date (with DP info)
+3. Merges them into a combined response: route metadata + allocation status + assigned DP name/photo
+
+**`updateRouteAllocation(...)`** — The most complex service in the system:
+1. Gets the previous allocation to calculate quantity deltas (Δ1L, ΔHalfL)
+2. **Pre-checks inventory:** If adding bottles, verifies sufficient `currentStock`; throws `INSUFFICIENT_STOCK` if not
+3. **Upserts** the `RouteAllocation` record
+4. **Decrements inventory** `currentStock` and `expectedStock` by the delta quantities
+5. **Processes petrol allowance:** If `petrolAllowanceGiven` is set and status is `ASSIGNED`, it:
+   - Deletes any previous petrol ledger entries for this route+date+dp combination
+   - Creates a new `LedgerTransaction` of type `PETROL_ALLOWANCE`, `SHORTAGE` (if under-paid), or `EXTRA_PAID` (if over-paid) based on comparison to `route.defaultPetrolAllowance`
+6. Calls `checkAndUpdateRoutesCompletion`
+
+---
+
+### `Backend/src/modules/inventory/`
+
+#### `inventory.router.ts`
+- `GET /inventory?date=` — get inventory with auto-carry-forward
+- `PUT /inventory?date=` — bulk save counted stock
+- `PUT /inventory/admin-stock?date=` — admin add new stock
+- `PUT /inventory/manager-stock?date=` — manager set today's received stock
+
+#### `inventory.service.ts`
+**`getInventoryForDate(date)`** — 
+1. Gets all `InventoryItem` records
+2. Gets existing `InventoryDailyRecord` for the date
+3. For any item without a record, **auto-creates one** using carry-forward:
+   - Finds the most recent previous record
+   - Sets `expectedStock = previousRecord.currentStock` (what was left yesterday = what's expected today)
+   - Uses `upsert` to avoid race conditions
+4. Returns combined item info + record data
+
+**`bulkUpdateInventory(date, records)`** — Manager saves the physically counted stock. Runs all upserts in one transaction, then calls `checkAndUpdateInventoryCompletion`.
+
+**`addAdminStock(date, inventoryItemId, newStockAdded)`** — Increments both `expectedStock` and `currentStock` (new delivery arrived).
+
+**`setManagerStock(date, inventoryItemId, newStockAdded)`** — Manager sets how much new stock arrived today (overwriting previous). Recalculates expected as `carriedOver + newStockAdded`, preserving any variance already recorded.
+
+---
+
+### `Backend/src/modules/empty-bottles/`
+
+#### `empty-bottles.router.ts`
+- `GET /empty-bottles?date=` — get return status for all routes
+- `PUT /empty-bottles/:routeId?date=` — update return log for a route
+
+#### `empty-bottles.service.ts`
+**`getEmptyBottleStatus(date)`** —
+1. Fetches all routes
+2. Fetches `RouteAllocation` records for the date (with DP info)
+3. Fetches `EmptyBottleLog` records for the date
+4. Merges into: per-route status showing expected bottles dispatched vs. bottles returned + delivery completed flag + flag issue
+
+**`updateEmptyBottleLog(routeId, date, data)`** —
+1. Verifies the route has an active allocation (ASSIGNED or COMPLETED)
+2. Upserts the `EmptyBottleLog`
+3. **Updates `RouteAllocation.status`**: if `deliveryCompleted=true` → set to `COMPLETED`, else keep `ASSIGNED`
+
+---
+
+### `Backend/src/modules/ledger/`
+
+#### `ledger.router.ts`
+- `GET /ledger` — query ledger with filters (`?dpId=`, `?from=`, `?to=`, `?type=`)
+- `POST /ledger` — create a manual transaction
+
+#### `ledger.service.ts`
+**`getLedger(dpId?, from?, to?, type?)`** — Queries only petrol-type transactions (`PETROL_ALLOWANCE`, `SHORTAGE`, `EXTRA_PAID`). Supports filtering by DP, date range, and type. Returns full DP and Route info joined.
+
+**`createLedgerTransaction(data)`** — Direct `prisma.ledgerTransaction.create`.
+
+**Key fact:** Petrol allowance ledger entries are **automatically created/replaced** by the routes service whenever a route is assigned with `petrolAllowanceGiven`. Manual entries via this endpoint are for `SALARY`, `ADVANCE`, `MISC` types.
+
+---
+
+### `Backend/src/modules/reports/`
+
+#### `reports.router.ts`
+- `GET /reports/dp-performance?range=&sortBy=&from=&to=` — DP performance report
+
+#### `reports.service.ts`
+**`getDpPerformance(range, from?, to?, sortBy)`** —
+1. Calculates `startDate` / `endDate` based on `range`: `today | week | month | custom`
+2. For each DP:
+   - `totalLitres` — sum of `litresAllocated` across all ASSIGNED allocations in range
+   - `totalRoutes` — count of routes assigned
+   - `attendanceRatio` — `presentDays / totalRecordedDays`
+   - `totalBottles` — sum of 1L + halfL empty bottles collected
+3. Sorts the array by `sortBy` parameter before returning
+
+---
+
+### Root-Level Backend Scripts
+
+#### `prisma/schema.prisma`
+The single source of truth for the entire database. Defines models, enums, relationships, and unique constraints. See [Section 5](#5-database-schema-prisma) for full breakdown.
+
+#### `prisma/seed.ts`
+Seeds the database with initial data (manager account, default routes, inventory items). Run with `npx prisma db seed`.
+
+#### `seed_data.js`
+Alternative seed script (plain JS) for populating test data via the REST API itself (not directly via Prisma).
+
+#### `reset_db_and_seed.js`
+Dev utility: resets (truncates) the database and re-seeds it.
+
+#### `reset_prod.js`
+Production utility for carefully resetting specific tables.
+
+#### `test_conn.js`
+Quick connectivity test — just connects to the DB and prints a success/error message.
+
+#### `fix_enum.sql`
+A one-off SQL migration to fix an enum type inconsistency.
+
+#### `package.json`
+Node project config. Key scripts:
+- `dev` — runs with `ts-node-dev` for hot-reload
+- `build` — compiles TypeScript to `dist/`
+- `start` — runs compiled JS from `dist/server.js`
+
+#### `.env` / `.env.example`
+Environment variables. Never committed to git. `.env.example` shows what's needed.
+
+---
+
+## 4. Flutter App — Every File Explained
+
+### Entry Point
+
+#### `lib/main.dart`
+**What it is:** Flutter entry point.
+
+**What it does:**
+1. Calls `WidgetsFlutterBinding.ensureInitialized()` (required before any async work)
+2. Loads `.env` file via `flutter_dotenv` (reads `API_BASE_URL`)
+3. Wraps the whole app in `ProviderScope` (Riverpod's root widget — all providers live here)
+4. Creates `MaramManagerApp` which is a `ConsumerWidget` that:
+   - Reads `routerProvider` (GoRouter)
+   - Returns `MaterialApp.router` with the GoRouter config and `AppTheme.lightTheme`
+
+---
+
+### `lib/core/` — Infrastructure Layer
+
+#### `core/network/api_client.dart`
+**What it is:** Riverpod provider that creates and configures the single shared `Dio` HTTP client.
+
+**What it contains:**
+- `apiClientProvider` — a `Provider<Dio>`
+- `BaseOptions` with `baseUrl` from `.env['API_BASE_URL']` and 10s timeouts
+- Three interceptors added in order:
+  1. `LogInterceptor` — logs every request/response to console
+  2. `AuthInterceptor` — adds JWT token
+  3. `ErrorInterceptor` — handles 401s
+
+**Key fact:** Every provider in the app reads `ref.read(apiClientProvider)` to make HTTP calls.
+
+---
+
+#### `core/network/auth_interceptor.dart`
+**What it is:** Dio interceptor that injects the JWT token into every outgoing request.
+
+**What it does:**
+- Reads the JWT from `FlutterSecureStorage` (via `secureStorageProvider`)
+- Adds `Authorization: Bearer <token>` header to every request **except** `/auth/login`
+
+---
+
+#### `core/network/error_interceptor.dart`
+**What it is:** Dio interceptor that handles `401 Unauthorized` responses globally.
+
+**What it does:**
+- When any response has status 401 (and it's not the login request itself)
+- Calls `ref.read(authProvider.notifier).logout()` → clears token + navigates to `/login`
+
+**Key fact:** This is why the app auto-logs-out if the server says the token expired.
+
+---
+
+#### `core/router/app_router.dart`
+**What it is:** The entire navigation map of the app, using GoRouter.
+
+**What it contains:**
+- `routerProvider` — a `Provider<GoRouter>`
+- `_rootNavigatorKey` — a global navigator key for full-screen routes
+
+**Route map:**
+
+| Path | Screen | Notes |
+|------|---------|-------|
+| `/` | `SplashScreen` | First route |
+| `/login` | `LoginScreen` | Auth |
+| `/dashboard` | `DashboardScreen` | Tab 0 (in shell) |
+| `/attendance` | `AttendanceScreen` | Tab 1 (in shell) |
+| `/routes` | `RouteAllocationScreen` | Tab 2 (in shell) |
+| `/inventory` | `InventoryScreen` | Tab 3 (in shell) |
+| `/profile` | `ProfileScreen` | Tab 4 (in shell) |
+| `/dispatch` | `DispatchReadyScreen` | Full-screen |
+| `/dispatch/attendance` | `AttendanceScreen(isDispatchContext:true)` | Dispatch flow |
+| `/dispatch/inventory` | `InventoryScreen(isDispatchContext:true)` | Dispatch flow |
+| `/dispatch/routes` | `RouteAllocationScreen(isDispatchContext:true)` | Dispatch flow |
+| `/dispatch/milk-allocation` | `MilkAllocationScreen` | Dispatch flow |
+| `/dispatch/petrol-allowance` | `PetrolAllowanceScreen` | Dispatch flow |
+| `/dispatch_summary` | `DispatchSummaryScreen` | Post-dispatch |
+| `/reports` | `ReportsScreen` | Full-screen |
+| `/dp-performance` | `DpPerformanceScreen` | With query params |
+| `/transactions` | `TransactionsScreen` | Ledger |
+| `/bottles` | `EmptyBottleListScreen` | Evening check |
+| `/evening-check` | `EveningCheckScreen` | Evening check |
+| `/staff-directory` | `StaffDirectoryScreen` | Profile section |
+| `/staff-directory/add` | `StaffProfileEditScreen` | Add DP |
+| `/staff-directory/:id` | `StaffProfileScreen` | View DP |
+| `/staff-directory/:id/edit` | `StaffProfileEditScreen` | Edit DP |
+
+**Shell routing:** Dashboard, Attendance, Routes, Inventory, Profile are wrapped in a `StatefulShellRoute.indexedStack` — they share a bottom nav bar (`MainShell`) and each branch keeps its state alive.
+
+---
+
+#### `core/theme/app_theme.dart`
+**What it is:** Material 3 theme definition for the entire app.
+
+**Colors:**
+- Primary: `#226E27` (deep milk-bottle green)
+- Primary Dark: `#144718`
+- Scaffold background: `#F2F5F2` (subtle green-tinted off-white)
+
+**Typography:** Google Fonts `Inter` with custom weight hierarchy (w700 titles, w400 body).
+
+**Theming:** Cards, buttons, text fields, AppBar all styled consistently.
+
+---
+
+#### `core/constants/app_constants.dart`
+**What it is:** Magic numbers in one place.
+
+**Contains:**
+- `cardRadius: 18.0`, `buttonRadius: 12.0`
+- Spacing: `4, 8, 12, 16, 24, 32` dp
+- `cardShadow` and `primaryCardShadow` — `List<BoxShadow>` used on cards
+- `cardBorder` — subtle 1px border
+
+---
+
+#### `core/constants/app_colors.dart`
+**What it is:** Semantic color palette.
+
+**Key colors:**
+- `present` = Green `#2E7D32`
+- `standby` = Orange `#F57C00`
+- `absent` = Red `#D32F2F`
+- `info` = Blue `#1976D2`
+- Light variants: `standbyLight`, `absentLight`, `infoLight` for backgrounds
+
+---
+
+### `lib/shared/` — Reusable Widgets
+
+#### `app_button.dart`
+Customizable button supporting `primary`, `secondary`, `outline`, `danger` variants with loading state.
+
+#### `app_card.dart`
+Wrapper card with consistent border, shadow, and padding from `AppConstants`.
+
+#### `app_empty_state.dart`
+Empty state widget — icon + title + subtitle + optional CTA button.
+
+#### `app_error_state.dart`
+Error state widget — error icon + message + "Try Again" button.
+
+#### `app_loading_state.dart`
+Centered `CircularProgressIndicator` wrapper.
+
+#### `app_text_field.dart`
+Themed text field with label, prefix icon, optional suffix, and validation error display.
+
+#### `async_value_widget.dart`
+Generic widget that handles Riverpod's `AsyncValue<T>` states:
+- `loading` → `AppLoadingState`
+- `error` → `AppErrorState`
+- `data` → calls provided `data` builder
+
+#### `dp_avatar.dart`
+Circular avatar widget for delivery persons. Shows photo if available, fallback to initials.
+
+---
+
+### `lib/features/` — Feature Modules
+
+Each feature follows the pattern: **Models → Providers → Screens**
+
+---
+
+### Feature: Authentication
+
+#### `authentication/models/manager_profile.dart`
+**What it is:** Freezed data class for the logged-in manager.
+
+**Fields:** `name`, `role`, `branchName`
+Generated files: `manager_profile.freezed.dart` (immutable class, copyWith, equality), `manager_profile.g.dart` (JSON serialization).
+
+#### `authentication/providers/auth_provider.dart`
+**What it is:** The authentication brain of the entire app.
+
+**Contains:**
+- `secureStorageProvider` — exposes `FlutterSecureStorage` instance
+- `AuthState` — `{ isLoading, profile?, error? }`
+- `AuthNotifier extends Notifier<AuthState>`:
+  - `checkInitialAuth()` — called from SplashScreen: reads stored JWT + profile from secure storage → navigates to `/dashboard` or `/login`
+  - `login(email, password)` — POSTs to `/auth/login`, saves JWT + profile to secure storage, navigates to `/dashboard`
+  - `logout()` — deletes all from secure storage, resets state, navigates to `/login`. Has `_isLoggingOut` guard to prevent double-calls (e.g., from `ErrorInterceptor`)
+
+#### `authentication/login_screen.dart`
+Login UI: email/password fields, login button, handles loading/error state display.
+
+---
+
+### Feature: Splash
+
+#### `splash/splash_screen.dart`
+**What it does:** Shows an animated Maram branding screen while calling `authProvider.notifier.checkInitialAuth()`. Redirects to dashboard or login automatically. Never stays on screen.
+
+---
+
+### Feature: Shell
+
+#### `shell/main_shell.dart`
+**What it is:** The bottom navigation bar host.
+
+**What it does:**
+- Wraps the 5 main tabs (Dashboard, Attendance, Routes, Inventory, Profile)
+- Contains `NavigationBar` with icons for each tab
+- Handles back button via `tabHistoryProvider`
+
+#### `shell/providers/tab_history_provider.dart`
+**What it is:** Tracks the navigation history of which tab was visited.
+
+**What it does:**
+- Maintains a stack of tab indices (starts at `[0]` = Dashboard)
+- `pushTab(index)` — adds to stack
+- `popTab()` — pops and returns previous tab index
+
+**Why:** Android back button should go to the previously visited tab, not always exit the app.
+
+---
+
+### Feature: Dashboard
+
+#### `dashboard/dashboard_screen.dart`
+**What it is:** The home screen — shows today's operational status at a glance.
+
+**Displays:**
+- Attendance summary (total, present, absent, standby)
+- Route summary (assigned, unassigned)
+- Quick-action cards (go to attendance, dispatch, evening check, reports, ledger)
+- DispatchDay status (which steps are complete today)
+
+#### `dashboard/providers/dashboard_provider.dart`
+**What it is:** A derived `Provider<DashboardState>` (not async).
+
+**How it works:**
+- Watches `attendanceProvider` → reads present/absent/standby counts
+- Watches `routeProvider` → reads assigned/unassigned counts
+- Combines them into `DashboardState`
+- **No API call** — it's a pure computation on top of two existing providers. It rebuilds whenever attendance or route data changes.
+
+---
+
+### Feature: Attendance
+
+#### `attendance/models/attendance_entry.dart`
+Freezed model for a single row in the attendance list.
+**Fields:** `dpId`, `dpCode`, `name`, `photoUrl`, `status` (present/absent/standby/pending), `recordId`, `markedAt`, `petrolAllowanceGivenToday`
+
+`displayStatus` property: maps the raw status string to the `AttendanceStatus` enum.
+
+#### `attendance/models/delivery_person.dart`
+Full DP model (same as used in Profile). Also defines the `AttendanceStatus` enum:
+```dart
+enum AttendanceStatus { present, absent, standby, pending }
+```
+Generated files: `.freezed.dart` and `.g.dart` for immutability + JSON.
+
+#### `attendance/providers/attendance_provider.dart`
+**State:** `AttendanceState { persons: List<AttendanceEntry>, searchQuery, statusFilter }`
+
+**Computed getters on state:**
+- `filteredPersons` — applies search + status filter client-side
+- `countAll`, `countPresent`, `countAbsent`, `countStandby`
+
+**Actions:**
+- `build()` — auto-fetches on creation: `GET /attendance?date=today`
+- `markAttendance(dpId, newStatus)` — does an **optimistic update** (instant UI update), then `PUT /attendance/:dpId`, reverts on failure
+- `setSearchQuery` / `setStatusFilter` — client-side filtering, no API call
+- `reload()` — full re-fetch
+
+#### `attendance/attendance_screen.dart`
+Attendance marking UI. Supports two contexts:
+- Normal tab context: browse and mark attendance freely
+- `isDispatchContext: true`: same screen but inside the dispatch wizard flow
+
+---
+
+### Feature: Routes
+
+#### `routes/models/delivery_route.dart`
+Freezed model for a single route.
+**Fields:** `id`, `routeId`, `routeName`, `zone`, `customerCount`, `defaultLitres`, `assignedDpId?`, `assignedDpName?`, `assignedDpPhotoUrl?`, `milkQuantity`, `qty1LBottle`, `qtyHalfLBottle`, `qtyHalfLPacket`, `status`, `deliveryCompleted`, `emptyBottles1L`, `emptyBottlesHalfL`, `hasBottleReturnFlag`, `isPetrolAllowanceComplete`, `petrolAllowanceGiven`, `fixedPetrolAllowance`
+
+#### `routes/providers/route_provider.dart`
+**State:** `RouteState { routes: List<DeliveryRoute>, isAssignedFilter? }`
+
+**Computed:** `filteredRoutes`, `countAll`, `countAssigned`, `countUnassigned`
+
+**Actions:**
+- `build()` — `GET /routes?date=today`
+- `assignRoute(routeId, dpId, dpName, litresAllocated, ...)` — optimistic update + `PUT /routes/:id/allocation`. After success, invalidates `inventoryProvider`, `eveningCheckProvider`, `dispatchProvider`
+- `updateRouteAllocationLitres(...)` — same but for updating an already-assigned route
+- `unassignRoute(routeId)` — sets status to `UNASSIGNED`
+- `markPetrolAllowanceComplete(routeId, givenAmount)` — updates petrol allowance in backend
+- `saveEveningCheckData(...)` — local state update only (evening check result)
+- `setFilter(bool?)` — client-side filter: show only assigned/unassigned/all
+
+#### `routes/route_allocation_screen.dart`
+The main route assignment screen. Shows all routes in a list. Each route card shows the assigned DP or an "Assign" button. Tapping opens the assignment bottom sheet.
+
+#### `routes/empty_bottle_list_screen.dart`
+Evening check — lists all routes and their empty bottle return status. Each route shows expected vs. returned bottles. Tapping opens the entry bottom sheet.
+
+#### `routes/empty_bottle_sheet.dart`
+Bottom sheet for updating a route's empty bottle return. Fields: delivery completed toggle, 1L count, half-L count, flag issue toggle.
+
+---
+
+### Feature: Dispatch
+
+#### `dispatch/models/dispatch_summary.dart`
+Freezed model for the dispatch day status.
+**Fields:** `id`, `date`, `attendanceCompletedAt?`, `inventoryCompletedAt?`, `routesCompletedAt?`, `petrolAllowanceTotal`, `createdAt`
+**Computed:** `isAttendanceComplete`, `isInventoryComplete`, `isRoutesComplete`, `isAllComplete`
+
+#### `dispatch/providers/dispatch_provider.dart`
+Simple async notifier — fetches the `DispatchSummary` from `GET /dispatch/summary?date=today`. Can `reload()`. Many other providers invalidate this when they make changes (attendance, routes, inventory).
+
+#### `dispatch/dispatch_ready_screen.dart`
+The "Morning Dispatch" wizard hub. Shows 3 checkboxes (attendance, inventory, routes) with timestamps when completed. Each step is a button that navigates to the respective screen in dispatch context. A green "All Ready" state unlocks the dispatch action.
+
+#### `dispatch/dispatch_summary_screen.dart`
+Post-dispatch summary — shows total litres allocated, petrol allowance given, and other daily totals.
+
+---
+
+### Feature: Inventory
+
+#### `inventory/providers/inventory_provider.dart`
+**State:** `InventoryState { items: List<InventoryItemState>, isSaved: bool }`
+
+`InventoryItemState` fields: `id`, `recordId`, `name`, `subtitle` (material-unit), `expectedQty`, `carryOverQty`, `newStockAdded`, `currentStock`, `reason`
+Computed: `variance = expectedQty - currentStock`
+
+`InventoryState` computed: `totalExpected`, `totalCurrentStock`, `totalShort`, `totalOver`
+
+**Actions:**
+- `build()` — `GET /inventory?date=today`
+- `updateAdjustment(id, delta)` — changes `currentStock` locally (no API call yet)
+- `updateReason(id, reason)` — stores a reason text locally
+- `saveInventory()` — `PUT /inventory` with all current stocks
+- `updateManagerStock(inventoryItemId, newStockAdded)` — `PUT /inventory/manager-stock`
+- `reload()` — full re-fetch
+
+#### `inventory/inventory_screen.dart`
+Inventory counting screen. Shows each item with carried-over stock, new stock, expected total, and a counter to enter the physically counted amount. Shows variance in red/green.
+
+---
+
+### Feature: Evening Check
+
+#### `evening_check/models/empty_bottle_status.dart`
+Freezed model for one route's bottle return status.
+**Fields:** `routeId`, `routeName`, `dpId?`, `dpName?`, `deliveryCompleted`, `oneLBottlesCollected`, `halfLBottlesCollected`, `expected1LBottles`, `expectedHalfLBottles`, `flagIssue`, `status`
+
+#### `evening_check/providers/evening_check_provider.dart`
+**State:** `EveningCheckState { statuses: List<EmptyBottleStatus> }`
+
+**Actions:**
+- `build()` — `GET /empty-bottles?date=today`
+- `updateStatus(routeId, ...)` — `PUT /empty-bottles/:routeId`, then invalidates `routeProvider`, then re-fetches
+
+#### `evening_check/evening_check_screen.dart`
+Shows the status of all active routes for the evening (returned bottles, completion status). Tapping a route opens an update sheet.
+
+---
+
+### Feature: Milk Allocation
+
+#### `milk_allocation/providers/milk_allocation_provider.dart`
+**What it is:** A purely local (non-API) provider that tracks bottle quantity selections per route during the dispatch assignment flow.
+
+**State:** `MilkAllocationState { allocations: Map<routeId, RouteMilkAllocation> }`
+
+`RouteMilkAllocation` holds: `qty1LBottle`, `qtyHalfLBottle`, `qtyHalfLPacket`
+Computed: `totalVolume = (1L × 1) + (0.5L × halfL) + (0.5L × halfLPacket)`
+
+**Actions:** `initAllocation`, `update1LBottle`, `updateHalfLBottle`, `updateHalfLPacket` — all local state, no API
+
+#### `milk_allocation/milk_allocation_screen.dart`
+Screen that lists all routes where the manager sets how many 1L bottles, 500ml bottles, and 500ml packets go to each route.
+
+#### `milk_allocation/milk_allocation_sheet.dart`
+Bottom sheet for entering milk quantities for a specific route using +/– counters.
+
+---
+
+### Feature: Petrol Allowance
+
+#### `petrol_allowance/providers/petrol_allowance_provider.dart`
+**What it is:** Simplest provider in the app. Just holds a single `int` — the petrol amount to give.
+
+**State:** `int` (default: 80)
+
+**Actions:** `init(int)`, `updateAmount(int diff)`, `setAmount(int amount)`
+
+**Note:** This is local per-dispatch UI state. The actual petrol allowance is saved when `routeProvider.markPetrolAllowanceComplete(routeId, givenAmount)` is called.
+
+#### `petrol_allowance/petrol_allowance_screen.dart`
+Screen listing routes and their petrol allowance amounts. Manager can set how much petrol money was given for each route.
+
+#### `petrol_allowance/petrol_allowance_sheet.dart`
+Bottom sheet with a stepper control for entering the petrol amount.
+
+---
+
+### Feature: Ledger
+
+#### `ledger/models/ledger_transaction.dart`
+Freezed model: `id`, `dpId`, `dp` (nested DP info), `routeId`, `route` (nested route info), `date`, `type`, `amount`, `note`, `defaultAllowance`
+
+#### `ledger/providers/ledger_provider.dart`
+**State:** `LedgerState { transactions, filterType? }`
+Computed: `filteredTransactions` — client-side filter by type
+
+**Actions:**
+- `build()` — `GET /ledger` (all petrol transactions)
+- `setFilter(type?)` — client-side filter (no API call)
+- `addTransaction(...)` — `POST /ledger`, then re-fetches
+
+#### `ledger/transactions_screen.dart`
+Financial transaction history screen. Shows petrol allowance, shortage, and extra-paid entries in a date-sorted list with filter chips.
+
+---
+
+### Feature: Reports
+
+#### `reports/models/daily_report.dart`
+Local model for storing a generated daily report summary.
+
+#### `reports/models/dp_performance_report.dart`
+Freezed model for a single DP's performance data.
+**Fields:** `dpId`, `dpCode`, `name`, `photoUrl`, `totalLitres`, `totalRoutes`, `attendanceRatio`, `totalBottles`
+
+#### `reports/providers/report_provider.dart`
+Simple local provider holding a `DailyReport?`. Used for temporary in-app report storage. `saveDailyReport(report)` sets it.
+
+#### `reports/providers/dp_performance_provider.dart`
+**State:** `DpPerformanceState { reports, period, customDateRange?, sortOption, searchQuery }`
+Computed: `filteredReports` — client-side name search
+
+**Actions:**
+- `build()` — fetches with `period=month, sortBy=litres`
+- `setPeriod(period)` — re-fetches with new period
+- `setCustomDateRange(range)` — re-fetches with custom dates
+- `setSortOption(option)` — re-fetches with new sort
+- `setSearchQuery(query)` — local filter, no API
+
+#### `reports/reports_screen.dart`
+Reports hub screen with navigation to DP performance, transactions, and other report types.
+
+#### `reports/dp_performance_screen.dart`
+DP performance ranking screen. Shows all DPs sorted by litres/routes/attendance/bottles with period selectors (Today / Week / Month / Custom). Can open a date range picker for custom range.
+
+---
+
+### Feature: Profile
+
+#### `profile/providers/staff_provider.dart`
+**State:** `AsyncNotifier<List<DeliveryPerson>>`
+
+**Actions:**
+- `build()` — `GET /delivery-persons` (all active staff)
+- `search(query)` — re-fetches with `?search=` param
+- `addStaffWithResponse(dp)` — `POST /delivery-persons`, invalidates self, returns created DP
+- `updateStaff(id, dp)` — `PUT /delivery-persons/:id`
+- `deleteStaff(id)` — `DELETE /delivery-persons/:id`, handles the `HAS_ACTIVE_ROUTE` error gracefully
+- `uploadFile(dpId, filePath, type)` — multipart `POST /delivery-persons/:id/photo|aadhar|license`
+
+#### `profile/profile_screen.dart`
+Manager's own profile screen. Shows name, role, branch. Logout button.
+
+#### `profile/staff_directory_screen.dart`
+List of all delivery persons with search bar and "Add Staff" FAB.
+
+#### `profile/staff_profile_screen.dart`
+Detailed DP profile: photo, all personal info, documents (Aadhar, license), attendance history, and an edit button.
+
+#### `profile/staff_profile_edit_screen.dart`
+Full-form DP editor with all fields. Used for both create (no `dpId`) and edit (with `dpId`). Handles photo/document upload.
+
+---
+
+## 5. Database Schema (Prisma)
+
+### Enums
+| Enum | Values |
+|------|--------|
+| `Role` | `MANAGER`, `ADMIN` |
+| `AttendanceStatus` | `PRESENT`, `ABSENT`, `STANDBY` |
+| `RouteAllocationStatus` | `ASSIGNED`, `UNASSIGNED`, `COMPLETED` |
+| `LedgerTransactionType` | `SALARY`, `ADVANCE`, `PETROL_ALLOWANCE`, `SHORTAGE`, `EXTRA_PAID`, `MISC` |
+
+### Models
+
+#### `Manager`
+The app user. Has `email` (unique), `passwordHash`, `role`, `branchName`.
+Relation: has many `AttendanceRecord` (records they marked).
+
+#### `DeliveryPerson`
+Milk delivery staff. Key fields: `dpCode` (unique, auto-gen like `DP1001`), `isActive` (soft delete flag), all KYC fields (Aadhar, license, vehicle, bank, etc.).
+Relations: attendance records, route allocations, assigned routes, empty bottle logs, ledger transactions.
+
+#### `Route`
+A delivery route. Fields: `name`, `zone`, `defaultPetrolAllowance`, `customerCount`, `litres`, `assignedDpId?` (the "permanent" default DP).
+Relations: daily allocations, empty bottle logs, ledger transactions.
+
+#### `AttendanceRecord`
+Daily attendance per DP. Unique on `(dpId, date)`. Status is `PRESENT|ABSENT|STANDBY`.
+
+#### `RouteAllocation`
+Daily route assignment. Unique on `(routeId, date)`. Contains: `dpId`, `litresAllocated`, `qty1LBottle`, `qtyHalfLBottle`, `qtyHalfLPacket`, `petrolAllowanceGiven?`, `status`.
+
+#### `InventoryItem`
+Master list of inventory items (e.g., "1L Bottle", "500ml Packet"). Has `name`, `unit`, `material`.
+
+#### `InventoryDailyRecord`
+Daily snapshot per inventory item. Unique on `(inventoryItemId, date)`. Fields: `expectedStock`, `currentStock`, `carriedOverStock`, `newStockAdded`.
+
+#### `EmptyBottleLog`
+Evening return log per route per day. Unique on `(routeId, date)`. Fields: `deliveryCompleted`, `oneLBottlesCollected`, `halfLBottlesCollected`, `flagIssue`.
+
+#### `DispatchDay`
+The daily dispatch progress record. Unique on `date`. Has three nullable timestamps: `attendanceCompletedAt`, `inventoryCompletedAt`, `routesCompletedAt`. When all three are set → dispatch is complete.
+
+#### `LedgerTransaction`
+Financial entries. Links to a DP (optional) and a Route (optional). Type covers all financial event types.
+
+---
+
+## 6. Full Daily Workflow — Step by Step
+
+This is what actually happens each morning from app open to DPs going on their routes.
+
+```
+MORNING (7:00 AM)
+──────────────────────────────────────────────────────────────────────
+1. Manager opens the app
+   → SplashScreen calls checkInitialAuth()
+   → Finds JWT in secure storage → navigates to /dashboard
+
+2. Dashboard loads
+   → attendanceProvider fetches GET /attendance?date=today
+   → routeProvider fetches GET /routes?date=today
+   → dispatchProvider fetches GET /dispatch/summary?date=today
+   → dashboardProvider (derived) computes counts from attendance + routes
+   → Manager sees: 12 DPs total, 0 present, 12 routes unassigned
+
+3. Manager taps "Morning Dispatch" button → /dispatch
+
+4. DispatchReadyScreen shows 3 steps:
+   [✗] Attendance   [✗] Inventory   [✗] Routes
+
+STEP A: Attendance
+──────────────────────────────────────────────────────────────────────
+5. Manager taps "Mark Attendance" → /dispatch/attendance
+
+6. AttendanceScreen shows list of all DPs
+   Manager taps each DP: PRESENT / ABSENT / STANDBY
+
+7. Each tap calls attendanceProvider.markAttendance(dpId, status):
+   → Optimistic UI update (instant)
+   → PUT /attendance/:dpId { status: 'PRESENT' }
+   → Backend upserts AttendanceRecord
+   → Backend calls checkAndUpdateAttendanceCompletion()
+   → If all DPs marked → DispatchDay.attendanceCompletedAt = now()
+
+8. Manager goes back to DispatchReadyScreen
+   → dispatchProvider invalidated → re-fetches
+   → Step A now shows [✓] Attendance (with timestamp)
+
+STEP B: Inventory Count
+──────────────────────────────────────────────────────────────────────
+9. Manager taps "Check Inventory" → /dispatch/inventory
+
+10. InventoryScreen loads via inventoryProvider:
+    → GET /inventory?date=today
+    → Backend auto-creates records with carry-forward if not yet present
+    → e.g., "Yesterday's 1L bottle stock: 240 remaining → today's expected: 240"
+
+11. Manager physically counts bottles in the store room
+    → Updates each item's "Counted" number using +/– buttons
+    → Or types directly in the field
+
+12. Manager taps "Save Inventory"
+    → inventoryProvider.saveInventory()
+    → PUT /inventory { records: [{inventoryItemId, currentStock}, ...] }
+    → Backend bulk upserts InventoryDailyRecord
+    → Backend calls checkAndUpdateInventoryCompletion()
+    → DispatchDay.inventoryCompletedAt = now()
+
+13. Variance shows in red/green:
+    → expectedQty=240 but counted 235 → variance=-5 (shortage)
+
+STEP C: Route Allocation
+──────────────────────────────────────────────────────────────────────
+14. Manager taps "Assign Routes" → /dispatch/routes
+
+15. RouteAllocationScreen shows all routes with assigned DP or "Unassigned" badge
+
+16. Manager taps a route → opens assignment bottom sheet
+    → Selects which DP will run this route
+    → Sets litres allocated
+    → Opens MilkAllocationSheet (optional) → sets 1L, halfL, halfL-packet qty
+    → Sets petrol allowance amount
+
+17. Manager taps "Confirm Assignment"
+    → routeProvider.assignRoute(routeId, dpId, ...)
+    → PUT /routes/:routeId/allocation { dpId, litresAllocated, qty1LBottle, ..., petrolAllowanceGiven }
+    → Backend:
+       ① Checks inventory has enough bottles
+       ② Upserts RouteAllocation record
+       ③ Decrements inventory currentStock by qty
+       ④ Creates LedgerTransaction (PETROL_ALLOWANCE / SHORTAGE / EXTRA_PAID)
+       ⑤ Calls checkAndUpdateRoutesCompletion()
+
+18. routeProvider invalidates inventoryProvider (stock changed)
+    → InventoryScreen would now show updated currentStock
+
+19. When all routes are assigned:
+    → DispatchDay.routesCompletedAt = now()
+    → DispatchReadyScreen shows all 3 steps complete
+
+20. DPs physically leave for their routes (real world)
+
+EVENING (6:00 PM - 8:00 PM)
+──────────────────────────────────────────────────────────────────────
+21. DPs return with empty bottles
+    Manager taps "Evening Check" on dashboard → /evening-check
+
+22. EveningCheckScreen loads via eveningCheckProvider:
+    → GET /empty-bottles?date=today
+    → Shows: Route A: expected 120 bottles, returned 0
+
+23. For each returning DP, manager taps the route card → bottom sheet
+    → Ticks "Delivery Completed"
+    → Enters 1L bottles returned: 118
+    → Enters 500ml bottles returned: 45
+    → Optionally flags an issue
+
+24. eveningCheckProvider.updateStatus(routeId, ...)
+    → PUT /empty-bottles/:routeId { deliveryCompleted: true, oneLBottlesCollected: 118, ... }
+    → Backend upserts EmptyBottleLog
+    → Backend sets RouteAllocation.status = COMPLETED
+
+25. routeProvider is invalidated → refreshes routes
+    → Route A now shows as "Completed"
+
+END OF DAY — Reports
+──────────────────────────────────────────────────────────────────────
+26. Manager taps "Reports" → /reports → /dp-performance
+
+27. DpPerformanceScreen loads via dpPerformanceProvider:
+    → GET /reports/dp-performance?range=month&sortBy=litres
+    → Shows ranking of all DPs by litres delivered this month
+
+28. Manager views Ledger → /transactions
+    → ledgerProvider loads → GET /ledger
+    → Shows all petrol allowance transactions with shortage/extra flags
+```
+
+---
+
+## 7. Provider Dependency Graph
+
+```
+                     ┌─────────────────┐
+                     │  apiClientProvider│ (Dio instance)
+                     └────────┬────────┘
+                              │ used by all async providers
+              ┌───────────────┼────────────────────────────────┐
+              │               │                                │
+    ┌─────────▼──────┐  ┌─────▼──────────┐  ┌───────▼─────────┐
+    │ attendanceProvider│  │ routeProvider  │  │inventoryProvider│
+    └─────────┬──────┘  └─────┬──────────┘  └───────┬─────────┘
+              │               │ invalidates           │ invalidates
+              │               └───────────────────────┘
+              │                              │
+              └──────────────┐               │
+                   ┌─────────▼───────────────▼─────┐
+                   │         dispatchProvider        │
+                   └─────────────────────────────────┘
+                                    ▲
+                                    │ watches
+                   ┌────────────────┴────────────────┐
+                   │         dashboardProvider        │◄─── also watches attendanceProvider
+                   └─────────────────────────────────┘      and routeProvider
+
+    ┌──────────────────────┐
+    │ eveningCheckProvider  │◄── invalidated by routeProvider.assignRoute
+    └──────────────────────┘
+             │ invalidates routeProvider on update
+
+    ┌──────────────────────┐
+    │    ledgerProvider     │  (standalone, fetches /ledger)
+    └──────────────────────┘
+
+    ┌──────────────────────┐
+    │ dpPerformanceProvider │  (standalone, fetches /reports)
+    └──────────────────────┘
+
+    ┌──────────────────────┐
+    │     staffProvider     │  (standalone, fetches /delivery-persons)
+    └──────────────────────┘
+
+    ┌──────────────────────┐
+    │ milkAllocationProvider│  (pure local state, no API)
+    └──────────────────────┘
+
+    ┌──────────────────────┐
+    │petrolAllowanceProvider│  (pure local state, no API)
+    └──────────────────────┘
+
+    ┌──────────────────────┐
+    │  tabHistoryProvider   │  (pure local state, nav history)
+    └──────────────────────┘
+
+    ┌──────────────────────┐
+    │     authProvider      │◄── used by AuthInterceptor + ErrorInterceptor
+    └──────────────────────┘
+    ┌──────────────────────┐
+    │ secureStorageProvider │◄── used by authProvider + AuthInterceptor
+    └──────────────────────┘
+```
+
+---
+
+## Quick Reference — API Endpoints
+
+| Method | Path | What it does |
+|--------|------|-------------|
+| POST | `/api/v1/auth/login` | Login, get JWT |
+| POST | `/api/v1/auth/logout` | Stateless logout |
+| GET | `/api/v1/delivery-persons` | List staff |
+| POST | `/api/v1/delivery-persons` | Create DP |
+| PUT | `/api/v1/delivery-persons/:id` | Update DP |
+| DELETE | `/api/v1/delivery-persons/:id` | Soft delete DP |
+| POST | `/api/v1/delivery-persons/:id/photo` | Upload photo |
+| POST | `/api/v1/delivery-persons/:id/aadhar` | Upload Aadhar |
+| POST | `/api/v1/delivery-persons/:id/license` | Upload license |
+| GET | `/api/v1/attendance` | Get attendance for date |
+| PUT | `/api/v1/attendance/:dpId` | Mark attendance |
+| PUT | `/api/v1/attendance/bulk` | Bulk mark attendance |
+| GET | `/api/v1/routes` | Routes with allocation status |
+| PUT | `/api/v1/routes/:routeId/allocation` | Assign/update/unassign route |
+| GET | `/api/v1/inventory` | Get inventory for date |
+| PUT | `/api/v1/inventory` | Save counted stock |
+| PUT | `/api/v1/inventory/admin-stock` | Add new stock (admin) |
+| PUT | `/api/v1/inventory/manager-stock` | Set received stock (manager) |
+| GET | `/api/v1/dispatch/summary` | Get dispatch day status |
+| GET | `/api/v1/empty-bottles` | Get bottle return status |
+| PUT | `/api/v1/empty-bottles/:routeId` | Update return log |
+| GET | `/api/v1/ledger` | Get ledger transactions |
+| POST | `/api/v1/ledger` | Create manual transaction |
+| GET | `/api/v1/reports/dp-performance` | DP performance report |
+
+---
+
+*Last updated: 2026-07-27*

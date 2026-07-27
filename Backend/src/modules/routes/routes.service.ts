@@ -24,9 +24,9 @@ export const getRoutesWithAllocation = async (date: string) => {
       defaultLitres: route.litres,
       fixedPetrolAllowance: route.defaultPetrolAllowance,
       allocationId: allocation ? allocation.id : null,
-      assignedDpId: (allocation && allocation.status === 'ASSIGNED') ? allocation.dpId : null,
-      assignedDpName: (allocation?.dp && allocation.status === 'ASSIGNED') ? allocation.dp.name : null,
-      assignedDpPhotoUrl: (allocation?.dp && allocation.status === 'ASSIGNED') ? allocation.dp.photoUrl : null,
+      assignedDpId: (allocation && (allocation.status === 'ASSIGNED' || allocation.status === 'COMPLETED')) ? allocation.dpId : null,
+      assignedDpName: (allocation?.dp && (allocation.status === 'ASSIGNED' || allocation.status === 'COMPLETED')) ? allocation.dp.name : null,
+      assignedDpPhotoUrl: (allocation?.dp && (allocation.status === 'ASSIGNED' || allocation.status === 'COMPLETED')) ? allocation.dp.photoUrl : null,
       litresAllocated: allocation ? allocation.litresAllocated : 0,
       qty1LBottle: allocation ? allocation.qty1LBottle : 0,
       qtyHalfLBottle: allocation ? allocation.qtyHalfLBottle : 0,
@@ -170,46 +170,27 @@ export const updateRouteAllocation = async (
         }
       });
 
-      if (petrolAllowanceGiven > 0) {
-        await prisma.ledgerTransaction.create({
-          data: {
-            dpId,
-            routeId,
-            date,
-            type: 'PETROL_ALLOWANCE',
-            amount: petrolAllowanceGiven,
-            note: `Petrol allowance for ${route.name}`
-          }
-        });
-      }
+      let type: 'PETROL_ALLOWANCE' | 'SHORTAGE' | 'EXTRA_PAID' = 'PETROL_ALLOWANCE';
+      let note = `Petrol allowance for ${route.name}`;
 
       if (petrolAllowanceGiven < defaultAllowance) {
-        const shortage = defaultAllowance - petrolAllowanceGiven;
-        await prisma.ledgerTransaction.create({
-          data: {
-            dpId,
-            routeId,
-            date,
-            type: 'SHORTAGE',
-            amount: shortage,
-            note: `Short ₹${shortage} vs route allowance`
-          }
-        });
+        type = 'SHORTAGE';
+        note = `Short ₹${defaultAllowance - petrolAllowanceGiven} vs route allowance`;
+      } else if (petrolAllowanceGiven > defaultAllowance) {
+        type = 'EXTRA_PAID';
+        note = `Extra ₹${petrolAllowanceGiven - defaultAllowance} vs route allowance`;
       }
 
-      if (petrolAllowanceGiven > defaultAllowance) {
-        const extra = petrolAllowanceGiven - defaultAllowance;
-        await prisma.ledgerTransaction.create({
-          data: {
-            dpId,
-            routeId,
-            date,
-            type: 'EXTRA_PAID',
-            amount: extra,
-            note: `Extra ₹${extra} vs route allowance`
-          }
-        });
-      }
+      await prisma.ledgerTransaction.create({
+        data: {
+          dpId,
+          routeId,
+          date,
+          type,
+          amount: petrolAllowanceGiven,
+          note
+        }
+      });
     }
   }
 

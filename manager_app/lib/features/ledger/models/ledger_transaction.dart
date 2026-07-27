@@ -13,9 +13,10 @@ abstract class LedgerTransaction with _$LedgerTransaction {
     DeliveryPerson? dp,
     String? routeId,
     Map<String, dynamic>? route,
-    @Default(0) double givenAllowance,
+    required String type,
+    @Default(0) double amount,
+    String? note,
     @Default(0) double defaultAllowance,
-    required String status,
   }) = _LedgerTransaction;
 
   factory LedgerTransaction.fromJson(Map<String, dynamic> json) => _$LedgerTransactionFromJson(json);

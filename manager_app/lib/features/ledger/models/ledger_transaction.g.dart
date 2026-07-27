@@ -16,9 +16,10 @@ _LedgerTransaction _$LedgerTransactionFromJson(Map<String, dynamic> json) =>
           : DeliveryPerson.fromJson(json['dp'] as Map<String, dynamic>),
       routeId: json['routeId'] as String?,
       route: json['route'] as Map<String, dynamic>?,
-      givenAllowance: (json['givenAllowance'] as num?)?.toDouble() ?? 0,
+      type: json['type'] as String,
+      amount: (json['amount'] as num?)?.toDouble() ?? 0,
+      note: json['note'] as String?,
       defaultAllowance: (json['defaultAllowance'] as num?)?.toDouble() ?? 0,
-      status: json['status'] as String,
     );
 
 Map<String, dynamic> _$LedgerTransactionToJson(_LedgerTransaction instance) =>
@@ -29,7 +30,8 @@ Map<String, dynamic> _$LedgerTransactionToJson(_LedgerTransaction instance) =>
       'dp': instance.dp,
       'routeId': instance.routeId,
       'route': instance.route,
-      'givenAllowance': instance.givenAllowance,
+      'type': instance.type,
+      'amount': instance.amount,
+      'note': instance.note,
       'defaultAllowance': instance.defaultAllowance,
-      'status': instance.status,
     };

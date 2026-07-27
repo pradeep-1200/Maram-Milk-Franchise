@@ -11,9 +11,11 @@ abstract class EmptyBottleStatus with _$EmptyBottleStatus {
     String? dpId,
     String? dpName,
     required bool deliveryCompleted,
-    required int oneLBottlesCollected,
-    required int halfLBottlesCollected,
-    required bool flagIssue,
+    @Default(0) int oneLBottlesCollected,
+    @Default(0) int halfLBottlesCollected,
+    @Default(0) int expected1LBottles,
+    @Default(0) int expectedHalfLBottles,
+    @Default(false) bool flagIssue,
     required String status,
   }) = _EmptyBottleStatus;
 

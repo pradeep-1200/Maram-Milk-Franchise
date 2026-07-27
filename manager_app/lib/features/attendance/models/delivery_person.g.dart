@@ -38,6 +38,8 @@ _DeliveryPerson _$DeliveryPersonFromJson(Map<String, dynamic> json) =>
       updatedAt: json['updatedAt'] as String?,
       recordId: json['recordId'] as String?,
       markedAt: json['markedAt'] as String?,
+      petrolAllowanceGivenToday: (json['petrolAllowanceGivenToday'] as num?)
+          ?.toInt(),
     );
 
 Map<String, dynamic> _$DeliveryPersonToJson(_DeliveryPerson instance) =>
@@ -70,6 +72,7 @@ Map<String, dynamic> _$DeliveryPersonToJson(_DeliveryPerson instance) =>
       'updatedAt': instance.updatedAt,
       'recordId': instance.recordId,
       'markedAt': instance.markedAt,
+      'petrolAllowanceGivenToday': instance.petrolAllowanceGivenToday,
     };
 
 const _$AttendanceStatusEnumMap = {

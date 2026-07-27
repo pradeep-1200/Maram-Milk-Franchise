@@ -6,18 +6,21 @@ part of 'empty_bottle_status.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_EmptyBottleStatus _$EmptyBottleStatusFromJson(Map<String, dynamic> json) =>
-    _EmptyBottleStatus(
-      routeId: json['routeId'] as String,
-      routeName: json['routeName'] as String,
-      dpId: json['dpId'] as String?,
-      dpName: json['dpName'] as String?,
-      deliveryCompleted: json['deliveryCompleted'] as bool,
-      oneLBottlesCollected: (json['oneLBottlesCollected'] as num).toInt(),
-      halfLBottlesCollected: (json['halfLBottlesCollected'] as num).toInt(),
-      flagIssue: json['flagIssue'] as bool,
-      status: json['status'] as String,
-    );
+_EmptyBottleStatus _$EmptyBottleStatusFromJson(
+  Map<String, dynamic> json,
+) => _EmptyBottleStatus(
+  routeId: json['routeId'] as String,
+  routeName: json['routeName'] as String,
+  dpId: json['dpId'] as String?,
+  dpName: json['dpName'] as String?,
+  deliveryCompleted: json['deliveryCompleted'] as bool,
+  oneLBottlesCollected: (json['oneLBottlesCollected'] as num?)?.toInt() ?? 0,
+  halfLBottlesCollected: (json['halfLBottlesCollected'] as num?)?.toInt() ?? 0,
+  expected1LBottles: (json['expected1LBottles'] as num?)?.toInt() ?? 0,
+  expectedHalfLBottles: (json['expectedHalfLBottles'] as num?)?.toInt() ?? 0,
+  flagIssue: json['flagIssue'] as bool? ?? false,
+  status: json['status'] as String,
+);
 
 Map<String, dynamic> _$EmptyBottleStatusToJson(_EmptyBottleStatus instance) =>
     <String, dynamic>{
@@ -28,6 +31,8 @@ Map<String, dynamic> _$EmptyBottleStatusToJson(_EmptyBottleStatus instance) =>
       'deliveryCompleted': instance.deliveryCompleted,
       'oneLBottlesCollected': instance.oneLBottlesCollected,
       'halfLBottlesCollected': instance.halfLBottlesCollected,
+      'expected1LBottles': instance.expected1LBottles,
+      'expectedHalfLBottles': instance.expectedHalfLBottles,
       'flagIssue': instance.flagIssue,
       'status': instance.status,
     };

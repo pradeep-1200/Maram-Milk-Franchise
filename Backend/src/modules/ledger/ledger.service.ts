@@ -2,9 +2,9 @@ import { prisma } from '../../config/db';
 import { Prisma, LedgerTransactionType } from '@prisma/client';
 
 export const getLedger = async (dpId?: string, from?: string, to?: string, type?: string) => {
-  const where: Prisma.RouteAllocationWhereInput = {
-    petrolAllowanceGiven: { not: null },
-    status: { in: ['ASSIGNED', 'COMPLETED'] }
+  const where: Prisma.LedgerTransactionWhereInput = {
+    // Only return petrol transactions since this is the petrol ledger
+    type: { in: ['PETROL_ALLOWANCE', 'SHORTAGE', 'EXTRA_PAID'] }
   };
   
   if (dpId) where.dpId = dpId;
@@ -15,7 +15,14 @@ export const getLedger = async (dpId?: string, from?: string, to?: string, type?
     if (to) where.date.lte = to;
   }
 
-  const allocations = await prisma.routeAllocation.findMany({
+  // Filter by type if provided
+  if (type && type.toLowerCase() !== 'all') {
+    if (type.toLowerCase() === 'fully_paid') where.type = 'PETROL_ALLOWANCE';
+    else if (type.toLowerCase() === 'short_paid') where.type = 'SHORTAGE';
+    else if (type.toLowerCase() === 'extra_paid') where.type = 'EXTRA_PAID';
+  }
+
+  const transactions = await prisma.ledgerTransaction.findMany({
     where,
     orderBy: [
       { date: 'desc' },
@@ -24,29 +31,21 @@ export const getLedger = async (dpId?: string, from?: string, to?: string, type?
     include: { dp: true, route: true },
   });
 
-  let ledgerEntries = allocations.map(a => {
-    const given = a.petrolAllowanceGiven ?? 0;
-    const allowance = a.route.defaultPetrolAllowance;
-    let status = 'fully_paid';
-    if (given < allowance) status = 'short_paid';
-    else if (given > allowance) status = 'extra_paid';
-
+  const ledgerEntries = transactions.map(tx => {
     return {
-      id: a.id,
-      dpId: a.dpId,
-      dp: a.dp,
-      routeId: a.routeId,
-      route: a.route,
-      date: a.date,
-      givenAllowance: given,
-      defaultAllowance: allowance,
-      status
+      id: tx.id,
+      dpId: tx.dpId,
+      dp: tx.dp,
+      routeId: tx.routeId,
+      route: tx.route,
+      date: tx.date,
+      type: tx.type,
+      amount: tx.amount,
+      note: tx.note,
+      // For backwards compatibility or frontend usage, we can calculate the defaultAllowance
+      defaultAllowance: tx.route ? tx.route.defaultPetrolAllowance : 0,
     };
   });
-
-  if (type && type.toLowerCase() !== 'all') {
-    ledgerEntries = ledgerEntries.filter(entry => entry.status === type.toLowerCase());
-  }
 
   return ledgerEntries;
 };

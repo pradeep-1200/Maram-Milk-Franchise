@@ -114,11 +114,11 @@ class TransactionsScreen extends ConsumerWidget {
                           String statusText;
                           IconData statusIcon;
 
-                          if (tx.status == 'fully_paid') {
+                          if (tx.type == 'PETROL_ALLOWANCE') {
                             statusColor = Colors.green;
                             statusText = 'Fully Paid';
                             statusIcon = Icons.check_circle;
-                          } else if (tx.status == 'short_paid') {
+                          } else if (tx.type == 'SHORTAGE') {
                             statusColor = Colors.orange;
                             statusText = 'Short Paid';
                             statusIcon = Icons.warning;
@@ -189,18 +189,24 @@ class TransactionsScreen extends ConsumerWidget {
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
-                                    Text(
-                                      '₹${tx.givenAllowance.toStringAsFixed(0)}',
-                                      style: theme.textTheme.titleMedium?.copyWith(
-                                        color: theme.colorScheme.primary,
-                                        fontWeight: FontWeight.bold,
+                                      Text(
+                                        '₹${tx.amount.toStringAsFixed(0)}',
+                                        style: theme.textTheme.titleMedium?.copyWith(
+                                          color: theme.colorScheme.primary,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
-                                    ),
-                                    Text(
-                                      'of ₹${tx.defaultAllowance.toStringAsFixed(0)}',
-                                      style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                                    ),
-                                  ],
+                                      if (tx.note != null && tx.note!.isNotEmpty)
+                                        Text(
+                                          tx.note!,
+                                          style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                                        )
+                                      else
+                                        Text(
+                                          'of ₹${tx.defaultAllowance.toStringAsFixed(0)}',
+                                          style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                                        ),
+                                    ],
                                 ),
                               ],
                             ),

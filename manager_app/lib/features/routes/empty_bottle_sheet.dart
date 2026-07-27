@@ -116,12 +116,14 @@ class _EmptyBottleSheetState extends ConsumerState<EmptyBottleSheet> {
           
           _StepperRow(
             title: '1L Bottles Collected',
+            subtitle: 'Expected: ${status.expected1LBottles}',
             value: _bottles1L,
             onChanged: (val) => setState(() => _bottles1L = val),
           ),
           const Divider(),
           _StepperRow(
             title: 'Half L Bottles Collected',
+            subtitle: 'Expected: ${status.expectedHalfLBottles}',
             value: _bottlesHalfL,
             onChanged: (val) => setState(() => _bottlesHalfL = val),
           ),
@@ -160,11 +162,13 @@ class _EmptyBottleSheetState extends ConsumerState<EmptyBottleSheet> {
 
 class _StepperRow extends StatelessWidget {
   final String title;
+  final String? subtitle;
   final int value;
   final ValueChanged<int> onChanged;
 
   const _StepperRow({
     required this.title,
+    this.subtitle,
     required this.value,
     required this.onChanged,
   });
@@ -177,7 +181,17 @@ class _StepperRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: theme.textTheme.bodyMedium),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: theme.textTheme.bodyMedium),
+              if (subtitle != null)
+                Text(
+                  subtitle!,
+                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                ),
+            ],
+          ),
           Row(
             children: [
               IconButton(

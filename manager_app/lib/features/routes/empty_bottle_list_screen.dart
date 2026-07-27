@@ -21,6 +21,7 @@ class EmptyBottleListScreen extends ConsumerWidget {
     );
   }
 
+  @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final statuses = ref.watch(eveningCheckProvider).value?.statuses ?? [];
@@ -104,6 +105,43 @@ class EmptyBottleListScreen extends ConsumerWidget {
                                   ],
                                 ),
                               ],
+                              const SizedBox(height: 4),
+                              Builder(
+                                builder: (context) {
+                                  final totalCollected = status.oneLBottlesCollected + status.halfLBottlesCollected;
+                                  final totalExpected = status.expected1LBottles + status.expectedHalfLBottles;
+
+                                  String tagText;
+                                  Color tagColor;
+
+                                  if (totalCollected > totalExpected) {
+                                    tagText = '⚠ Over Expected';
+                                    tagColor = Colors.red;
+                                  } else if (totalCollected == totalExpected && totalExpected > 0) {
+                                    tagText = 'Fully Collected';
+                                    tagColor = Colors.green;
+                                  } else if (totalCollected > 0 && totalCollected < totalExpected) {
+                                    tagText = 'Partially Collected';
+                                    tagColor = Colors.orange;
+                                  } else {
+                                    tagText = 'Not Collected';
+                                    tagColor = Colors.grey;
+                                  }
+
+                                  return Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: tagColor.withAlpha(25),
+                                      border: Border.all(color: tagColor),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      tagText,
+                                      style: TextStyle(color: tagColor, fontSize: 10, fontWeight: FontWeight.bold),
+                                    ),
+                                  );
+                                },
+                              ),
                             ],
                           )
                         ] else if (isIncomplete) ...[

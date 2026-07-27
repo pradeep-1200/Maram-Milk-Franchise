@@ -59,6 +59,7 @@ abstract class DeliveryPerson with _$DeliveryPerson {
     // Attendance specific
     String? recordId,
     String? markedAt,
+    int? petrolAllowanceGivenToday,
   }) = _DeliveryPerson;
 
   factory DeliveryPerson.fromJson(Map<String, dynamic> json) =>

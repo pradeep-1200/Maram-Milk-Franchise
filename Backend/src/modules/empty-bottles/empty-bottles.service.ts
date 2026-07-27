@@ -6,7 +6,7 @@ export const getEmptyBottleStatus = async (date: string) => {
   });
 
   const allocations = await prisma.routeAllocation.findMany({
-    where: { date, status: 'ASSIGNED' },
+    where: { date, status: { in: ['ASSIGNED', 'COMPLETED'] } },
     include: { dp: true },
   });
 
@@ -29,6 +29,8 @@ export const getEmptyBottleStatus = async (date: string) => {
       deliveryCompleted: log?.deliveryCompleted || false,
       oneLBottlesCollected: log?.oneLBottlesCollected || 0,
       halfLBottlesCollected: log?.halfLBottlesCollected || 0,
+      expected1LBottles: allocation?.qty1LBottle || 0,
+      expectedHalfLBottles: allocation?.qtyHalfLBottle || 0,
       flagIssue: log?.flagIssue || false,
       status: log?.deliveryCompleted ? 'Delivered' : (allocation ? 'Pending' : 'Unassigned'),
     };
@@ -44,7 +46,7 @@ export const updateEmptyBottleLog = async (
     where: { routeId_date: { routeId, date } },
   });
 
-  if (!allocation || allocation.status !== 'ASSIGNED') {
+  if (!allocation || (allocation.status !== 'ASSIGNED' && allocation.status !== 'COMPLETED')) {
     throw new Error('Cannot update empty bottles for an unassigned route.');
   }
 

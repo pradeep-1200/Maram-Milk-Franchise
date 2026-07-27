@@ -404,7 +404,12 @@ class _RouteCard extends ConsumerWidget {
                   },
                 ),
                 const SizedBox(width: AppConstants.spacing16),
-                Icon(Icons.edit, size: 20, color: theme.colorScheme.primary),
+                IconButton(
+                  icon: Icon(Icons.edit, size: 20, color: theme.colorScheme.primary),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  onPressed: onAssignTapped,
+                ),
               ],
             )
           else
@@ -633,6 +638,18 @@ class _AssignDpSheet extends ConsumerWidget {
                           runSpacing: 4,
                           children: [
                             Text(dp.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                            if (dp.petrolAllowanceGivenToday != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.shade100,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  'PA Given: ₹${dp.petrolAllowanceGivenToday}',
+                                  style: TextStyle(color: Colors.green.shade900, fontSize: 10, fontWeight: FontWeight.bold),
+                                ),
+                              ),
                             if (otherRoutes.isNotEmpty)
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),

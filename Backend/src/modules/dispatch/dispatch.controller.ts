@@ -29,7 +29,13 @@ export const getDispatchSummary = async (req: Request, res: Response, next: Next
     for (const r of attendanceRecords) {
       if (r.status === 'ABSENT') {
         absentCount++;
-      } else if (r.status === 'PRESENT' || r.status === 'STANDBY') {
+      } else if (r.status === 'PRESENT') {
+        if (assignedDpIds.has(r.dpId)) {
+          presentCount++;
+        } else {
+          standbyCount++;
+        }
+      } else if (r.status === 'STANDBY') {
         if (assignedDpIds.has(r.dpId)) {
           presentCount++;
         } else {

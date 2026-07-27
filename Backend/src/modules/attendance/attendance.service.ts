@@ -18,16 +18,31 @@ export const getAttendanceForDate = async (date: string) => {
   });
   const assignedDpIds = new Set(allocations.map(a => a.dpId));
 
+  const ledgerTxs = await prisma.ledgerTransaction.findMany({
+    where: {
+      date,
+      type: { in: ['PETROL_ALLOWANCE', 'SHORTAGE', 'EXTRA_PAID'] },
+    },
+  });
+
   return dps.map(dp => {
     const record = recordMap.get(dp.id);
-    let status = record ? record.status : 'NOT_MARKED';
+    // The correct condition must be strictly: attendanceStatus === 'PRESENT' AND no RouteAllocation exists.
+    // Unmarked ('NOT_MARKED') or 'ABSENT' are ignored for standby.
+    let originalStatus = record ? record.status : 'NOT_MARKED';
+    let status = originalStatus;
 
-    // Auto-calculate STANDBY if PRESENT but no route
-    if (status === 'PRESENT' && !assignedDpIds.has(dp.id)) {
-      status = 'STANDBY';
-    } else if (status === 'STANDBY' && assignedDpIds.has(dp.id)) {
-      status = 'PRESENT';
+    if (originalStatus === 'PRESENT') {
+      if (!assignedDpIds.has(dp.id)) {
+        status = 'STANDBY';
+      }
+    } else if (originalStatus === 'STANDBY') {
+      // If DB somehow has STANDBY explicitly, correct it dynamically
+      status = assignedDpIds.has(dp.id) ? 'PRESENT' : 'STANDBY';
     }
+
+    const dpTxs = ledgerTxs.filter(tx => tx.dpId === dp.id);
+    const sumPA = dpTxs.reduce((sum, tx) => sum + tx.amount, 0);
 
     return {
       dpId: dp.id,
@@ -37,6 +52,7 @@ export const getAttendanceForDate = async (date: string) => {
       status,
       recordId: record ? record.id : null,
       markedAt: record ? record.createdAt : null,
+      petrolAllowanceGivenToday: sumPA > 0 ? sumPA : null,
     };
   });
 };

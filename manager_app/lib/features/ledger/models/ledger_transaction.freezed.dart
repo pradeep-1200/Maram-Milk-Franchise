@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$LedgerTransaction {
 
- String get id; String? get dpId; String get date; DeliveryPerson? get dp; String? get routeId; Map<String, dynamic>? get route; double get givenAllowance; double get defaultAllowance; String get status;
+ String get id; String? get dpId; String get date; DeliveryPerson? get dp; String? get routeId; Map<String, dynamic>? get route; String get type; double get amount; String? get note; double get defaultAllowance;
 /// Create a copy of LedgerTransaction
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $LedgerTransactionCopyWith<LedgerTransaction> get copyWith => _$LedgerTransactio
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is LedgerTransaction&&(identical(other.id, id) || other.id == id)&&(identical(other.dpId, dpId) || other.dpId == dpId)&&(identical(other.date, date) || other.date == date)&&(identical(other.dp, dp) || other.dp == dp)&&(identical(other.routeId, routeId) || other.routeId == routeId)&&const DeepCollectionEquality().equals(other.route, route)&&(identical(other.givenAllowance, givenAllowance) || other.givenAllowance == givenAllowance)&&(identical(other.defaultAllowance, defaultAllowance) || other.defaultAllowance == defaultAllowance)&&(identical(other.status, status) || other.status == status));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is LedgerTransaction&&(identical(other.id, id) || other.id == id)&&(identical(other.dpId, dpId) || other.dpId == dpId)&&(identical(other.date, date) || other.date == date)&&(identical(other.dp, dp) || other.dp == dp)&&(identical(other.routeId, routeId) || other.routeId == routeId)&&const DeepCollectionEquality().equals(other.route, route)&&(identical(other.type, type) || other.type == type)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.note, note) || other.note == note)&&(identical(other.defaultAllowance, defaultAllowance) || other.defaultAllowance == defaultAllowance));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,dpId,date,dp,routeId,const DeepCollectionEquality().hash(route),givenAllowance,defaultAllowance,status);
+int get hashCode => Object.hash(runtimeType,id,dpId,date,dp,routeId,const DeepCollectionEquality().hash(route),type,amount,note,defaultAllowance);
 
 @override
 String toString() {
-  return 'LedgerTransaction(id: $id, dpId: $dpId, date: $date, dp: $dp, routeId: $routeId, route: $route, givenAllowance: $givenAllowance, defaultAllowance: $defaultAllowance, status: $status)';
+  return 'LedgerTransaction(id: $id, dpId: $dpId, date: $date, dp: $dp, routeId: $routeId, route: $route, type: $type, amount: $amount, note: $note, defaultAllowance: $defaultAllowance)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $LedgerTransactionCopyWith<$Res>  {
   factory $LedgerTransactionCopyWith(LedgerTransaction value, $Res Function(LedgerTransaction) _then) = _$LedgerTransactionCopyWithImpl;
 @useResult
 $Res call({
- String id, String? dpId, String date, DeliveryPerson? dp, String? routeId, Map<String, dynamic>? route, double givenAllowance, double defaultAllowance, String status
+ String id, String? dpId, String date, DeliveryPerson? dp, String? routeId, Map<String, dynamic>? route, String type, double amount, String? note, double defaultAllowance
 });
 
 
@@ -65,7 +65,7 @@ class _$LedgerTransactionCopyWithImpl<$Res>
 
 /// Create a copy of LedgerTransaction
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? dpId = freezed,Object? date = null,Object? dp = freezed,Object? routeId = freezed,Object? route = freezed,Object? givenAllowance = null,Object? defaultAllowance = null,Object? status = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? dpId = freezed,Object? date = null,Object? dp = freezed,Object? routeId = freezed,Object? route = freezed,Object? type = null,Object? amount = null,Object? note = freezed,Object? defaultAllowance = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,dpId: freezed == dpId ? _self.dpId : dpId // ignore: cast_nullable_to_non_nullable
@@ -73,10 +73,11 @@ as String?,date: null == date ? _self.date : date // ignore: cast_nullable_to_no
 as String,dp: freezed == dp ? _self.dp : dp // ignore: cast_nullable_to_non_nullable
 as DeliveryPerson?,routeId: freezed == routeId ? _self.routeId : routeId // ignore: cast_nullable_to_non_nullable
 as String?,route: freezed == route ? _self.route : route // ignore: cast_nullable_to_non_nullable
-as Map<String, dynamic>?,givenAllowance: null == givenAllowance ? _self.givenAllowance : givenAllowance // ignore: cast_nullable_to_non_nullable
-as double,defaultAllowance: null == defaultAllowance ? _self.defaultAllowance : defaultAllowance // ignore: cast_nullable_to_non_nullable
-as double,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as String,
+as Map<String, dynamic>?,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
+as String,amount: null == amount ? _self.amount : amount // ignore: cast_nullable_to_non_nullable
+as double,note: freezed == note ? _self.note : note // ignore: cast_nullable_to_non_nullable
+as String?,defaultAllowance: null == defaultAllowance ? _self.defaultAllowance : defaultAllowance // ignore: cast_nullable_to_non_nullable
+as double,
   ));
 }
 /// Create a copy of LedgerTransaction
@@ -173,10 +174,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String? dpId,  String date,  DeliveryPerson? dp,  String? routeId,  Map<String, dynamic>? route,  double givenAllowance,  double defaultAllowance,  String status)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String? dpId,  String date,  DeliveryPerson? dp,  String? routeId,  Map<String, dynamic>? route,  String type,  double amount,  String? note,  double defaultAllowance)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _LedgerTransaction() when $default != null:
-return $default(_that.id,_that.dpId,_that.date,_that.dp,_that.routeId,_that.route,_that.givenAllowance,_that.defaultAllowance,_that.status);case _:
+return $default(_that.id,_that.dpId,_that.date,_that.dp,_that.routeId,_that.route,_that.type,_that.amount,_that.note,_that.defaultAllowance);case _:
   return orElse();
 
 }
@@ -194,10 +195,10 @@ return $default(_that.id,_that.dpId,_that.date,_that.dp,_that.routeId,_that.rout
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String? dpId,  String date,  DeliveryPerson? dp,  String? routeId,  Map<String, dynamic>? route,  double givenAllowance,  double defaultAllowance,  String status)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String? dpId,  String date,  DeliveryPerson? dp,  String? routeId,  Map<String, dynamic>? route,  String type,  double amount,  String? note,  double defaultAllowance)  $default,) {final _that = this;
 switch (_that) {
 case _LedgerTransaction():
-return $default(_that.id,_that.dpId,_that.date,_that.dp,_that.routeId,_that.route,_that.givenAllowance,_that.defaultAllowance,_that.status);case _:
+return $default(_that.id,_that.dpId,_that.date,_that.dp,_that.routeId,_that.route,_that.type,_that.amount,_that.note,_that.defaultAllowance);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -214,10 +215,10 @@ return $default(_that.id,_that.dpId,_that.date,_that.dp,_that.routeId,_that.rout
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String? dpId,  String date,  DeliveryPerson? dp,  String? routeId,  Map<String, dynamic>? route,  double givenAllowance,  double defaultAllowance,  String status)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String? dpId,  String date,  DeliveryPerson? dp,  String? routeId,  Map<String, dynamic>? route,  String type,  double amount,  String? note,  double defaultAllowance)?  $default,) {final _that = this;
 switch (_that) {
 case _LedgerTransaction() when $default != null:
-return $default(_that.id,_that.dpId,_that.date,_that.dp,_that.routeId,_that.route,_that.givenAllowance,_that.defaultAllowance,_that.status);case _:
+return $default(_that.id,_that.dpId,_that.date,_that.dp,_that.routeId,_that.route,_that.type,_that.amount,_that.note,_that.defaultAllowance);case _:
   return null;
 
 }
@@ -229,7 +230,7 @@ return $default(_that.id,_that.dpId,_that.date,_that.dp,_that.routeId,_that.rout
 @JsonSerializable()
 
 class _LedgerTransaction implements LedgerTransaction {
-  const _LedgerTransaction({required this.id, this.dpId, required this.date, this.dp, this.routeId, final  Map<String, dynamic>? route, this.givenAllowance = 0, this.defaultAllowance = 0, required this.status}): _route = route;
+  const _LedgerTransaction({required this.id, this.dpId, required this.date, this.dp, this.routeId, final  Map<String, dynamic>? route, required this.type, this.amount = 0, this.note, this.defaultAllowance = 0}): _route = route;
   factory _LedgerTransaction.fromJson(Map<String, dynamic> json) => _$LedgerTransactionFromJson(json);
 
 @override final  String id;
@@ -246,9 +247,10 @@ class _LedgerTransaction implements LedgerTransaction {
   return EqualUnmodifiableMapView(value);
 }
 
-@override@JsonKey() final  double givenAllowance;
+@override final  String type;
+@override@JsonKey() final  double amount;
+@override final  String? note;
 @override@JsonKey() final  double defaultAllowance;
-@override final  String status;
 
 /// Create a copy of LedgerTransaction
 /// with the given fields replaced by the non-null parameter values.
@@ -263,16 +265,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LedgerTransaction&&(identical(other.id, id) || other.id == id)&&(identical(other.dpId, dpId) || other.dpId == dpId)&&(identical(other.date, date) || other.date == date)&&(identical(other.dp, dp) || other.dp == dp)&&(identical(other.routeId, routeId) || other.routeId == routeId)&&const DeepCollectionEquality().equals(other._route, _route)&&(identical(other.givenAllowance, givenAllowance) || other.givenAllowance == givenAllowance)&&(identical(other.defaultAllowance, defaultAllowance) || other.defaultAllowance == defaultAllowance)&&(identical(other.status, status) || other.status == status));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LedgerTransaction&&(identical(other.id, id) || other.id == id)&&(identical(other.dpId, dpId) || other.dpId == dpId)&&(identical(other.date, date) || other.date == date)&&(identical(other.dp, dp) || other.dp == dp)&&(identical(other.routeId, routeId) || other.routeId == routeId)&&const DeepCollectionEquality().equals(other._route, _route)&&(identical(other.type, type) || other.type == type)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.note, note) || other.note == note)&&(identical(other.defaultAllowance, defaultAllowance) || other.defaultAllowance == defaultAllowance));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,dpId,date,dp,routeId,const DeepCollectionEquality().hash(_route),givenAllowance,defaultAllowance,status);
+int get hashCode => Object.hash(runtimeType,id,dpId,date,dp,routeId,const DeepCollectionEquality().hash(_route),type,amount,note,defaultAllowance);
 
 @override
 String toString() {
-  return 'LedgerTransaction(id: $id, dpId: $dpId, date: $date, dp: $dp, routeId: $routeId, route: $route, givenAllowance: $givenAllowance, defaultAllowance: $defaultAllowance, status: $status)';
+  return 'LedgerTransaction(id: $id, dpId: $dpId, date: $date, dp: $dp, routeId: $routeId, route: $route, type: $type, amount: $amount, note: $note, defaultAllowance: $defaultAllowance)';
 }
 
 
@@ -283,7 +285,7 @@ abstract mixin class _$LedgerTransactionCopyWith<$Res> implements $LedgerTransac
   factory _$LedgerTransactionCopyWith(_LedgerTransaction value, $Res Function(_LedgerTransaction) _then) = __$LedgerTransactionCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String? dpId, String date, DeliveryPerson? dp, String? routeId, Map<String, dynamic>? route, double givenAllowance, double defaultAllowance, String status
+ String id, String? dpId, String date, DeliveryPerson? dp, String? routeId, Map<String, dynamic>? route, String type, double amount, String? note, double defaultAllowance
 });
 
 
@@ -300,7 +302,7 @@ class __$LedgerTransactionCopyWithImpl<$Res>
 
 /// Create a copy of LedgerTransaction
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? dpId = freezed,Object? date = null,Object? dp = freezed,Object? routeId = freezed,Object? route = freezed,Object? givenAllowance = null,Object? defaultAllowance = null,Object? status = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? dpId = freezed,Object? date = null,Object? dp = freezed,Object? routeId = freezed,Object? route = freezed,Object? type = null,Object? amount = null,Object? note = freezed,Object? defaultAllowance = null,}) {
   return _then(_LedgerTransaction(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,dpId: freezed == dpId ? _self.dpId : dpId // ignore: cast_nullable_to_non_nullable
@@ -308,10 +310,11 @@ as String?,date: null == date ? _self.date : date // ignore: cast_nullable_to_no
 as String,dp: freezed == dp ? _self.dp : dp // ignore: cast_nullable_to_non_nullable
 as DeliveryPerson?,routeId: freezed == routeId ? _self.routeId : routeId // ignore: cast_nullable_to_non_nullable
 as String?,route: freezed == route ? _self._route : route // ignore: cast_nullable_to_non_nullable
-as Map<String, dynamic>?,givenAllowance: null == givenAllowance ? _self.givenAllowance : givenAllowance // ignore: cast_nullable_to_non_nullable
-as double,defaultAllowance: null == defaultAllowance ? _self.defaultAllowance : defaultAllowance // ignore: cast_nullable_to_non_nullable
-as double,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as String,
+as Map<String, dynamic>?,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
+as String,amount: null == amount ? _self.amount : amount // ignore: cast_nullable_to_non_nullable
+as double,note: freezed == note ? _self.note : note // ignore: cast_nullable_to_non_nullable
+as String?,defaultAllowance: null == defaultAllowance ? _self.defaultAllowance : defaultAllowance // ignore: cast_nullable_to_non_nullable
+as double,
   ));
 }
 

@@ -53,7 +53,7 @@ export const updateEmptyBottleLog = async (
   });
 
   if (existingLog) {
-    return await prisma.emptyBottleLog.update({
+    await prisma.emptyBottleLog.update({
       where: { id: existingLog.id },
       data: {
         dpId: allocation.dpId,
@@ -61,7 +61,7 @@ export const updateEmptyBottleLog = async (
       },
     });
   } else {
-    return await prisma.emptyBottleLog.create({
+    await prisma.emptyBottleLog.create({
       data: {
         routeId,
         dpId: allocation.dpId,
@@ -70,4 +70,12 @@ export const updateEmptyBottleLog = async (
       },
     });
   }
+
+  // Update RouteAllocation status based on deliveryCompleted
+  await prisma.routeAllocation.update({
+    where: { routeId_date: { routeId, date } },
+    data: { status: data.deliveryCompleted ? 'COMPLETED' : 'ASSIGNED' },
+  });
+
+  return { success: true };
 };

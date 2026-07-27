@@ -17,9 +17,26 @@ export const getDispatchSummary = async (req: Request, res: Response, next: Next
     // 1. Attendance Stats
     const totalDps = await prisma.deliveryPerson.count();
     const attendanceRecords = await prisma.attendanceRecord.findMany({ where: { date } });
-    const presentCount = attendanceRecords.filter(r => r.status === 'PRESENT').length;
-    const absentCount = attendanceRecords.filter(r => r.status === 'ABSENT').length;
-    const standbyCount = attendanceRecords.filter(r => r.status === 'STANDBY').length;
+    
+    // We need route allocations to compute standby dynamically
+    const allocationsForAttendance = await prisma.routeAllocation.findMany({ where: { date, status: { in: ['ASSIGNED', 'COMPLETED'] } } });
+    const assignedDpIds = new Set(allocationsForAttendance.map(a => a.dpId));
+
+    let presentCount = 0;
+    let absentCount = 0;
+    let standbyCount = 0;
+
+    for (const r of attendanceRecords) {
+      if (r.status === 'ABSENT') {
+        absentCount++;
+      } else if (r.status === 'PRESENT' || r.status === 'STANDBY') {
+        if (assignedDpIds.has(r.dpId)) {
+          presentCount++;
+        } else {
+          standbyCount++;
+        }
+      }
+    }
     const markedCount = attendanceRecords.length;
 
     // 2. Route Stats

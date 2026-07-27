@@ -13,14 +13,28 @@ export const getAttendanceForDate = async (date: string) => {
 
   const recordMap = new Map(records.map(r => [r.dpId, r]));
 
+  const allocations = await prisma.routeAllocation.findMany({
+    where: { date, status: { in: ['ASSIGNED', 'COMPLETED'] } }
+  });
+  const assignedDpIds = new Set(allocations.map(a => a.dpId));
+
   return dps.map(dp => {
     const record = recordMap.get(dp.id);
+    let status = record ? record.status : 'NOT_MARKED';
+
+    // Auto-calculate STANDBY if PRESENT but no route
+    if (status === 'PRESENT' && !assignedDpIds.has(dp.id)) {
+      status = 'STANDBY';
+    } else if (status === 'STANDBY' && assignedDpIds.has(dp.id)) {
+      status = 'PRESENT';
+    }
+
     return {
       dpId: dp.id,
       dpCode: dp.dpCode,
       name: dp.name,
       photoUrl: dp.photoUrl,
-      status: record ? record.status : 'NOT_MARKED',
+      status,
       recordId: record ? record.id : null,
       markedAt: record ? record.createdAt : null,
     };

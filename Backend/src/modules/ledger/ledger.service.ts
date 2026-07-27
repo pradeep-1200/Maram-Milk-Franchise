@@ -4,7 +4,7 @@ import { Prisma, LedgerTransactionType } from '@prisma/client';
 export const getLedger = async (dpId?: string, from?: string, to?: string, type?: string) => {
   const where: Prisma.RouteAllocationWhereInput = {
     petrolAllowanceGiven: { not: null },
-    status: 'ASSIGNED'
+    status: { in: ['ASSIGNED', 'COMPLETED'] }
   };
   
   if (dpId) where.dpId = dpId;

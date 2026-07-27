@@ -228,22 +228,28 @@ class InventoryScreen extends ConsumerWidget {
                 width: double.infinity,
                 child: AppButton(
                   text: 'Save Inventory',
-                  onPressed: canSave ? () async {
-                    try {
-                      await notifier.saveInventory();
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Inventory saved successfully!')),
-                        );
+                  onPressed: () async {
+                    if (canSave) {
+                      try {
+                        await notifier.saveInventory();
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Inventory saved successfully!')),
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Save failed: $e'), backgroundColor: Colors.red),
+                          );
+                        }
                       }
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Save failed: $e'), backgroundColor: Colors.red),
-                        );
-                      }
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Please provide reasons for shortages')),
+                      );
                     }
-                  } : null,
+                  },
                 ),
               ),
             ],

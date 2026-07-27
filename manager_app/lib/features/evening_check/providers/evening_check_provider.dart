@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/network/api_client.dart';
 import '../models/empty_bottle_status.dart';
+import '../../routes/providers/route_provider.dart';
 
 class EveningCheckState {
   final List<EmptyBottleStatus> statuses;
@@ -47,6 +48,10 @@ class EveningCheckNotifier extends AsyncNotifier<EveningCheckState> {
           'flagIssue': flagIssue,
         },
       );
+      
+      // Invalidate routeProvider to update Routes Assigned status
+      ref.invalidate(routeProvider);
+      
       return _fetchStatus(DateTime.now());
     });
   }

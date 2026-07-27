@@ -23,6 +23,7 @@ enum AttendanceStatus {
 enum RouteAllocationStatus {
   ASSIGNED
   UNASSIGNED
+  COMPLETED
 }
 
 enum LedgerTransactionType {

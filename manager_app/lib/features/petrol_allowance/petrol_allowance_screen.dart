@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../routes/providers/route_provider.dart';
 import '../attendance/providers/attendance_provider.dart';
 import '../routes/models/delivery_route.dart';
@@ -56,7 +57,7 @@ class PetrolAllowanceScreen extends ConsumerWidget {
           children: [
             const Text('Petrol Allowance', style: TextStyle(fontWeight: FontWeight.bold)),
             Text(
-              'Oct 24, 2023',
+              DateFormat('MMM dd, yyyy').format(DateTime.now()),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),

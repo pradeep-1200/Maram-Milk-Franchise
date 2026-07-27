@@ -290,31 +290,6 @@ class _RouteCard extends ConsumerWidget {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: AppConstants.spacing4),
-                            InkWell(
-                              onTap: () {
-                                final dpList = (ref.read(attendanceProvider).value?.persons ?? []);
-                                final dp = dpList.cast<DeliveryPerson?>().firstWhere(
-                                  (p) => p?.id == route.assignedDpId, 
-                                  orElse: () => null
-                                );
-                                if (dp != null) {
-                                  showModalBottomSheet(
-                                    context: context,
-                                    isScrollControlled: true,
-                                    useRootNavigator: true,
-                                    shape: const RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.vertical(top: Radius.circular(AppConstants.cardRadius)),
-                                    ),
-                                    builder: (ctx) => Padding(
-                                      padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-                                      child: PetrolAllowanceSheet(route: route, dp: dp),
-                                    ),
-                                  );
-                                }
-                              },
-                              child: Icon(Icons.edit, size: 14, color: theme.colorScheme.primary),
-                            ),
                           ],
                         );
                       },
@@ -569,16 +544,31 @@ class _AssignDpSheet extends ConsumerWidget {
             ),
             title: Text(currentlyAssignedDp.name, style: const TextStyle(fontWeight: FontWeight.bold)),
             subtitle: Text(currentlyAssignedDp.dpCode),
-            trailing: OutlinedButton(
-              onPressed: () => _showUnassignConfirm(context, ref),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.red,
-                side: const BorderSide(color: Colors.red),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                minimumSize: const Size(0, 36),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              child: const Text('Unassign'),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                OutlinedButton(
+                  onPressed: () => _assign(context, ref, currentlyAssignedDp!),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    minimumSize: const Size(0, 36),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text('Edit Allocation'),
+                ),
+                const SizedBox(width: AppConstants.spacing8),
+                OutlinedButton(
+                  onPressed: () => _showUnassignConfirm(context, ref),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    side: const BorderSide(color: Colors.red),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    minimumSize: const Size(0, 36),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text('Unassign'),
+                ),
+              ],
             ),
           ),
           const Divider(height: 1),

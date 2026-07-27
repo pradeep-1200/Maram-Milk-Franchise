@@ -13,7 +13,12 @@ class LedgerState {
 
   List<LedgerTransaction> get filteredTransactions {
     if (filterType == null || filterType == 'all') return transactions;
-    return transactions.where((t) => t.type == filterType).toList();
+    
+    final targetType = filterType == 'fully_paid' ? 'PETROL_ALLOWANCE' :
+                       filterType == 'short_paid' ? 'SHORTAGE' :
+                       filterType == 'extra_paid' ? 'EXTRA_PAID' : filterType;
+                       
+    return transactions.where((t) => t.type == targetType).toList();
   }
 
   LedgerState copyWith({

@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_constants.dart';
-import '../../shared/app_button.dart';
-import '../../shared/app_text_field.dart';
 import '../shell/providers/tab_history_provider.dart';
 import '../authentication/providers/auth_provider.dart';
 

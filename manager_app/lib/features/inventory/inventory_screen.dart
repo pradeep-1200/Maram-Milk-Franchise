@@ -378,12 +378,24 @@ class _InventoryRow extends StatelessWidget {
                                   ),
                               ],
                             ),
-                            Text(
-                              '${item.expectedQty}',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  '${item.expectedQty.toInt()}',
+                                  style: theme.textTheme.titleSmall?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                if (item.litresPerUnit > 0)
+                                  Text(
+                                    '${(item.expectedQty * item.litresPerUnit).toStringAsFixed(1)} L total',
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant.withAlpha(150),
+                                    ),
+                                  ),
+                              ],
                             ),
                           ],
                         ),
@@ -477,13 +489,25 @@ class _InventoryRow extends StatelessWidget {
                                   padding: EdgeInsets.zero,
                                   constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                                 ),
-                                SizedBox(
-                                  width: 32,
-                                  child: Text(
-                                    '$currentQty',
-                                    textAlign: TextAlign.center,
-                                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                                  ),
+                                Column(
+                                  children: [
+                                    SizedBox(
+                                      width: 40,
+                                      child: Text(
+                                        '${currentQty.toInt()}',
+                                        textAlign: TextAlign.center,
+                                        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    if (item.litresPerUnit > 0)
+                                      Text(
+                                        '${(currentQty * item.litresPerUnit).toStringAsFixed(1)} L',
+                                        style: theme.textTheme.labelSmall?.copyWith(
+                                          color: theme.colorScheme.onSurfaceVariant.withAlpha(150),
+                                          fontSize: 9,
+                                        ),
+                                      ),
+                                  ],
                                 ),
                                 IconButton(
                                   icon: const Icon(Icons.add_circle),

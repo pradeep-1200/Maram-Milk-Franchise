@@ -67,6 +67,7 @@ export const getInventoryForDate = async (date: string) => {
       currentStock: record.currentStock,
       carriedOverStock: record.carriedOverStock,
       newStockAdded: record.newStockAdded,
+      litres: item.litres,
     });
   }
 

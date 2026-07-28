@@ -1,5 +1,6 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'auth_interceptor.dart';
 import 'error_interceptor.dart';
@@ -21,7 +22,7 @@ final apiClientProvider = Provider<Dio>((ref) {
       responseHeader: true,
       responseBody: true,
       error: true,
-      logPrint: (obj) => print(obj),
+      logPrint: (obj) => debugPrint(obj.toString()),
     ),
     AuthInterceptor(ref),
     ErrorInterceptor(ref),

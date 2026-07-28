@@ -119,6 +119,10 @@ class AttendanceNotifier extends AsyncNotifier<AttendanceState> {
     if (state.value != null) {
       final updated = state.value!.persons.map((p) {
         if (p.dpId == dpId) {
+          // If marking present and currently standby, keep them as standby (optimistically)
+          if (newStatus == AttendanceStatus.present && p.status == AttendanceStatus.standby) {
+            return p;
+          }
           return p.copyWith(status: newStatus);
         }
         return p;
@@ -133,9 +137,14 @@ class AttendanceNotifier extends AsyncNotifier<AttendanceState> {
         data: {'status': statusString},
       );
       ref.invalidate(dispatchProvider);
+      
+      // Silently refresh to get the true backend-derived state (like Standby)
+      final updatedState = await _fetchAttendance();
+      state = AsyncValue.data(updatedState);
     } catch (e) {
       // Revert on failure by refetching
-      ref.invalidateSelf();
+      final revertedState = await _fetchAttendance();
+      state = AsyncValue.data(revertedState);
     }
   }
 

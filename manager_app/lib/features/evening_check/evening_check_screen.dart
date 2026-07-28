@@ -91,7 +91,6 @@ class _EveningCheckScreenState extends ConsumerState<EveningCheckScreen> {
           final total = allRoutes.length;
           final checked = allRoutes.where((r) => r.status == 'Delivered').length;
           final pendingCount = allRoutes.where((r) => r.status == 'Pending').length;
-          final unassignedCount = allRoutes.where((r) => r.status == 'Unassigned').length;
           final deliveredCount = allRoutes.where((r) => r.deliveryCompleted == true).length;
           final notDeliveredCount = allRoutes.where((r) => r.status == 'Delivered' && r.deliveryCompleted == false).length;
 

@@ -298,7 +298,7 @@ class _DetailRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final hasData = value != null && value!.isNotEmpty;
-    final displayValue = hasData || forceValue ? (value ?? '') : 'Not added';
+    final displayValue = hasData || forceValue ? (value ?? '') : 'N/A';
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),

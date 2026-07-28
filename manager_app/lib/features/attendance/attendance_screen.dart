@@ -7,7 +7,6 @@ import '../../shared/app_card.dart';
 import '../../shared/app_text_field.dart';
 import '../../shared/async_value_widget.dart';
 import '../../shared/dp_avatar.dart';
-import '../profile/providers/staff_provider.dart';
 import 'providers/attendance_provider.dart';
 import 'models/attendance_entry.dart';
 import 'models/delivery_person.dart' show AttendanceStatus;

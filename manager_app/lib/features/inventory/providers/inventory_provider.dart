@@ -12,6 +12,7 @@ class InventoryItemState {
   final double carryOverQty;
   final double newStockAdded;
   final double currentStock;
+  final double litresPerUnit;
   final String? reason;
 
   const InventoryItemState({
@@ -23,6 +24,7 @@ class InventoryItemState {
     this.carryOverQty = 0.0,
     this.newStockAdded = 0.0,
     this.currentStock = 0.0,
+    this.litresPerUnit = 0.0,
     this.reason,
   });
 
@@ -41,6 +43,7 @@ class InventoryItemState {
       carryOverQty: carryOverQty,
       newStockAdded: newStockAdded,
       currentStock: currentStock ?? this.currentStock,
+      litresPerUnit: litresPerUnit,
       reason: reason ?? this.reason,
     );
   }
@@ -55,6 +58,7 @@ class InventoryItemState {
       carryOverQty: (json['carriedOverStock'] as num?)?.toDouble() ?? 0.0,
       newStockAdded: (json['newStockAdded'] as num?)?.toDouble() ?? 0.0,
       currentStock: (json['currentStock'] as num?)?.toDouble() ?? 0.0,
+      litresPerUnit: (json['litres'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }

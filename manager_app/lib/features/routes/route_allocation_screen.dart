@@ -6,7 +6,6 @@ import '../../shared/app_card.dart';
 import '../../shared/app_button.dart';
 import 'providers/route_provider.dart';
 import 'models/delivery_route.dart';
-import '../../shared/async_value_widget.dart';
 import '../../shared/dp_avatar.dart';
 import '../attendance/providers/attendance_provider.dart';
 import '../attendance/models/delivery_person.dart';

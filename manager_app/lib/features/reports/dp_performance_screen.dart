@@ -126,6 +126,7 @@ class _DpPerformanceScreenState extends ConsumerState<DpPerformanceScreen> {
 
       final xfile = XFile(path);
       if (mounted) {
+        // ignore: deprecated_member_use
         await Share.shareXFiles([xfile], text: 'DP Performance Report');
       }
     } catch (e) {

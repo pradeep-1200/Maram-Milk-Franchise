@@ -66,13 +66,21 @@ dev_dependencies:
   freezed: ^3.2.3
   json_serializable: ^6.11.2
   flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.4.7
 
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/icon/app_icon.png"
-  adaptive_icon_background: "#ffffff"
-  adaptive_icon_foreground: "assets/icon/app_icon.png"
+  image_path: "assets/icon/app_icon_solid.png"
+  adaptive_icon_background: "#2a6c30"
+  adaptive_icon_foreground: "assets/icon/app_icon_transparent.png"
+
+flutter_native_splash:
+  color: "#F2F5F2"
+  image: "assets/icon/transparent_1x1.png"
+  android_12:
+    color: "#F2F5F2"
+    image: "assets/icon/transparent_1x1.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

@@ -113,7 +113,7 @@ class DispatchReadyScreen extends ConsumerWidget {
                         children: [
                           _ChecklistItem(
                             title: 'Attendance',
-                            subtitle: '${attMarked}/${attCount} Marked',
+                            subtitle: '$attMarked/$attCount Marked',
                             isComplete: attendanceComplete,
                             onTap: () => context.push('/dispatch/attendance'),
                           ),
@@ -127,7 +127,7 @@ class DispatchReadyScreen extends ConsumerWidget {
                           const Divider(),
                           _ChecklistItem(
                             title: 'Routes & Allocations',
-                            subtitle: '${routesAssigned}/${routesCount} Assigned',
+                            subtitle: '$routesAssigned/$routesCount Assigned',
                             isComplete: routesComplete,
                             onTap: () => context.push('/dispatch/routes'),
                           ),

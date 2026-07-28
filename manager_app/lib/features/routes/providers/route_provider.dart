@@ -66,10 +66,10 @@ class RouteNotifier extends AsyncNotifier<RouteState> {
         json['defaultLitres'] = (json['litresAllocated'] as num).toDouble();
       }
       json['deliveryCompleted'] = json['status'] == 'COMPLETED';
-      // Fallback for null fields coming from backend
       json['qty1LBottle'] = json['qty1LBottle'] ?? 0;
       json['qtyHalfLBottle'] = json['qtyHalfLBottle'] ?? 0;
       json['qtyHalfLPacket'] = json['qtyHalfLPacket'] ?? 0;
+      json['expectedEmptyBottles'] = json['expectedEmptyBottles'] ?? 0;
       return DeliveryRoute.fromJson(json);
     }).toList();
 

@@ -72,6 +72,7 @@ model DeliveryPerson {
   gpayNumber           String?
   upiId                String?
   bankAccountDetails   String?
+  petrolBalance        Float    @default(0)
   isActive             Boolean  @default(true)
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
@@ -169,6 +170,10 @@ model EmptyBottleLog {
   halfLPacketCollected  Int      @default(0)
   flagIssue             Boolean  @default(false)
   
+  reason                String?
+  brokenBottleCount     Int?
+  notes                 String?
+
   actualDelivered1L       Int?
   actualDeliveredHalfL    Int?
   actualDeliveredPacket   Int?

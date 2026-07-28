@@ -33,6 +33,10 @@ export const getEmptyBottleStatus = async (date: string) => {
     const carriedOverHalfL = previousLog?.outstandingHalfL ?? 0;
     const carriedOverPacket = previousLog?.outstandingPacket ?? 0;
 
+    const expectedEmptyBottles = carriedOver1L + carriedOverHalfL + 
+      (allocation?.qty1LBottle ?? 0) + 
+      (allocation?.qtyHalfLBottle ?? 0);
+
     return {
       routeId: route.id,
       routeName: route.name,
@@ -47,12 +51,16 @@ export const getEmptyBottleStatus = async (date: string) => {
       expected1LBottles: log?.expected1L ?? (carriedOver1L + (allocation?.qty1LBottle || 0)),
       expectedHalfLBottles: log?.expectedHalfL ?? (carriedOverHalfL + (allocation?.qtyHalfLBottle || 0)),
       expectedHalfLPacket: log?.expectedPacket ?? (carriedOverPacket + (allocation?.qtyHalfLPacket || 0)),
+      expectedEmptyBottles,
       
       actualDelivered1L: log?.actualDelivered1L ?? (allocation?.qty1LBottle || 0),
       actualDeliveredHalfL: log?.actualDeliveredHalfL ?? (allocation?.qtyHalfLBottle || 0),
       actualDeliveredPacket: log?.actualDeliveredPacket ?? (allocation?.qtyHalfLPacket || 0),
       
       flagIssue: log?.flagIssue || false,
+      reason: log?.reason || null,
+      brokenBottleCount: log?.brokenBottleCount || null,
+      notes: log?.notes || null,
       status: log?.deliveryCompleted ? 'Delivered' : (allocation ? 'Pending' : 'Unassigned'),
     };
   });
@@ -79,7 +87,10 @@ export const updateEmptyBottleLog = async (
     actualDelivered1L: number;
     actualDeliveredHalfL: number;
     actualDeliveredPacket: number;
-    flagIssue: boolean 
+    flagIssue: boolean;
+    reason?: string;
+    brokenBottleCount?: number;
+    notes?: string;
   }
 ) => {
   const allocation = await prisma.routeAllocation.findUnique({
@@ -96,10 +107,22 @@ export const updateEmptyBottleLog = async (
   const carriedOverHalfL = previousLog?.outstandingHalfL ?? 0;
   const carriedOverPacket = previousLog?.outstandingPacket ?? 0;
 
+  // Handle actual delivered logic for "Not Delivered" scenarios
+  let finalActualDelivered1L = data.actualDelivered1L;
+  let finalActualDeliveredHalfL = data.actualDeliveredHalfL;
+  let finalActualDeliveredPacket = data.actualDeliveredPacket;
+
+  if (!data.deliveryCompleted && data.reason !== 'Partial delivery completed') {
+    // If not delivered (full failure, broken, etc.) and NOT a partial delivery, zero out actual delivery.
+    finalActualDelivered1L = 0;
+    finalActualDeliveredHalfL = 0;
+    finalActualDeliveredPacket = 0;
+  }
+
   // Calculate expected
-  const expected1L = carriedOver1L + data.actualDelivered1L;
-  const expectedHalfL = carriedOverHalfL + data.actualDeliveredHalfL;
-  const expectedPacket = carriedOverPacket + data.actualDeliveredPacket;
+  const expected1L = carriedOver1L + finalActualDelivered1L;
+  const expectedHalfL = carriedOverHalfL + finalActualDeliveredHalfL;
+  const expectedPacket = carriedOverPacket + finalActualDeliveredPacket;
 
   // Calculate outstanding
   const outstanding1L = expected1L - data.oneLBottlesCollected;
@@ -120,9 +143,12 @@ export const updateEmptyBottleLog = async (
         halfLBottlesCollected: data.halfLBottlesCollected,
         halfLPacketCollected: data.halfLPacketCollected,
         flagIssue: data.flagIssue,
-        actualDelivered1L: data.actualDelivered1L,
-        actualDeliveredHalfL: data.actualDeliveredHalfL,
-        actualDeliveredPacket: data.actualDeliveredPacket,
+        reason: data.reason,
+        brokenBottleCount: data.brokenBottleCount,
+        notes: data.notes,
+        actualDelivered1L: finalActualDelivered1L,
+        actualDeliveredHalfL: finalActualDeliveredHalfL,
+        actualDeliveredPacket: finalActualDeliveredPacket,
         carriedOver1L,
         carriedOverHalfL,
         carriedOverPacket,
@@ -145,9 +171,12 @@ export const updateEmptyBottleLog = async (
         halfLBottlesCollected: data.halfLBottlesCollected,
         halfLPacketCollected: data.halfLPacketCollected,
         flagIssue: data.flagIssue,
-        actualDelivered1L: data.actualDelivered1L,
-        actualDeliveredHalfL: data.actualDeliveredHalfL,
-        actualDeliveredPacket: data.actualDeliveredPacket,
+        reason: data.reason,
+        brokenBottleCount: data.brokenBottleCount,
+        notes: data.notes,
+        actualDelivered1L: finalActualDelivered1L,
+        actualDeliveredHalfL: finalActualDeliveredHalfL,
+        actualDeliveredPacket: finalActualDeliveredPacket,
         carriedOver1L,
         carriedOverHalfL,
         carriedOverPacket,

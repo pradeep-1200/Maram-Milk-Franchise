@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../core/constants/app_constants.dart';
-import '../../shared/app_button.dart';
 import '../../shared/app_card.dart';
 import '../../shared/async_value_widget.dart';
 import '../../shared/dp_avatar.dart';
@@ -21,6 +20,14 @@ class EveningCheckScreen extends ConsumerStatefulWidget {
 
 class _EveningCheckScreenState extends ConsumerState<EveningCheckScreen> {
   EveningCheckFilter _filter = EveningCheckFilter.all;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   void _showCheckSheet(BuildContext context, EmptyBottleStatus route) {
     showModalBottomSheet(
@@ -95,6 +102,9 @@ class _EveningCheckScreenState extends ConsumerState<EveningCheckScreen> {
           final notDeliveredCount = allRoutes.where((r) => r.status == 'Delivered' && r.deliveryCompleted == false).length;
 
           final filteredRoutes = allRoutes.where((route) {
+            final matchesSearch = _searchQuery.isEmpty || route.routeName.toLowerCase().contains(_searchQuery.toLowerCase());
+            if (!matchesSearch) return false;
+            
             switch (_filter) {
               case EveningCheckFilter.all:
                 return true;
@@ -140,6 +150,23 @@ class _EveningCheckScreenState extends ConsumerState<EveningCheckScreen> {
                   ),
                 ),
               
+              const SizedBox(height: AppConstants.spacing8),
+              
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppConstants.spacing16),
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search by route name...',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                  ),
+                  onChanged: (value) => setState(() => _searchQuery = value),
+                ),
+              ),
               const SizedBox(height: AppConstants.spacing8),
               
               SingleChildScrollView(
@@ -198,7 +225,7 @@ class _EveningCheckScreenState extends ConsumerState<EveningCheckScreen> {
                         separatorBuilder: (_, __) => const SizedBox(height: AppConstants.spacing8),
                         itemBuilder: (context, index) {
                           final route = filteredRoutes[index];
-                          return _DpRouteCard(
+                          return _RouteDpCard(
                             route: route,
                             onTap: () => _showCheckSheet(context, route),
                           );
@@ -242,11 +269,11 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
-class _DpRouteCard extends StatelessWidget {
+class _RouteDpCard extends StatelessWidget {
   final EmptyBottleStatus route;
   final VoidCallback onTap;
 
-  const _DpRouteCard({
+  const _RouteDpCard({
     required this.route,
     required this.onTap,
   });
@@ -294,10 +321,17 @@ class _DpRouteCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    route.dpName ?? 'Unassigned',
+                    route.routeName,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: isUnassigned ? Colors.grey : null,
+                      color: isUnassigned ? Colors.grey : theme.colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    route.dpName ?? 'Unassigned',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: isUnassigned ? Colors.grey : theme.colorScheme.onSurface,
                     ),
                   ),
                   if (route.dpId != null)
@@ -305,14 +339,6 @@ class _DpRouteCard extends StatelessWidget {
                       'ID: ${route.dpId}',
                       style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                     ),
-                  const SizedBox(height: 4),
-                  Text(
-                    route.routeName,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: isUnassigned ? Colors.grey : theme.colorScheme.primary,
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -357,6 +383,19 @@ class _EveningCheckSheetState extends ConsumerState<_EveningCheckSheet> {
   late int _bottlesHalfL;
   late bool _flagNoReturn;
 
+  String? _reason;
+  late int _brokenBottleCount;
+  late int _actualDelivered1L;
+  late int _actualDeliveredHalfL;
+  late int _actualDeliveredPacket;
+  late final TextEditingController _ctrl1L;
+  late final TextEditingController _ctrlHalfL;
+  late final TextEditingController _ctrlBroken;
+  late final TextEditingController _ctrlActual1L;
+  late final TextEditingController _ctrlActualHalfL;
+  late final TextEditingController _ctrlActualPacket;
+  late final TextEditingController _ctrlNotes;
+
   @override
   void initState() {
     super.initState();
@@ -366,12 +405,52 @@ class _EveningCheckSheetState extends ConsumerState<_EveningCheckSheet> {
     _bottles1L = widget.route.oneLBottlesCollected;
     _bottlesHalfL = widget.route.halfLBottlesCollected;
     _flagNoReturn = widget.route.flagIssue;
+    
+    _reason = widget.route.reason;
+    _brokenBottleCount = widget.route.brokenBottleCount ?? 0;
+    _actualDelivered1L = widget.route.actualDelivered1L;
+    _actualDeliveredHalfL = widget.route.actualDeliveredHalfL;
+    _actualDeliveredPacket = widget.route.actualDeliveredPacket;
+    
+    _ctrl1L = TextEditingController(text: _bottles1L.toString());
+    _ctrlHalfL = TextEditingController(text: _bottlesHalfL.toString());
+    _ctrlBroken = TextEditingController(text: _brokenBottleCount.toString());
+    _ctrlActual1L = TextEditingController(text: _actualDelivered1L.toString());
+    _ctrlActualHalfL = TextEditingController(text: _actualDeliveredHalfL.toString());
+    _ctrlActualPacket = TextEditingController(text: _actualDeliveredPacket.toString());
+    _ctrlNotes = TextEditingController(text: widget.route.notes ?? '');
+  }
+
+  @override
+  void dispose() {
+    _ctrl1L.dispose();
+    _ctrlHalfL.dispose();
+    _ctrlBroken.dispose();
+    _ctrlActual1L.dispose();
+    _ctrlActualHalfL.dispose();
+    _ctrlActualPacket.dispose();
+    _ctrlNotes.dispose();
+    super.dispose();
   }
 
   void _handleSave() {
     if (_didCompleteDelivery == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select Yes or No')),
+      );
+      return;
+    }
+    
+    if (_didCompleteDelivery == false && _reason == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a reason')),
+      );
+      return;
+    }
+    
+    if (_didCompleteDelivery == false && _reason == 'Other' && _ctrlNotes.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Notes are required for "Other" reason')),
       );
       return;
     }
@@ -382,10 +461,13 @@ class _EveningCheckSheetState extends ConsumerState<_EveningCheckSheet> {
       oneLBottlesCollected: _bottles1L,
       halfLBottlesCollected: _bottlesHalfL,
       halfLPacketCollected: widget.route.halfLPacketCollected,
-      actualDelivered1L: widget.route.actualDelivered1L,
-      actualDeliveredHalfL: widget.route.actualDeliveredHalfL,
-      actualDeliveredPacket: widget.route.actualDeliveredPacket,
+      actualDelivered1L: _actualDelivered1L,
+      actualDeliveredHalfL: _actualDeliveredHalfL,
+      actualDeliveredPacket: _actualDeliveredPacket,
       flagIssue: _flagNoReturn,
+      reason: _didCompleteDelivery == false ? _reason : null,
+      brokenBottleCount: (_didCompleteDelivery == false && _reason == 'Bottles broken') ? _brokenBottleCount : null,
+      notes: (_didCompleteDelivery == false && ['Bottles broken', 'Other'].contains(_reason)) ? _ctrlNotes.text.trim() : null,
     );
 
     context.pop();
@@ -394,40 +476,91 @@ class _EveningCheckSheetState extends ConsumerState<_EveningCheckSheet> {
   Widget _buildCounter(
     String label,
     int value,
+    TextEditingController ctrl,
     ValueChanged<int> onChanged,
     ThemeData theme,
   ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
+        Expanded(
+          child: Text(
+            label,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
         Row(
           children: [
             IconButton(
-              onPressed: value > 0 ? () => onChanged(value - 1) : null,
+              onPressed: value > 0
+                  ? () {
+                      final newVal = value - 1;
+                      onChanged(newVal);
+                      ctrl.text = newVal.toString();
+                    }
+                  : null,
               icon: const Icon(Icons.remove_circle_outline),
               color: theme.colorScheme.primary,
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                border: Border.all(color: theme.colorScheme.outlineVariant),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                value.toString(),
+            // Editable text field replaces the static Container+Text display
+            SizedBox(
+              width: 64,
+              child: TextField(
+                controller: ctrl,
+                keyboardType: TextInputType.number,
+                textAlign: TextAlign.center,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
+                decoration: InputDecoration(
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: theme.colorScheme.outlineVariant),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: theme.colorScheme.outlineVariant),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
+                  ),
+                ),
+                onChanged: (raw) {
+                  final parsed = int.tryParse(raw);
+                  if (parsed != null && parsed >= 0) {
+                    onChanged(parsed);
+                  }
+                },
+                onEditingComplete: () {
+                  final parsed = int.tryParse(ctrl.text);
+                  if (parsed == null || parsed < 0) {
+                    // Reset to last valid value
+                    ctrl.text = value.toString();
+                  } else {
+                    ctrl.text = value.toString();
+                  }
+                  FocusScope.of(context).unfocus();
+                },
+                onSubmitted: (_) {
+                  final parsed = int.tryParse(ctrl.text);
+                  if (parsed == null || parsed < 0) {
+                    ctrl.text = value.toString();
+                  }
+                  FocusScope.of(context).unfocus();
+                },
               ),
             ),
             IconButton(
-              onPressed: () => onChanged(value + 1),
+              onPressed: () {
+                final newVal = value + 1;
+                onChanged(newVal);
+                ctrl.text = newVal.toString();
+              },
               icon: const Icon(Icons.add_circle_outline),
               color: theme.colorScheme.primary,
             ),
@@ -521,22 +654,48 @@ class _EveningCheckSheetState extends ConsumerState<_EveningCheckSheet> {
                   const Divider(),
                   const SizedBox(height: AppConstants.spacing16),
                   
-                  Text(
-                    'Empty Bottles Returned',
-                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Empty Bottles Returned',
+                        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: (widget.route.expectedEmptyBottles - (_bottles1L + _bottlesHalfL)) > 0 
+                            ? Colors.orange.withValues(alpha: 0.2) 
+                            : Colors.green.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'Expected: ${widget.route.expectedEmptyBottles} | Remaining: ${widget.route.expectedEmptyBottles - (_bottles1L + _bottlesHalfL)}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: (widget.route.expectedEmptyBottles - (_bottles1L + _bottlesHalfL)) > 0 
+                              ? Colors.orange[800] 
+                              : Colors.green[800],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: AppConstants.spacing16),
 
                   _buildCounter(
-                    '1L Bottles',
+                    'Actual 1L Collected',
                     _bottles1L,
+                    _ctrl1L,
                     (v) => setState(() => _bottles1L = v),
                     theme,
                   ),
                   const SizedBox(height: AppConstants.spacing16),
                   _buildCounter(
-                    '500ml Bottles',
+                    'Actual Half L Collected',
                     _bottlesHalfL,
+                    _ctrlHalfL,
                     (v) => setState(() => _bottlesHalfL = v),
                     theme,
                   ),
@@ -556,6 +715,93 @@ class _EveningCheckSheetState extends ConsumerState<_EveningCheckSheet> {
                   ),
                 ],
                 
+                if (_didCompleteDelivery == false) ...[
+                  const SizedBox(height: AppConstants.spacing24),
+                  const Divider(),
+                  const SizedBox(height: AppConstants.spacing16),
+                  
+                  Text(
+                    'Reason for non-delivery',
+                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: AppConstants.spacing8),
+                  
+                  DropdownButtonFormField<String>(
+                    value: _reason,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'Bottles broken', child: Text('Bottles broken')),
+                      DropdownMenuItem(value: 'Full delivery not completed', child: Text('Full delivery not completed')),
+                      DropdownMenuItem(value: 'Partial delivery completed', child: Text('Partial delivery completed')),
+                      DropdownMenuItem(value: 'Other', child: Text('Other')),
+                    ],
+                    onChanged: (val) {
+                      setState(() {
+                        _reason = val;
+                      });
+                    },
+                  ),
+                  
+                  if (_reason == 'Bottles broken') ...[
+                    const SizedBox(height: AppConstants.spacing16),
+                    _buildCounter(
+                      'Broken Bottle Count',
+                      _brokenBottleCount,
+                      _ctrlBroken,
+                      (v) => setState(() => _brokenBottleCount = v),
+                      theme,
+                    ),
+                  ],
+                  
+                  if (_reason == 'Partial delivery completed') ...[
+                    const SizedBox(height: AppConstants.spacing16),
+                    Text(
+                      'Actually Delivered',
+                      style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: AppConstants.spacing8),
+                    _buildCounter(
+                      '1L Bottles Delivered',
+                      _actualDelivered1L,
+                      _ctrlActual1L,
+                      (v) => setState(() => _actualDelivered1L = v),
+                      theme,
+                    ),
+                    const SizedBox(height: AppConstants.spacing16),
+                    _buildCounter(
+                      'Half L Bottles Delivered',
+                      _actualDeliveredHalfL,
+                      _ctrlActualHalfL,
+                      (v) => setState(() => _actualDeliveredHalfL = v),
+                      theme,
+                    ),
+                    const SizedBox(height: AppConstants.spacing16),
+                    _buildCounter(
+                      'Half L Packets Delivered',
+                      _actualDeliveredPacket,
+                      _ctrlActualPacket,
+                      (v) => setState(() => _actualDeliveredPacket = v),
+                      theme,
+                    ),
+                  ],
+                  
+                  if (['Bottles broken', 'Other'].contains(_reason)) ...[
+                    const SizedBox(height: AppConstants.spacing16),
+                    TextField(
+                      controller: _ctrlNotes,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        labelText: 'Notes',
+                        hintText: 'Enter details here...',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ],
+                ],
+                
                 const SizedBox(height: AppConstants.spacing32),
               ],
             ),
@@ -565,9 +811,15 @@ class _EveningCheckSheetState extends ConsumerState<_EveningCheckSheet> {
             padding: const EdgeInsets.all(AppConstants.spacing16),
             child: SizedBox(
               width: double.infinity,
-              child: AppButton(
-                text: 'Save Report',
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.colorScheme.primary,
+                  foregroundColor: theme.colorScheme.onPrimary,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.cardRadius)),
+                ),
                 onPressed: _handleSave,
+                child: const Text('Save Report', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ),
           ),

@@ -46,6 +46,8 @@ abstract class DeliveryPerson with _$DeliveryPerson {
     String? gpayNumber,
     String? upiId,
     String? bankAccountDetails,
+    @Default(0.0) double petrolBalance,
+    @Default(true) bool isActive,
     
     // Placeholder URLs
     String? photoUrl,

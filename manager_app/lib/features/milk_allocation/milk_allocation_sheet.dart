@@ -101,6 +101,8 @@ class MilkAllocationSheet extends ConsumerWidget {
                 quantity: routeAllocation.qty1LBottle,
                 onDecrement: () => notifier.update1LBottle(route.id, -1),
                 onIncrement: () => notifier.update1LBottle(route.id, 1, maxLimit: max1L),
+                onSetValue: (v) => notifier.set1LBottle(route.id, v, maxLimit: max1L),
+                maxLimit: max1L,
               ),
               _ProductRow(
                 icon: Icons.local_drink,
@@ -109,6 +111,8 @@ class MilkAllocationSheet extends ConsumerWidget {
                 quantity: routeAllocation.qtyHalfLBottle,
                 onDecrement: () => notifier.updateHalfLBottle(route.id, -1),
                 onIncrement: () => notifier.updateHalfLBottle(route.id, 1, maxLimit: maxHalfL),
+                onSetValue: (v) => notifier.setHalfLBottle(route.id, v, maxLimit: maxHalfL),
+                maxLimit: maxHalfL,
               ),
               _ProductRow(
                 icon: Icons.shopping_bag,
@@ -117,6 +121,8 @@ class MilkAllocationSheet extends ConsumerWidget {
                 quantity: routeAllocation.qtyHalfLPacket,
                 onDecrement: () => notifier.updateHalfLPacket(route.id, -1),
                 onIncrement: () => notifier.updateHalfLPacket(route.id, 1, maxLimit: maxHalfLPacket),
+                onSetValue: (v) => notifier.setHalfLPacket(route.id, v, maxLimit: maxHalfLPacket),
+                maxLimit: maxHalfLPacket,
               ),
             ],
           ),
@@ -238,13 +244,16 @@ class MilkAllocationSheet extends ConsumerWidget {
   }
 }
 
-class _ProductRow extends StatelessWidget {
+class _ProductRow extends StatefulWidget {
   final IconData icon;
   final String title;
   final String subtitle;
   final int quantity;
   final VoidCallback onDecrement;
   final VoidCallback onIncrement;
+  /// Called when the user types a value directly; same max-limit clamping applies.
+  final ValueChanged<int>? onSetValue;
+  final int? maxLimit;
 
   const _ProductRow({
     required this.icon,
@@ -253,7 +262,61 @@ class _ProductRow extends StatelessWidget {
     required this.quantity,
     required this.onDecrement,
     required this.onIncrement,
+    this.onSetValue,
+    this.maxLimit,
   });
+
+  @override
+  State<_ProductRow> createState() => _ProductRowState();
+}
+
+class _ProductRowState extends State<_ProductRow> {
+  late final TextEditingController _controller;
+  // Track whether the field is being edited so we don't override mid-type.
+  bool _isEditing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.quantity.toString());
+  }
+
+  @override
+  void didUpdateWidget(_ProductRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Sync external quantity changes (e.g. from +/- taps) unless user is mid-edit.
+    if (!_isEditing && oldWidget.quantity != widget.quantity) {
+      _controller.text = widget.quantity.toString();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onTextChanged(String raw) {
+    final parsed = int.tryParse(raw);
+    if (parsed == null || parsed < 0) return; // wait for valid input
+    final clamped = widget.maxLimit != null && parsed > widget.maxLimit!
+        ? widget.maxLimit!
+        : parsed;
+    widget.onSetValue?.call(clamped);
+  }
+
+  void _onEditingComplete() {
+    _isEditing = false;
+    final parsed = int.tryParse(_controller.text);
+    if (parsed == null || parsed < 0) {
+      // Reset to current valid quantity
+      _controller.text = widget.quantity.toString();
+    } else {
+      // Ensure display matches (may have been clamped by onSetValue)
+      _controller.text = widget.quantity.toString();
+    }
+    FocusScope.of(context).unfocus();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -272,7 +335,7 @@ class _ProductRow extends StatelessWidget {
               color: theme.colorScheme.primaryContainer,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, color: theme.colorScheme.onPrimaryContainer),
+            child: Icon(widget.icon, color: theme.colorScheme.onPrimaryContainer),
           ),
           const SizedBox(width: AppConstants.spacing16),
           Expanded(
@@ -280,11 +343,11 @@ class _ProductRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  widget.title,
                   style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  subtitle,
+                  widget.subtitle,
                   style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
               ],
@@ -295,21 +358,51 @@ class _ProductRow extends StatelessWidget {
             children: [
               IconButton(
                 icon: const Icon(Icons.remove_circle_outline),
-                color: quantity > 0 ? theme.colorScheme.primary : theme.disabledColor,
-                onPressed: quantity > 0 ? onDecrement : null,
+                color: widget.quantity > 0 ? theme.colorScheme.primary : theme.disabledColor,
+                onPressed: widget.quantity > 0
+                    ? () {
+                        widget.onDecrement();
+                        // Controller will sync via didUpdateWidget
+                      }
+                    : null,
               ),
+              // Editable quantity field — replaces the static Text display
               SizedBox(
-                width: 32,
-                child: Text(
-                  quantity.toString(),
+                width: 56,
+                child: TextField(
+                  controller: _controller,
+                  keyboardType: TextInputType.number,
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  decoration: InputDecoration(
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: BorderSide(color: theme.colorScheme.outlineVariant),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: BorderSide(color: theme.colorScheme.outlineVariant),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
+                    ),
+                  ),
+                  onTap: () => setState(() => _isEditing = true),
+                  onChanged: _onTextChanged,
+                  onEditingComplete: _onEditingComplete,
+                  onSubmitted: (_) => _onEditingComplete(),
                 ),
               ),
               IconButton(
                 icon: const Icon(Icons.add_circle),
                 color: theme.colorScheme.primary,
-                onPressed: onIncrement,
+                onPressed: () {
+                  widget.onIncrement();
+                  // Controller will sync via didUpdateWidget
+                },
               ),
             ],
           ),

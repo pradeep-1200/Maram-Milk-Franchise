@@ -6,31 +6,34 @@ part of 'delivery_route.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_DeliveryRoute _$DeliveryRouteFromJson(Map<String, dynamic> json) =>
-    _DeliveryRoute(
-      id: json['routeId'] as String,
-      name: json['routeName'] as String,
-      area: json['zone'] as String,
-      customerCount: (json['customerCount'] as num).toInt(),
-      milkQuantity: (json['defaultLitres'] as num).toDouble(),
-      assignedDpId: json['assignedDpId'] as String?,
-      assignedDpName: json['assignedDpName'] as String?,
-      assignedDpPhotoUrl: json['assignedDpPhotoUrl'] as String?,
-      allocationId: json['allocationId'] as String?,
-      qty1LBottle: (json['qty1LBottle'] as num?)?.toInt() ?? 0,
-      qtyHalfLBottle: (json['qtyHalfLBottle'] as num?)?.toInt() ?? 0,
-      qtyHalfLPacket: (json['qtyHalfLPacket'] as num?)?.toInt() ?? 0,
-      fixedPetrolAllowance:
-          (json['fixedPetrolAllowance'] as num?)?.toInt() ?? 80,
-      isPetrolAllowanceComplete:
-          json['isPetrolAllowanceComplete'] as bool? ?? false,
-      petrolAllowanceGiven: (json['petrolAllowanceGiven'] as num?)?.toInt(),
-      deliveryCompleted: json['deliveryCompleted'] as bool?,
-      emptyBottles1L: (json['emptyBottles1L'] as num?)?.toInt(),
-      emptyBottlesHalfL: (json['emptyBottlesHalfL'] as num?)?.toInt(),
-      hasBottleReturnFlag: json['hasBottleReturnFlag'] as bool? ?? false,
-      bottleReturnNote: json['bottleReturnNote'] as String?,
-    );
+_DeliveryRoute _$DeliveryRouteFromJson(
+  Map<String, dynamic> json,
+) => _DeliveryRoute(
+  id: json['routeId'] as String,
+  name: json['routeName'] as String,
+  area: json['zone'] as String,
+  customerCount: (json['customerCount'] as num).toInt(),
+  milkQuantity: (json['defaultLitres'] as num).toDouble(),
+  assignedDpId: json['assignedDpId'] as String?,
+  assignedDpName: json['assignedDpName'] as String?,
+  assignedDpPhotoUrl: json['assignedDpPhotoUrl'] as String?,
+  assignedDpPetrolBalance:
+      (json['assignedDpPetrolBalance'] as num?)?.toDouble() ?? 0.0,
+  allocationId: json['allocationId'] as String?,
+  qty1LBottle: (json['qty1LBottle'] as num?)?.toInt() ?? 0,
+  qtyHalfLBottle: (json['qtyHalfLBottle'] as num?)?.toInt() ?? 0,
+  qtyHalfLPacket: (json['qtyHalfLPacket'] as num?)?.toInt() ?? 0,
+  expectedEmptyBottles: (json['expectedEmptyBottles'] as num?)?.toInt() ?? 0,
+  fixedPetrolAllowance: (json['fixedPetrolAllowance'] as num?)?.toInt() ?? 80,
+  isPetrolAllowanceComplete:
+      json['isPetrolAllowanceComplete'] as bool? ?? false,
+  petrolAllowanceGiven: (json['petrolAllowanceGiven'] as num?)?.toInt(),
+  deliveryCompleted: json['deliveryCompleted'] as bool?,
+  emptyBottles1L: (json['emptyBottles1L'] as num?)?.toInt(),
+  emptyBottlesHalfL: (json['emptyBottlesHalfL'] as num?)?.toInt(),
+  hasBottleReturnFlag: json['hasBottleReturnFlag'] as bool? ?? false,
+  bottleReturnNote: json['bottleReturnNote'] as String?,
+);
 
 Map<String, dynamic> _$DeliveryRouteToJson(_DeliveryRoute instance) =>
     <String, dynamic>{
@@ -42,10 +45,12 @@ Map<String, dynamic> _$DeliveryRouteToJson(_DeliveryRoute instance) =>
       'assignedDpId': instance.assignedDpId,
       'assignedDpName': instance.assignedDpName,
       'assignedDpPhotoUrl': instance.assignedDpPhotoUrl,
+      'assignedDpPetrolBalance': instance.assignedDpPetrolBalance,
       'allocationId': instance.allocationId,
       'qty1LBottle': instance.qty1LBottle,
       'qtyHalfLBottle': instance.qtyHalfLBottle,
       'qtyHalfLPacket': instance.qtyHalfLPacket,
+      'expectedEmptyBottles': instance.expectedEmptyBottles,
       'fixedPetrolAllowance': instance.fixedPetrolAllowance,
       'isPetrolAllowanceComplete': instance.isPetrolAllowanceComplete,
       'petrolAllowanceGiven': instance.petrolAllowanceGiven,

@@ -36,9 +36,10 @@ class _PetrolAllowanceSheetState extends ConsumerState<PetrolAllowanceSheet> {
     _amountController = TextEditingController();
     _amountFocusNode = FocusNode();
     _amountFocusNode.addListener(_onFocusChange);
-    // Initialize state with fixed allowance
+    // Initialize state with the actual given amount if editing, or fallback to fixed allowance
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(petrolAllowanceProvider.notifier).init(widget.route.fixedPetrolAllowance);
+      final initialAmount = widget.route.petrolAllowanceGiven ?? widget.route.fixedPetrolAllowance;
+      ref.read(petrolAllowanceProvider.notifier).init(initialAmount);
     });
   }
 

@@ -236,9 +236,14 @@ class StaffProfileScreen extends ConsumerWidget {
                 title: 'Payment Details',
                 icon: Icons.account_balance_wallet,
                 children: [
-                  _DetailRow(label: 'GPAY Number', value: dp.gpayNumber),
-                  _DetailRow(label: 'UPI ID', value: dp.upiId),
+                  _DetailRow(label: 'GPAY Number', value: dp.gpayNumber, warningIfEmpty: true),
+                  _DetailRow(label: 'UPI ID', value: dp.upiId, warningIfEmpty: true),
                   _DetailRow(label: 'Bank Account Details', value: dp.bankAccountDetails),
+                  _DetailRow(
+                    label: 'Cumulative PA Balance', 
+                    value: dp.petrolBalance == 0 ? '₹0' : (dp.petrolBalance > 0 ? 'Extra ₹${dp.petrolBalance.abs().toStringAsFixed(0)}' : 'Short ₹${dp.petrolBalance.abs().toStringAsFixed(0)}'), 
+                    forceValue: true
+                  ),
                 ],
               ),
             ],
@@ -287,18 +292,20 @@ class _DetailRow extends StatelessWidget {
   final String label;
   final String? value;
   final bool forceValue;
+  final bool warningIfEmpty;
 
   const _DetailRow({
     required this.label,
     this.value,
     this.forceValue = false,
+    this.warningIfEmpty = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final hasData = value != null && value!.isNotEmpty;
-    final displayValue = hasData || forceValue ? (value ?? '') : 'N/A';
+    final displayValue = hasData || forceValue ? (value ?? '') : (warningIfEmpty ? 'Not Provided ⚠️' : 'N/A');
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
@@ -310,7 +317,10 @@ class _DetailRow extends StatelessWidget {
           Text(
             displayValue, 
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: hasData || forceValue ? theme.colorScheme.onSurface : theme.colorScheme.onSurfaceVariant.withAlpha(150),
+              color: hasData || forceValue 
+                  ? theme.colorScheme.onSurface 
+                  : (warningIfEmpty ? Colors.orange[800] : theme.colorScheme.onSurfaceVariant.withAlpha(150)),
+              fontWeight: (!hasData && warningIfEmpty) ? FontWeight.bold : FontWeight.normal,
               fontStyle: hasData || forceValue ? FontStyle.normal : FontStyle.italic,
             ),
           ),

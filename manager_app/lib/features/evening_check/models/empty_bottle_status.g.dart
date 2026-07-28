@@ -24,6 +24,10 @@ _EmptyBottleStatus _$EmptyBottleStatusFromJson(
   actualDeliveredHalfL: (json['actualDeliveredHalfL'] as num?)?.toInt() ?? 0,
   actualDeliveredPacket: (json['actualDeliveredPacket'] as num?)?.toInt() ?? 0,
   flagIssue: json['flagIssue'] as bool? ?? false,
+  reason: json['reason'] as String?,
+  brokenBottleCount: (json['brokenBottleCount'] as num?)?.toInt(),
+  notes: json['notes'] as String?,
+  expectedEmptyBottles: (json['expectedEmptyBottles'] as num?)?.toInt() ?? 0,
   status: json['status'] as String,
 );
 
@@ -44,5 +48,9 @@ Map<String, dynamic> _$EmptyBottleStatusToJson(_EmptyBottleStatus instance) =>
       'actualDeliveredHalfL': instance.actualDeliveredHalfL,
       'actualDeliveredPacket': instance.actualDeliveredPacket,
       'flagIssue': instance.flagIssue,
+      'reason': instance.reason,
+      'brokenBottleCount': instance.brokenBottleCount,
+      'notes': instance.notes,
+      'expectedEmptyBottles': instance.expectedEmptyBottles,
       'status': instance.status,
     };

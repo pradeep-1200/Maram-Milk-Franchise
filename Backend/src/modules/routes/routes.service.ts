@@ -12,10 +12,27 @@ export const getRoutesWithAllocation = async (date: string) => {
     include: { dp: true },
   });
 
+  const previousLogs = await prisma.emptyBottleLog.findMany({
+    where: { date: { lt: date } },
+    orderBy: { date: 'desc' },
+    distinct: ['routeId'],
+  });
+
   const allocationMap = new Map(allocations.map(a => [a.routeId, a]));
+  const previousLogMap = new Map(previousLogs.map(l => [l.routeId, l]));
 
   return routes.map(route => {
     const allocation = allocationMap.get(route.id);
+    const previousLog = previousLogMap.get(route.id);
+    
+    const carriedOver1L = previousLog?.outstanding1L ?? 0;
+    const carriedOverHalfL = previousLog?.outstandingHalfL ?? 0;
+    
+    // Total expected excluding packets
+    const expectedEmptyBottles = carriedOver1L + carriedOverHalfL + 
+      (allocation?.qty1LBottle ?? 0) + 
+      (allocation?.qtyHalfLBottle ?? 0);
+
     return {
       routeId: route.id,
       routeName: route.name,
@@ -27,10 +44,12 @@ export const getRoutesWithAllocation = async (date: string) => {
       assignedDpId: (allocation && (allocation.status === 'ASSIGNED' || allocation.status === 'COMPLETED')) ? allocation.dpId : null,
       assignedDpName: (allocation?.dp && (allocation.status === 'ASSIGNED' || allocation.status === 'COMPLETED')) ? allocation.dp.name : null,
       assignedDpPhotoUrl: (allocation?.dp && (allocation.status === 'ASSIGNED' || allocation.status === 'COMPLETED')) ? allocation.dp.photoUrl : null,
+      assignedDpPetrolBalance: (allocation?.dp && (allocation.status === 'ASSIGNED' || allocation.status === 'COMPLETED')) ? allocation.dp.petrolBalance : 0,
       litresAllocated: allocation ? allocation.litresAllocated : 0,
       qty1LBottle: allocation ? allocation.qty1LBottle : 0,
       qtyHalfLBottle: allocation ? allocation.qtyHalfLBottle : 0,
       qtyHalfLPacket: allocation ? allocation.qtyHalfLPacket : 0,
+      expectedEmptyBottles,
       status: allocation ? allocation.status : 'UNASSIGNED',
     };
   });
@@ -154,43 +173,72 @@ export const updateRouteAllocation = async (
     }
   }
 
-  // 4. Process Petrol Allowance Ledger entries
-  if (petrolAllowanceGiven !== undefined && status === 'ASSIGNED') {
-    const route = await prisma.route.findUnique({ where: { id: routeId } });
-    if (route) {
-      const defaultAllowance = route.defaultPetrolAllowance;
+  // 4. Process Petrol Allowance Ledger entries and DP Balance
+  const route = await prisma.route.findUnique({ where: { id: routeId } });
+  if (route) {
+    const defaultAllowance = route.defaultPetrolAllowance;
 
-      // Clear existing ledger entries for this route and date
+    // First, clear out old ledger entries & reverse old balance impact
+    if (previous && (previous.status === 'ASSIGNED' || previous.status === 'COMPLETED')) {
+      const oldDpId = previous.dpId;
+      const oldPA = previous.petrolAllowanceGiven;
+
+      if (oldPA !== null && oldPA !== undefined) {
+        const oldDelta = oldPA - defaultAllowance;
+        // Reverse balance
+        await prisma.deliveryPerson.update({
+          where: { id: oldDpId },
+          data: { petrolBalance: { decrement: oldDelta } }
+        });
+      }
+
+      // Delete old ledger entries
       await prisma.ledgerTransaction.deleteMany({
         where: {
-          dpId,
+          dpId: oldDpId,
           date,
           routeId,
           type: { in: ['PETROL_ALLOWANCE', 'SHORTAGE', 'EXTRA_PAID'] }
         }
       });
+    }
 
-      let type: 'PETROL_ALLOWANCE' | 'SHORTAGE' | 'EXTRA_PAID' = 'PETROL_ALLOWANCE';
-      let note = `Petrol allowance for ${route.name}`;
+    // Now apply new ledger entries & new balance impact (if not UNASSIGNED)
+    if (status === 'ASSIGNED' || status === 'COMPLETED') {
+      // Use the newly passed petrolAllowanceGiven, or fallback to what we just saved (which is newPA)
+      const newPA = petrolAllowanceGiven !== undefined ? petrolAllowanceGiven : (previous?.petrolAllowanceGiven ?? null);
 
-      if (petrolAllowanceGiven < defaultAllowance) {
-        type = 'SHORTAGE';
-        note = `Short ₹${defaultAllowance - petrolAllowanceGiven} vs route allowance`;
-      } else if (petrolAllowanceGiven > defaultAllowance) {
-        type = 'EXTRA_PAID';
-        note = `Extra ₹${petrolAllowanceGiven - defaultAllowance} vs route allowance`;
-      }
+      if (newPA !== null && newPA !== undefined) {
+        const newDelta = newPA - defaultAllowance;
 
-      await prisma.ledgerTransaction.create({
-        data: {
-          dpId,
-          routeId,
-          date,
-          type,
-          amount: petrolAllowanceGiven,
-          note
+        // Apply new balance
+        await prisma.deliveryPerson.update({
+          where: { id: dpId },
+          data: { petrolBalance: { increment: newDelta } }
+        });
+
+        let type: 'PETROL_ALLOWANCE' | 'SHORTAGE' | 'EXTRA_PAID' = 'PETROL_ALLOWANCE';
+        let note = `Petrol allowance for ${route.name}`;
+
+        if (newPA < defaultAllowance) {
+          type = 'SHORTAGE';
+          note = `Short ₹${defaultAllowance - newPA} vs route allowance`;
+        } else if (newPA > defaultAllowance) {
+          type = 'EXTRA_PAID';
+          note = `Extra ₹${newPA - defaultAllowance} vs route allowance`;
         }
-      });
+
+        await prisma.ledgerTransaction.create({
+          data: {
+            dpId,
+            routeId,
+            date,
+            type,
+            amount: newPA,
+            note
+          }
+        });
+      }
     }
   }
 

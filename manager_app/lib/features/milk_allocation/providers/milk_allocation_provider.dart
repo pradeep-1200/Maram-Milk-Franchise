@@ -81,6 +81,13 @@ class MilkAllocationNotifier extends Notifier<MilkAllocationState> {
     });
   }
 
+  void set1LBottle(String routeId, int value, {int? maxLimit}) {
+    _updateAllocation(routeId, (a) {
+      final clamped = value < 0 ? 0 : (maxLimit != null && value > maxLimit ? maxLimit : value);
+      return a.copyWith(qty1LBottle: clamped);
+    });
+  }
+
   void updateHalfLBottle(String routeId, int diff, {int? maxLimit}) {
     final allocations = Map<String, RouteMilkAllocation>.from(state.allocations);
     allocations.update(routeId, (a) {
@@ -90,7 +97,14 @@ class MilkAllocationNotifier extends Notifier<MilkAllocationState> {
     }, ifAbsent: () => RouteMilkAllocation(qtyHalfLBottle: diff));
     state = state.copyWith(allocations: allocations);
   }
-  
+
+  void setHalfLBottle(String routeId, int value, {int? maxLimit}) {
+    _updateAllocation(routeId, (a) {
+      final clamped = value < 0 ? 0 : (maxLimit != null && value > maxLimit ? maxLimit : value);
+      return a.copyWith(qtyHalfLBottle: clamped);
+    });
+  }
+
   void updateHalfLPacket(String routeId, int diff, {int? maxLimit}) {
     final allocations = Map<String, RouteMilkAllocation>.from(state.allocations);
     allocations.update(routeId, (a) {
@@ -99,6 +113,13 @@ class MilkAllocationNotifier extends Notifier<MilkAllocationState> {
       return a.copyWith(qtyHalfLPacket: newQty);
     }, ifAbsent: () => RouteMilkAllocation(qtyHalfLPacket: diff));
     state = state.copyWith(allocations: allocations);
+  }
+
+  void setHalfLPacket(String routeId, int value, {int? maxLimit}) {
+    _updateAllocation(routeId, (a) {
+      final clamped = value < 0 ? 0 : (maxLimit != null && value > maxLimit ? maxLimit : value);
+      return a.copyWith(qtyHalfLPacket: clamped);
+    });
   }
 }
 

@@ -15,9 +15,12 @@ export const createDpSchema = z.object({
   licenseNumber: z.string().optional().nullable(),
   vehicleNumber: z.string().optional().nullable(),
   dateOfJoining: z.string().optional().nullable(),
-  gpayNumber: z.string().optional().nullable(),
-  upiId: z.string().optional().nullable(),
+  gpayNumber: z.string().min(1, 'GPAY Number is required'),
+  upiId: z.string().min(1, 'UPI ID is required'),
   bankAccountDetails: z.string().optional().nullable(),
 });
 
-export const updateDpSchema = createDpSchema.partial();
+export const updateDpSchema = createDpSchema.partial().extend({
+  gpayNumber: z.string().min(1, 'GPAY Number is required'),
+  upiId: z.string().min(1, 'UPI ID is required'),
+});

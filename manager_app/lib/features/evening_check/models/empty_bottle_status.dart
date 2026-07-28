@@ -21,6 +21,10 @@ abstract class EmptyBottleStatus with _$EmptyBottleStatus {
     @Default(0) int actualDeliveredHalfL,
     @Default(0) int actualDeliveredPacket,
     @Default(false) bool flagIssue,
+    String? reason,
+    int? brokenBottleCount,
+    String? notes,
+    @Default(0) int expectedEmptyBottles,
     required String status,
   }) = _EmptyBottleStatus;
 

@@ -235,26 +235,41 @@ class _DPCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    
-    Color badgeColor;
-    String badgeText;
-    switch (person.displayStatus) {
+
+    // A DP whose status is STANDBY is implicitly Present (present + no route).
+    // We show BOTH a green Present badge AND an orange Standby badge together.
+    final isStandby = person.status == AttendanceStatus.standby;
+
+    // Determine the primary attendance badge (Present/Absent/Pending).
+    // For standby DPs we treat the primary badge as Present (green).
+    Color primaryBadgeColor;
+    String primaryBadgeText;
+    switch (isStandby ? AttendanceStatus.present : person.displayStatus) {
       case AttendanceStatus.present:
-        badgeColor = Colors.green;
-        badgeText = 'Present';
+        primaryBadgeColor = Colors.green;
+        primaryBadgeText = 'Present';
         break;
       case AttendanceStatus.absent:
-        badgeColor = Colors.red;
-        badgeText = 'Absent';
-        break;
-      case AttendanceStatus.standby:
-        badgeColor = Colors.orange;
-        badgeText = 'Standby';
+        primaryBadgeColor = Colors.red;
+        primaryBadgeText = 'Absent';
         break;
       default:
-        badgeColor = Colors.grey;
-        badgeText = 'Pending';
+        primaryBadgeColor = Colors.grey;
+        primaryBadgeText = 'Pending';
     }
+
+    Widget badge(Color color, String text) => Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            color: color.withAlpha(25),
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: color),
+          ),
+          child: Text(
+            text,
+            style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold),
+          ),
+        );
 
     return AppCard(
       padding: const EdgeInsets.symmetric(horizontal: AppConstants.spacing16, vertical: 12.0),
@@ -281,18 +296,13 @@ class _DPCard extends ConsumerWidget {
                       style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                     ),
                     const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: badgeColor.withAlpha(25),
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: badgeColor),
-                      ),
-                      child: Text(
-                        badgeText,
-                        style: TextStyle(color: badgeColor, fontSize: 10, fontWeight: FontWeight.bold),
-                      ),
-                    ),
+                    // Primary badge (Present / Absent / Pending)
+                    badge(primaryBadgeColor, primaryBadgeText),
+                    // Additional Standby badge shown alongside Present
+                    if (isStandby) ...[
+                      const SizedBox(width: 4),
+                      badge(Colors.orange, 'Standby'),
+                    ],
                   ],
                 ),
               ],
@@ -311,10 +321,15 @@ class _DPCard extends ConsumerWidget {
                 },
               ),
               const SizedBox(width: AppConstants.spacing8),
+              // The ✓ button is active (green filled) for BOTH present AND standby,
+              // because standby means the DP IS present. The tap handler is unchanged:
+              // sending PRESENT is a safe re-confirmation; the backend refresh will
+              // re-derive the standby state (Phase 65 logic is preserved).
               _buildToggleButton(
                 icon: Icons.check,
                 color: Colors.green,
-                isSelected: person.status == AttendanceStatus.present,
+                isSelected: person.status == AttendanceStatus.present ||
+                    person.status == AttendanceStatus.standby,
                 onTap: () {
                   ref.read(attendanceProvider.notifier).markAttendance(person.dpId, AttendanceStatus.present);
                 },

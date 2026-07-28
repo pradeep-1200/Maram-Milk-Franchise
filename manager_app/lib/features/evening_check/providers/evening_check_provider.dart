@@ -36,9 +36,12 @@ class EveningCheckNotifier extends AsyncNotifier<EveningCheckState> {
       required int halfLBottlesCollected,
       required int halfLPacketCollected,
       required int actualDelivered1L,
-      required int actualDeliveredHalfL,
-      required int actualDeliveredPacket,
-      required bool flagIssue,
+      required int? actualDeliveredHalfL,
+      int? actualDeliveredPacket,
+      bool flagIssue = false,
+      String? reason,
+      int? brokenBottleCount,
+      String? notes,
   }) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
@@ -51,9 +54,12 @@ class EveningCheckNotifier extends AsyncNotifier<EveningCheckState> {
           'halfLBottlesCollected': halfLBottlesCollected,
           'halfLPacketCollected': halfLPacketCollected,
           'actualDelivered1L': actualDelivered1L,
-          'actualDeliveredHalfL': actualDeliveredHalfL,
-          'actualDeliveredPacket': actualDeliveredPacket,
+          if (actualDeliveredHalfL != null) 'actualDeliveredHalfL': actualDeliveredHalfL,
+          if (actualDeliveredPacket != null) 'actualDeliveredPacket': actualDeliveredPacket,
           'flagIssue': flagIssue,
+          if (reason != null) 'reason': reason,
+          if (brokenBottleCount != null) 'brokenBottleCount': brokenBottleCount,
+          if (notes != null) 'notes': notes,
         },
       );
       

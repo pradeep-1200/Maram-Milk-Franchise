@@ -9,7 +9,6 @@ import 'models/delivery_route.dart';
 import '../../shared/dp_avatar.dart';
 import '../attendance/providers/attendance_provider.dart';
 import '../attendance/models/delivery_person.dart';
-import 'empty_bottle_sheet.dart';
 import '../milk_allocation/milk_allocation_sheet.dart';
 import '../milk_allocation/providers/milk_allocation_provider.dart';
 import '../petrol_allowance/petrol_allowance_sheet.dart';
@@ -365,7 +364,7 @@ class _RouteCard extends ConsumerWidget {
               const SizedBox(width: AppConstants.spacing16),
               const Icon(Icons.keyboard_return, size: 16, color: Colors.grey),
               const SizedBox(width: AppConstants.spacing4),
-              Text('${route.qty1LBottle + route.qtyHalfLBottle + route.qtyHalfLPacket} Expected', style: const TextStyle(fontSize: 12)),
+              Text('${route.expectedEmptyBottles} Expected', style: const TextStyle(fontSize: 12)),
             ],
           ),
           const SizedBox(height: AppConstants.spacing8),
@@ -382,23 +381,26 @@ class _RouteCard extends ConsumerWidget {
                   route.assignedDpName!,
                   style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
                 ),
-                const Spacer(),
-                IconButton(
-                  icon: Icon(Icons.local_drink, size: 20, color: theme.colorScheme.primary),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  onPressed: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(AppConstants.cardRadius)),
-                      ),
-                      builder: (context) => EmptyBottleSheet(routeId: route.id),
-                    );
-                  },
+                const SizedBox(width: AppConstants.spacing8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: (route.assignedDpPetrolBalance > 0 ? Colors.teal : (route.assignedDpPetrolBalance < 0 ? Colors.orange : Colors.grey)).withAlpha(25),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: route.assignedDpPetrolBalance > 0 ? Colors.teal : (route.assignedDpPetrolBalance < 0 ? Colors.orange : Colors.grey)),
+                  ),
+                  child: Text(
+                    route.assignedDpPetrolBalance == 0 
+                      ? 'Running PA: ₹0' 
+                      : 'Running PA: ${route.assignedDpPetrolBalance > 0 ? 'Extra' : 'Short'} ₹${route.assignedDpPetrolBalance.abs().toStringAsFixed(0)}',
+                    style: TextStyle(
+                      color: route.assignedDpPetrolBalance > 0 ? Colors.teal : (route.assignedDpPetrolBalance < 0 ? Colors.orange : Colors.grey),
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
-                const SizedBox(width: AppConstants.spacing16),
+                const Spacer(),
                 IconButton(
                   icon: Icon(Icons.edit, size: 20, color: theme.colorScheme.primary),
                   padding: EdgeInsets.zero,

@@ -328,9 +328,9 @@ class _StaffProfileEditScreenState extends ConsumerState<StaffProfileEditScreen>
             _FormSection(
               title: 'Payment Details',
               children: [
-                AppTextField(controller: _gpayController, labelText: 'GPAY Number', keyboardType: TextInputType.phone),
+                AppTextField(controller: _gpayController, labelText: 'GPAY Number *', keyboardType: TextInputType.phone, validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
                 const SizedBox(height: 12),
-                AppTextField(controller: _upiController, labelText: 'UPI ID'),
+                AppTextField(controller: _upiController, labelText: 'UPI ID *', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
                 const SizedBox(height: 12),
                 AppTextField(controller: _bankController, labelText: 'Bank Account Details (Acct No / IFSC)'),
               ],

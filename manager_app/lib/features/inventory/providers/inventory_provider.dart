@@ -58,7 +58,7 @@ class InventoryItemState {
       carryOverQty: (json['carriedOverStock'] as num?)?.toDouble() ?? 0.0,
       newStockAdded: (json['newStockAdded'] as num?)?.toDouble() ?? 0.0,
       currentStock: (json['currentStock'] as num?)?.toDouble() ?? 0.0,
-      litresPerUnit: (json['litres'] as num?)?.toDouble() ?? 0.0,
+      litresPerUnit: (json['litresPerUnit'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }

@@ -1,5 +1,6 @@
 import { prisma } from '../../config/db';
 import { checkAndUpdateInventoryCompletion } from '../dispatch/dispatch.service';
+import { parseUnitToLitres } from '../../utils/unit';
 
 /**
  * Retrieves the most recent previous record for an item before a given date.
@@ -67,7 +68,7 @@ export const getInventoryForDate = async (date: string) => {
       currentStock: record.currentStock,
       carriedOverStock: record.carriedOverStock,
       newStockAdded: record.newStockAdded,
-      litres: item.litres,
+      litresPerUnit: parseUnitToLitres(item.unit),
     });
   }
 

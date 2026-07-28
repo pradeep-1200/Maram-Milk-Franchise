@@ -538,8 +538,27 @@ class _AssignDpSheet extends ConsumerWidget {
         }
       }
     }
+    String paStatusText = 'PA: Not Given';
+    Color paColor = theme.colorScheme.primary;
 
-    return Column(
+    if (route.petrolAllowanceGiven != null) {
+      final given = route.petrolAllowanceGiven!;
+      final expected = route.fixedPetrolAllowance;
+      if (given < expected) {
+        paStatusText = 'PA: Short ₹${expected - given}';
+        paColor = Colors.red;
+      } else if (given > expected) {
+        paStatusText = 'PA: Extra ₹${given - expected}';
+        paColor = Colors.orange;
+      } else {
+        paStatusText = 'PA: Fully Paid';
+        paColor = Colors.green;
+      }
+    }
+
+    return ListView(
+      controller: scrollController,
+      padding: EdgeInsets.zero,
       children: [
         Padding(
           padding: const EdgeInsets.all(AppConstants.spacing16),
@@ -558,36 +577,100 @@ class _AssignDpSheet extends ConsumerWidget {
               child: Text('CURRENTLY ASSIGNED', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
             ),
           ),
-          ListTile(
-            leading: DpAvatar(
-              photoUrl: currentlyAssignedDp.profilePictureUrl,
-              name: currentlyAssignedDp.name,
-            ),
-            title: Text(currentlyAssignedDp.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text(currentlyAssignedDp.dpCode),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppConstants.spacing16, vertical: AppConstants.spacing8),
+            child: Column(
               children: [
-                OutlinedButton(
-                  onPressed: () => _assign(context, ref, currentlyAssignedDp!),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    minimumSize: const Size(0, 36),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  child: const Text('Edit Allocation'),
+                Row(
+                  children: [
+                    DpAvatar(
+                      photoUrl: currentlyAssignedDp.profilePictureUrl,
+                      name: currentlyAssignedDp.name,
+                    ),
+                    const SizedBox(width: AppConstants.spacing16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            currentlyAssignedDp.name, 
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            currentlyAssignedDp.dpCode,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: AppConstants.spacing8),
-                OutlinedButton(
-                  onPressed: () => _showUnassignConfirm(context, ref),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.red,
-                    side: const BorderSide(color: Colors.red),
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    minimumSize: const Size(0, 36),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                const SizedBox(height: AppConstants.spacing16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => _assign(context, ref, currentlyAssignedDp!),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 0),
+                          minimumSize: const Size(0, 36),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: const Text('Edit Allocation'),
+                      ),
+                    ),
+                    const SizedBox(width: AppConstants.spacing8),
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => _showUnassignConfirm(context, ref),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red,
+                          side: const BorderSide(color: Colors.red),
+                          padding: const EdgeInsets.symmetric(horizontal: 0),
+                          minimumSize: const Size(0, 36),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: const Text('Unassign'),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppConstants.spacing8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      showModalBottomSheet(
+                        context: context,
+                        useRootNavigator: true,
+                        isScrollControlled: true,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(top: Radius.circular(AppConstants.cardRadius)),
+                        ),
+                        builder: (context) {
+                          return Padding(
+                            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+                            child: PetrolAllowanceSheet(
+                              route: route,
+                              dp: DeliveryPerson(
+                                id: currentlyAssignedDp!.dpId, 
+                                name: currentlyAssignedDp.name, 
+                                employeeId: currentlyAssignedDp.dpCode,
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: paColor,
+                      side: BorderSide(color: paColor),
+                      minimumSize: const Size(0, 36),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: Text(paStatusText),
                   ),
-                  child: const Text('Unassign'),
                 ),
               ],
             ),
@@ -595,104 +678,99 @@ class _AssignDpSheet extends ConsumerWidget {
           const Divider(height: 1),
         ],
 
-        Expanded(
-          child: availableDps.isEmpty
-              ? const Center(child: Text('No other available DPs (Present or Standby)'))
-              : ListView.builder(
-                  controller: scrollController,
-                  itemCount: availableDps.length,
-                  itemBuilder: (context, index) {
-                    final dp = availableDps[index];
-                    final otherRoutes = allRoutes.where((r) => r.id != route.id && r.assignedDpId == dp.dpId).toList();
-                    
-                    return Dismissible(
-                      key: ValueKey(dp.dpId),
-                      direction: DismissDirection.endToStart,
-                      background: Container(
-                        alignment: Alignment.centerRight,
-                        padding: const EdgeInsets.only(right: 20.0),
-                        color: theme.colorScheme.primary,
-                        child: const Icon(Icons.assignment_turned_in, color: Colors.white),
-                      ),
-                      confirmDismiss: (direction) async {
-                        if (otherRoutes.isNotEmpty) {
-                          final bool? confirm = await showDialog<bool>(
-                            context: context,
-                            builder: (ctx) => AlertDialog(
-                              title: const Text('Double Booking'),
-                              content: Text('${dp.name} is already assigned to ${otherRoutes.map((r) => r.name).join(', ')}. Assign them to ${route.name} as well?'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => ctx.pop(false),
-                                  child: const Text('Cancel'),
-                                ),
-                                TextButton(
-                                  onPressed: () => ctx.pop(true),
-                                  child: const Text('Confirm', style: TextStyle(color: Colors.blue)),
-                                ),
-                              ],
-                            ),
-                          );
-                          return confirm ?? false;
-                        }
-                        return true;
-                      },
-                      onDismissed: (_) => _assign(context, ref, dp),
-                      child: ListTile(
-                        leading: DpAvatar(
-                          photoUrl: dp.profilePictureUrl,
-                          name: dp.name,
+        if (availableDps.isEmpty)
+          const Padding(
+            padding: EdgeInsets.all(32.0),
+            child: Center(child: Text('No other available DPs (Present or Standby)')),
+          )
+        else
+          ...availableDps.map((dp) {
+            final otherRoutes = allRoutes.where((r) => r.id != route.id && r.assignedDpId == dp.dpId).toList();
+            return Dismissible(
+              key: ValueKey(dp.dpId),
+              direction: DismissDirection.endToStart,
+              background: Container(
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.only(right: 20.0),
+                color: theme.colorScheme.primary,
+                child: const Icon(Icons.assignment_turned_in, color: Colors.white),
+              ),
+              confirmDismiss: (direction) async {
+                if (otherRoutes.isNotEmpty) {
+                  final bool? confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Double Booking'),
+                      content: Text('${dp.name} is already assigned to ${otherRoutes.map((r) => r.name).join(', ')}. Assign them to ${route.name} as well?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => ctx.pop(false),
+                          child: const Text('Cancel'),
                         ),
-                        title: Wrap(
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: 8,
-                          runSpacing: 4,
-                          children: [
-                            Text(dp.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                            if (dp.petrolAllowanceGivenToday != null)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: Colors.green.shade100,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  'PA Given: ₹${dp.petrolAllowanceGivenToday}',
-                                  style: TextStyle(color: Colors.green.shade900, fontSize: 10, fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                            if (otherRoutes.isNotEmpty)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: Colors.orange.shade100,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  'Also on: ${otherRoutes.map((r) => r.name).join(', ')}',
-                                  style: TextStyle(color: Colors.orange.shade900, fontSize: 10, fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                          ],
+                        TextButton(
+                          onPressed: () => ctx.pop(true),
+                          child: const Text('Confirm', style: TextStyle(color: Colors.blue)),
                         ),
-                        subtitle: Text(dp.dpCode),
-                        trailing: ElevatedButton(
-                          onPressed: () => _handleAssign(context, ref, dp, otherRoutes),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: theme.colorScheme.primary,
-                            foregroundColor: theme.colorScheme.onPrimary,
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            minimumSize: const Size(0, 36),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            elevation: 0,
-                          ),
-                          child: const Text('Assign'),
-                        ),
-                      ),
-                    );
-                  },
+                      ],
+                    ),
+                  );
+                  return confirm ?? false;
+                }
+                return true;
+              },
+              onDismissed: (_) => _assign(context, ref, dp),
+              child: ListTile(
+                leading: DpAvatar(
+                  photoUrl: dp.profilePictureUrl,
+                  name: dp.name,
                 ),
-        ),
+                title: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 4,
+                  children: [
+                    Text(dp.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    if (dp.petrolAllowanceGivenToday != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade100,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'PA Given: ₹${dp.petrolAllowanceGivenToday}',
+                          style: TextStyle(color: Colors.green.shade900, fontSize: 10, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    if (otherRoutes.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade100,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'Also on: ${otherRoutes.map((r) => r.name).join(', ')}',
+                          style: TextStyle(color: Colors.orange.shade900, fontSize: 10, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                  ],
+                ),
+                subtitle: Text(dp.dpCode),
+                trailing: ElevatedButton(
+                  onPressed: () => _handleAssign(context, ref, dp, otherRoutes),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: theme.colorScheme.onPrimary,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    minimumSize: const Size(0, 36),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    elevation: 0,
+                  ),
+                  child: const Text('Assign'),
+                ),
+              ),
+            );
+          }),
         Padding(
           padding: const EdgeInsets.all(AppConstants.spacing16),
           child: SizedBox(

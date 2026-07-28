@@ -94,12 +94,13 @@ class _EmptyBottleSheetState extends ConsumerState<EmptyBottleSheet> {
         top: AppConstants.spacing24,
         bottom: bottomPadding + AppConstants.spacing24,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 'Empty Bottles',
@@ -231,6 +232,7 @@ class _EmptyBottleSheetState extends ConsumerState<EmptyBottleSheet> {
             onPressed: _save,
           ),
         ],
+      ),
       ),
     );
   }

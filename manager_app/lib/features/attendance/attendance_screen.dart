@@ -88,32 +88,30 @@ class AttendanceScreen extends ConsumerWidget {
           return Column(
             children: [
               // Filter Chips
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
+              Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppConstants.spacing16,
                   vertical: AppConstants.spacing8,
                 ),
-                child: Row(
+                child: Wrap(
+                  spacing: AppConstants.spacing8,
+                  runSpacing: 8.0,
                   children: [
                     _FilterChip(
                       label: 'All ${state.countAll}',
                       isSelected: state.statusFilter == null,
                       onSelected: () => notifier.setStatusFilter(null),
                     ),
-                    const SizedBox(width: AppConstants.spacing8),
                     _FilterChip(
                       label: 'Present ${state.countPresent}',
                       isSelected: state.statusFilter == AttendanceStatus.present,
                       onSelected: () => notifier.setStatusFilter(AttendanceStatus.present),
                     ),
-                    const SizedBox(width: AppConstants.spacing8),
                     _FilterChip(
                       label: 'Absent ${state.countAbsent}',
                       isSelected: state.statusFilter == AttendanceStatus.absent,
                       onSelected: () => notifier.setStatusFilter(AttendanceStatus.absent),
                     ),
-                    const SizedBox(width: AppConstants.spacing8),
                     _FilterChip(
                       label: 'Standby ${state.countStandby}',
                       isSelected: state.statusFilter == AttendanceStatus.standby,

@@ -38,7 +38,7 @@ class AttendanceState {
   }
   
   int get countAll => persons.length;
-  int get countPresent => persons.where((p) => p.displayStatus == AttendanceStatus.present).length;
+  int get countPresent => persons.where((p) => p.displayStatus == AttendanceStatus.present || p.displayStatus == AttendanceStatus.standby).length;
   int get countAbsent => persons.where((p) => p.displayStatus == AttendanceStatus.absent).length;
   int get countStandby => persons.where((p) => p.displayStatus == AttendanceStatus.standby).length;
 }

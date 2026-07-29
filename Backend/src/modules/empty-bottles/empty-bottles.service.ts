@@ -60,6 +60,8 @@ export const getEmptyBottleStatus = async (date: string) => {
       flagIssue: log?.flagIssue || false,
       reason: log?.reason || null,
       brokenBottleCount: log?.brokenBottleCount || null,
+      brokenBottleCount1L: log?.brokenBottleCount1L || null,
+      brokenBottleCountHalfL: log?.brokenBottleCountHalfL || null,
       notes: log?.notes || null,
       status: log?.deliveryCompleted ? 'Delivered' : (allocation ? 'Pending' : 'Unassigned'),
     };
@@ -90,6 +92,8 @@ export const updateEmptyBottleLog = async (
     flagIssue: boolean;
     reason?: string;
     brokenBottleCount?: number;
+    brokenBottleCount1L?: number;
+    brokenBottleCountHalfL?: number;
     notes?: string;
   }
 ) => {
@@ -124,9 +128,9 @@ export const updateEmptyBottleLog = async (
   const expectedHalfL = carriedOverHalfL + finalActualDeliveredHalfL;
   const expectedPacket = carriedOverPacket + finalActualDeliveredPacket;
 
-  // Calculate outstanding
-  const outstanding1L = expected1L - data.oneLBottlesCollected;
-  const outstandingHalfL = expectedHalfL - data.halfLBottlesCollected;
+  // Calculate outstanding (Remaining = Expected - Collected - Broken)
+  const outstanding1L = expected1L - data.oneLBottlesCollected - (data.brokenBottleCount1L || 0);
+  const outstandingHalfL = expectedHalfL - data.halfLBottlesCollected - (data.brokenBottleCountHalfL || 0);
   const outstandingPacket = expectedPacket - data.halfLPacketCollected;
 
   const existingLog = await prisma.emptyBottleLog.findFirst({
@@ -145,6 +149,8 @@ export const updateEmptyBottleLog = async (
         flagIssue: data.flagIssue,
         reason: data.reason,
         brokenBottleCount: data.brokenBottleCount,
+        brokenBottleCount1L: data.brokenBottleCount1L,
+        brokenBottleCountHalfL: data.brokenBottleCountHalfL,
         notes: data.notes,
         actualDelivered1L: finalActualDelivered1L,
         actualDeliveredHalfL: finalActualDeliveredHalfL,
@@ -173,6 +179,8 @@ export const updateEmptyBottleLog = async (
         flagIssue: data.flagIssue,
         reason: data.reason,
         brokenBottleCount: data.brokenBottleCount,
+        brokenBottleCount1L: data.brokenBottleCount1L,
+        brokenBottleCountHalfL: data.brokenBottleCountHalfL,
         notes: data.notes,
         actualDelivered1L: finalActualDelivered1L,
         actualDeliveredHalfL: finalActualDeliveredHalfL,

@@ -172,6 +172,8 @@ model EmptyBottleLog {
   
   reason                String?
   brokenBottleCount     Int?
+  brokenBottleCount1L   Int?
+  brokenBottleCountHalfL Int?
   notes                 String?
 
   actualDelivered1L       Int?

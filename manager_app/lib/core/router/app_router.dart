@@ -64,7 +64,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           routes: [
             GoRoute(
               path: '/routes',
-              builder: (context, state) => const RouteAllocationScreen(),
+              builder: (context, state) {
+                final openRouteId = state.uri.queryParameters['openRouteId'];
+                return RouteAllocationScreen(openRouteId: openRouteId);
+              },
             ),
           ],
         ),
@@ -104,7 +107,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         GoRoute(
           path: 'routes',
           parentNavigatorKey: _rootNavigatorKey,
-          builder: (context, state) => const RouteAllocationScreen(isDispatchContext: true),
+          builder: (context, state) {
+            final openRouteId = state.uri.queryParameters['openRouteId'];
+            return RouteAllocationScreen(isDispatchContext: true, openRouteId: openRouteId);
+          },
         ),
         GoRoute(
           path: 'milk-allocation',

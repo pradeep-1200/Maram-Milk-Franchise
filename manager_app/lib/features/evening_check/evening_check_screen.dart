@@ -384,13 +384,15 @@ class _EveningCheckSheetState extends ConsumerState<_EveningCheckSheet> {
   late bool _flagNoReturn;
 
   String? _reason;
-  late int _brokenBottleCount;
+  late int _brokenBottleCount1L;
+  late int _brokenBottleCountHalfL;
   late int _actualDelivered1L;
   late int _actualDeliveredHalfL;
   late int _actualDeliveredPacket;
   late final TextEditingController _ctrl1L;
   late final TextEditingController _ctrlHalfL;
-  late final TextEditingController _ctrlBroken;
+  late final TextEditingController _ctrlBroken1L;
+  late final TextEditingController _ctrlBrokenHalfL;
   late final TextEditingController _ctrlActual1L;
   late final TextEditingController _ctrlActualHalfL;
   late final TextEditingController _ctrlActualPacket;
@@ -407,14 +409,16 @@ class _EveningCheckSheetState extends ConsumerState<_EveningCheckSheet> {
     _flagNoReturn = widget.route.flagIssue;
     
     _reason = widget.route.reason;
-    _brokenBottleCount = widget.route.brokenBottleCount ?? 0;
+    _brokenBottleCount1L = widget.route.brokenBottleCount1L ?? 0;
+    _brokenBottleCountHalfL = widget.route.brokenBottleCountHalfL ?? 0;
     _actualDelivered1L = widget.route.actualDelivered1L;
     _actualDeliveredHalfL = widget.route.actualDeliveredHalfL;
     _actualDeliveredPacket = widget.route.actualDeliveredPacket;
     
     _ctrl1L = TextEditingController(text: _bottles1L.toString());
     _ctrlHalfL = TextEditingController(text: _bottlesHalfL.toString());
-    _ctrlBroken = TextEditingController(text: _brokenBottleCount.toString());
+    _ctrlBroken1L = TextEditingController(text: _brokenBottleCount1L.toString());
+    _ctrlBrokenHalfL = TextEditingController(text: _brokenBottleCountHalfL.toString());
     _ctrlActual1L = TextEditingController(text: _actualDelivered1L.toString());
     _ctrlActualHalfL = TextEditingController(text: _actualDeliveredHalfL.toString());
     _ctrlActualPacket = TextEditingController(text: _actualDeliveredPacket.toString());
@@ -425,7 +429,8 @@ class _EveningCheckSheetState extends ConsumerState<_EveningCheckSheet> {
   void dispose() {
     _ctrl1L.dispose();
     _ctrlHalfL.dispose();
-    _ctrlBroken.dispose();
+    _ctrlBroken1L.dispose();
+    _ctrlBrokenHalfL.dispose();
     _ctrlActual1L.dispose();
     _ctrlActualHalfL.dispose();
     _ctrlActualPacket.dispose();
@@ -466,8 +471,9 @@ class _EveningCheckSheetState extends ConsumerState<_EveningCheckSheet> {
       actualDeliveredPacket: _actualDeliveredPacket,
       flagIssue: _flagNoReturn,
       reason: _didCompleteDelivery == false ? _reason : null,
-      brokenBottleCount: (_didCompleteDelivery == false && _reason == 'Bottles broken') ? _brokenBottleCount : null,
-      notes: (_didCompleteDelivery == false && ['Bottles broken', 'Other'].contains(_reason)) ? _ctrlNotes.text.trim() : null,
+      brokenBottleCount1L: ((_didCompleteDelivery == false && _reason == 'Bottles broken') || (_didCompleteDelivery == true && _flagNoReturn)) ? _brokenBottleCount1L : null,
+      brokenBottleCountHalfL: ((_didCompleteDelivery == false && _reason == 'Bottles broken') || (_didCompleteDelivery == true && _flagNoReturn)) ? _brokenBottleCountHalfL : null,
+      notes: ((_didCompleteDelivery == false && ['Bottles broken', 'Other'].contains(_reason)) || (_didCompleteDelivery == true && _flagNoReturn)) ? _ctrlNotes.text.trim() : null,
     );
 
     context.pop();
@@ -654,51 +660,115 @@ class _EveningCheckSheetState extends ConsumerState<_EveningCheckSheet> {
                   const Divider(),
                   const SizedBox(height: AppConstants.spacing16),
                   
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       Text(
                         'Empty Bottles Returned',
                         style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                       ),
+                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: (widget.route.expectedEmptyBottles - (_bottles1L + _bottlesHalfL)) > 0 
-                            ? Colors.orange.withValues(alpha: 0.2) 
-                            : Colors.green.withValues(alpha: 0.2),
+                          color: Colors.blue.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          'Expected: ${widget.route.expectedEmptyBottles} | Remaining: ${widget.route.expectedEmptyBottles - (_bottles1L + _bottlesHalfL)}',
+                          'Total Expected: ${widget.route.expected1LBottles + widget.route.expectedHalfLBottles} | Remaining: ${(widget.route.expected1LBottles - _bottles1L - _brokenBottleCount1L) + (widget.route.expectedHalfLBottles - _bottlesHalfL - _brokenBottleCountHalfL)}',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: (widget.route.expectedEmptyBottles - (_bottles1L + _bottlesHalfL)) > 0 
-                              ? Colors.orange[800] 
-                              : Colors.green[800],
+                            color: Colors.blue[800],
                           ),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: AppConstants.spacing16),
-
-                  _buildCounter(
-                    'Actual 1L Collected',
-                    _bottles1L,
-                    _ctrl1L,
-                    (v) => setState(() => _bottles1L = v),
-                    theme,
+                  
+                  // 1L Bottles Section
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: theme.colorScheme.outlineVariant),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '1L Bottles',
+                              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              'Expected: ${widget.route.expected1LBottles} | Rem: ${widget.route.expected1LBottles - _bottles1L - _brokenBottleCount1L}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: (widget.route.expected1LBottles - _bottles1L - _brokenBottleCount1L) > 0 ? Colors.orange[800] : Colors.green[800],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        _buildCounter(
+                          'Collected',
+                          _bottles1L,
+                          _ctrl1L,
+                          (v) => setState(() => _bottles1L = v),
+                          theme,
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: AppConstants.spacing16),
-                  _buildCounter(
-                    'Actual Half L Collected',
-                    _bottlesHalfL,
-                    _ctrlHalfL,
-                    (v) => setState(() => _bottlesHalfL = v),
-                    theme,
+                  
+                  // Half L Bottles Section
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: theme.colorScheme.outlineVariant),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Half L Bottles',
+                              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              'Expected: ${widget.route.expectedHalfLBottles} | Rem: ${widget.route.expectedHalfLBottles - _bottlesHalfL - _brokenBottleCountHalfL}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: (widget.route.expectedHalfLBottles - _bottlesHalfL - _brokenBottleCountHalfL) > 0 ? Colors.orange[800] : Colors.green[800],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        _buildCounter(
+                          'Collected',
+                          _bottlesHalfL,
+                          _ctrlHalfL,
+                          (v) => setState(() => _bottlesHalfL = v),
+                          theme,
+                        ),
+                      ],
+                    ),
                   ),
+                  const SizedBox(height: AppConstants.spacing16),
+
 
                   const SizedBox(height: AppConstants.spacing24),
                   SwitchListTile(
@@ -713,6 +783,35 @@ class _EveningCheckSheetState extends ConsumerState<_EveningCheckSheet> {
                     contentPadding: EdgeInsets.zero,
                     activeColor: Colors.orange,
                   ),
+                  
+                  if (_flagNoReturn) ...[
+                    const SizedBox(height: AppConstants.spacing16),
+                    _buildCounter(
+                      'Broken 1L Bottles',
+                      _brokenBottleCount1L,
+                      _ctrlBroken1L,
+                      (v) => setState(() => _brokenBottleCount1L = v),
+                      theme,
+                    ),
+                    const SizedBox(height: AppConstants.spacing8),
+                    _buildCounter(
+                      'Broken Half L Bottles',
+                      _brokenBottleCountHalfL,
+                      _ctrlBrokenHalfL,
+                      (v) => setState(() => _brokenBottleCountHalfL = v),
+                      theme,
+                    ),
+                    const SizedBox(height: AppConstants.spacing16),
+                    TextField(
+                      controller: _ctrlNotes,
+                      maxLines: 2,
+                      decoration: InputDecoration(
+                        labelText: 'Notes (optional)',
+                        hintText: 'Enter details about missing/broken bottles...',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ],
                 ],
                 
                 if (_didCompleteDelivery == false) ...[
@@ -748,10 +847,18 @@ class _EveningCheckSheetState extends ConsumerState<_EveningCheckSheet> {
                   if (_reason == 'Bottles broken') ...[
                     const SizedBox(height: AppConstants.spacing16),
                     _buildCounter(
-                      'Broken Bottle Count',
-                      _brokenBottleCount,
-                      _ctrlBroken,
-                      (v) => setState(() => _brokenBottleCount = v),
+                      'Broken 1L Bottles',
+                      _brokenBottleCount1L,
+                      _ctrlBroken1L,
+                      (v) => setState(() => _brokenBottleCount1L = v),
+                      theme,
+                    ),
+                    const SizedBox(height: AppConstants.spacing8),
+                    _buildCounter(
+                      'Broken Half L Bottles',
+                      _brokenBottleCountHalfL,
+                      _ctrlBrokenHalfL,
+                      (v) => setState(() => _brokenBottleCountHalfL = v),
                       theme,
                     ),
                   ],

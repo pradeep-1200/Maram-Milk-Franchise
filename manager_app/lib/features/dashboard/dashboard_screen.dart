@@ -278,7 +278,7 @@ class DashboardScreen extends ConsumerWidget {
                               Icon(Icons.map, color: theme.colorScheme.primary, size: 20),
                               const SizedBox(width: AppConstants.spacing8),
                               Text(
-                                'Priority Routes',
+                                'Routes',
                                 style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                               ),
                             ],
@@ -314,7 +314,7 @@ class DashboardScreen extends ConsumerWidget {
                                       backgroundColor: needsDp ? Colors.red : Colors.orange,
                                       labelStyle: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                                       side: BorderSide.none,
-                                      onPressed: () => context.push('/routes'),
+                                      onPressed: () => context.push('/routes?openRouteId=${route.id}'),
                                     );
                                   },
                                 ),

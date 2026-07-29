@@ -16,17 +16,35 @@ import 'package:intl/intl.dart';
 import '../attendance/models/attendance_entry.dart';
 import '../shell/providers/tab_history_provider.dart';
 
-class RouteAllocationScreen extends ConsumerWidget {
+class RouteAllocationScreen extends ConsumerStatefulWidget {
   final bool isDispatchContext;
+  final String? openRouteId;
   
-  const RouteAllocationScreen({super.key, this.isDispatchContext = false});
+  const RouteAllocationScreen({super.key, this.isDispatchContext = false, this.openRouteId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<RouteAllocationScreen> createState() => _RouteAllocationScreenState();
+}
+
+class _RouteAllocationScreenState extends ConsumerState<RouteAllocationScreen> {
+  bool _hasOpenedInitialRoute = false;
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(routeProvider);
     final notifier = ref.read(routeProvider.notifier);
     final theme = Theme.of(context);
     final todayStr = DateFormat('MMM d, yyyy').format(DateTime.now());
+
+    if (widget.openRouteId != null && !_hasOpenedInitialRoute && (state.value?.routes.isNotEmpty ?? false)) {
+      final routeToOpen = state.value!.routes.where((r) => r.id == widget.openRouteId).firstOrNull;
+      if (routeToOpen != null) {
+        _hasOpenedInitialRoute = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _showAssignSheet(context, ref, routeToOpen);
+        });
+      }
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -57,7 +75,7 @@ class RouteAllocationScreen extends ConsumerWidget {
             ),
           ],
         ),
-        actions: isDispatchContext
+        actions: widget.isDispatchContext
             ? [
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

@@ -3,10 +3,12 @@ import { AttendanceStatus } from '@prisma/client';
 import { checkAndUpdateAttendanceCompletion } from '../dispatch/dispatch.service';
 
 export const getAttendanceForDate = async (date: string) => {
+  console.log('[DEBUG] getAttendanceForDate - Querying DPs with filter: { isActive: true }');
   const dps = await prisma.deliveryPerson.findMany({
     where: { isActive: true },
     orderBy: { dpCode: 'asc' },
   });
+  console.log(`[DEBUG] getAttendanceForDate - DB returned ${dps.length} DPs.`);
   
   const records = await prisma.attendanceRecord.findMany({
     where: { date },

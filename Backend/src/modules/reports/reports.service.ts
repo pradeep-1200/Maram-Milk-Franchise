@@ -21,10 +21,12 @@ export const getDpPerformance = async (range: 'today'|'week'|'month'|'custom', f
     endDate = to!;
   }
 
+  console.log('[DEBUG] getDpPerformance - Querying DPs with filter: { isActive: true }');
   const dps = await prisma.deliveryPerson.findMany({
     where: { isActive: true },
     orderBy: { dpCode: 'asc' },
   });
+  console.log(`[DEBUG] getDpPerformance - DB returned ${dps.length} DPs.`);
 
   const allocations = await prisma.routeAllocation.findMany({
     where: {

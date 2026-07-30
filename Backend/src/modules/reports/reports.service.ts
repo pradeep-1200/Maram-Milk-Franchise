@@ -59,7 +59,9 @@ export const getDpPerformance = async (range: 'today'|'week'|'month'|'custom', f
     const totalRecordedDays = dpAttendance.length;
     const attendanceRatio = `${presentCount} of ${totalRecordedDays}`;
 
-    const totalBottles = dpBottles.reduce((sum, b) => sum + b.oneLBottlesCollected + b.halfLBottlesCollected, 0);
+    const total1LBottles = dpBottles.reduce((sum, b) => sum + b.oneLBottlesCollected, 0);
+    const totalHalfLBottles = dpBottles.reduce((sum, b) => sum + b.halfLBottlesCollected, 0);
+    const totalBottles = total1LBottles + totalHalfLBottles;
 
     const attendancePercent = totalRecordedDays > 0 ? (presentCount / totalRecordedDays) : 0;
 
@@ -73,6 +75,8 @@ export const getDpPerformance = async (range: 'today'|'week'|'month'|'custom', f
       attendanceRatio,
       attendancePercent,
       totalBottles,
+      total1LBottles,
+      totalHalfLBottles,
     };
   });
 

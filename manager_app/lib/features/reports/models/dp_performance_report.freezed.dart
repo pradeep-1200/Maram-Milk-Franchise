@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$DpPerformanceReport {
 
- String get dpId; String get dpCode; String get name; String? get photoUrl; double get totalLitres; int get totalRoutes; String get attendanceRatio; int get totalBottles;
+ String get dpId; String get dpCode; String get name; String? get photoUrl; double get totalLitres; int get totalRoutes; String get attendanceRatio; int get totalBottles; int get total1LBottles; int get totalHalfLBottles;
 /// Create a copy of DpPerformanceReport
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $DpPerformanceReportCopyWith<DpPerformanceReport> get copyWith => _$DpPerformanc
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is DpPerformanceReport&&(identical(other.dpId, dpId) || other.dpId == dpId)&&(identical(other.dpCode, dpCode) || other.dpCode == dpCode)&&(identical(other.name, name) || other.name == name)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.totalLitres, totalLitres) || other.totalLitres == totalLitres)&&(identical(other.totalRoutes, totalRoutes) || other.totalRoutes == totalRoutes)&&(identical(other.attendanceRatio, attendanceRatio) || other.attendanceRatio == attendanceRatio)&&(identical(other.totalBottles, totalBottles) || other.totalBottles == totalBottles));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is DpPerformanceReport&&(identical(other.dpId, dpId) || other.dpId == dpId)&&(identical(other.dpCode, dpCode) || other.dpCode == dpCode)&&(identical(other.name, name) || other.name == name)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.totalLitres, totalLitres) || other.totalLitres == totalLitres)&&(identical(other.totalRoutes, totalRoutes) || other.totalRoutes == totalRoutes)&&(identical(other.attendanceRatio, attendanceRatio) || other.attendanceRatio == attendanceRatio)&&(identical(other.totalBottles, totalBottles) || other.totalBottles == totalBottles)&&(identical(other.total1LBottles, total1LBottles) || other.total1LBottles == total1LBottles)&&(identical(other.totalHalfLBottles, totalHalfLBottles) || other.totalHalfLBottles == totalHalfLBottles));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,dpId,dpCode,name,photoUrl,totalLitres,totalRoutes,attendanceRatio,totalBottles);
+int get hashCode => Object.hash(runtimeType,dpId,dpCode,name,photoUrl,totalLitres,totalRoutes,attendanceRatio,totalBottles,total1LBottles,totalHalfLBottles);
 
 @override
 String toString() {
-  return 'DpPerformanceReport(dpId: $dpId, dpCode: $dpCode, name: $name, photoUrl: $photoUrl, totalLitres: $totalLitres, totalRoutes: $totalRoutes, attendanceRatio: $attendanceRatio, totalBottles: $totalBottles)';
+  return 'DpPerformanceReport(dpId: $dpId, dpCode: $dpCode, name: $name, photoUrl: $photoUrl, totalLitres: $totalLitres, totalRoutes: $totalRoutes, attendanceRatio: $attendanceRatio, totalBottles: $totalBottles, total1LBottles: $total1LBottles, totalHalfLBottles: $totalHalfLBottles)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $DpPerformanceReportCopyWith<$Res>  {
   factory $DpPerformanceReportCopyWith(DpPerformanceReport value, $Res Function(DpPerformanceReport) _then) = _$DpPerformanceReportCopyWithImpl;
 @useResult
 $Res call({
- String dpId, String dpCode, String name, String? photoUrl, double totalLitres, int totalRoutes, String attendanceRatio, int totalBottles
+ String dpId, String dpCode, String name, String? photoUrl, double totalLitres, int totalRoutes, String attendanceRatio, int totalBottles, int total1LBottles, int totalHalfLBottles
 });
 
 
@@ -65,7 +65,7 @@ class _$DpPerformanceReportCopyWithImpl<$Res>
 
 /// Create a copy of DpPerformanceReport
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? dpId = null,Object? dpCode = null,Object? name = null,Object? photoUrl = freezed,Object? totalLitres = null,Object? totalRoutes = null,Object? attendanceRatio = null,Object? totalBottles = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? dpId = null,Object? dpCode = null,Object? name = null,Object? photoUrl = freezed,Object? totalLitres = null,Object? totalRoutes = null,Object? attendanceRatio = null,Object? totalBottles = null,Object? total1LBottles = null,Object? totalHalfLBottles = null,}) {
   return _then(_self.copyWith(
 dpId: null == dpId ? _self.dpId : dpId // ignore: cast_nullable_to_non_nullable
 as String,dpCode: null == dpCode ? _self.dpCode : dpCode // ignore: cast_nullable_to_non_nullable
@@ -75,6 +75,8 @@ as String?,totalLitres: null == totalLitres ? _self.totalLitres : totalLitres //
 as double,totalRoutes: null == totalRoutes ? _self.totalRoutes : totalRoutes // ignore: cast_nullable_to_non_nullable
 as int,attendanceRatio: null == attendanceRatio ? _self.attendanceRatio : attendanceRatio // ignore: cast_nullable_to_non_nullable
 as String,totalBottles: null == totalBottles ? _self.totalBottles : totalBottles // ignore: cast_nullable_to_non_nullable
+as int,total1LBottles: null == total1LBottles ? _self.total1LBottles : total1LBottles // ignore: cast_nullable_to_non_nullable
+as int,totalHalfLBottles: null == totalHalfLBottles ? _self.totalHalfLBottles : totalHalfLBottles // ignore: cast_nullable_to_non_nullable
 as int,
   ));
 }
@@ -160,10 +162,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String dpId,  String dpCode,  String name,  String? photoUrl,  double totalLitres,  int totalRoutes,  String attendanceRatio,  int totalBottles)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String dpId,  String dpCode,  String name,  String? photoUrl,  double totalLitres,  int totalRoutes,  String attendanceRatio,  int totalBottles,  int total1LBottles,  int totalHalfLBottles)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _DpPerformanceReport() when $default != null:
-return $default(_that.dpId,_that.dpCode,_that.name,_that.photoUrl,_that.totalLitres,_that.totalRoutes,_that.attendanceRatio,_that.totalBottles);case _:
+return $default(_that.dpId,_that.dpCode,_that.name,_that.photoUrl,_that.totalLitres,_that.totalRoutes,_that.attendanceRatio,_that.totalBottles,_that.total1LBottles,_that.totalHalfLBottles);case _:
   return orElse();
 
 }
@@ -181,10 +183,10 @@ return $default(_that.dpId,_that.dpCode,_that.name,_that.photoUrl,_that.totalLit
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String dpId,  String dpCode,  String name,  String? photoUrl,  double totalLitres,  int totalRoutes,  String attendanceRatio,  int totalBottles)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String dpId,  String dpCode,  String name,  String? photoUrl,  double totalLitres,  int totalRoutes,  String attendanceRatio,  int totalBottles,  int total1LBottles,  int totalHalfLBottles)  $default,) {final _that = this;
 switch (_that) {
 case _DpPerformanceReport():
-return $default(_that.dpId,_that.dpCode,_that.name,_that.photoUrl,_that.totalLitres,_that.totalRoutes,_that.attendanceRatio,_that.totalBottles);case _:
+return $default(_that.dpId,_that.dpCode,_that.name,_that.photoUrl,_that.totalLitres,_that.totalRoutes,_that.attendanceRatio,_that.totalBottles,_that.total1LBottles,_that.totalHalfLBottles);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -201,10 +203,10 @@ return $default(_that.dpId,_that.dpCode,_that.name,_that.photoUrl,_that.totalLit
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String dpId,  String dpCode,  String name,  String? photoUrl,  double totalLitres,  int totalRoutes,  String attendanceRatio,  int totalBottles)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String dpId,  String dpCode,  String name,  String? photoUrl,  double totalLitres,  int totalRoutes,  String attendanceRatio,  int totalBottles,  int total1LBottles,  int totalHalfLBottles)?  $default,) {final _that = this;
 switch (_that) {
 case _DpPerformanceReport() when $default != null:
-return $default(_that.dpId,_that.dpCode,_that.name,_that.photoUrl,_that.totalLitres,_that.totalRoutes,_that.attendanceRatio,_that.totalBottles);case _:
+return $default(_that.dpId,_that.dpCode,_that.name,_that.photoUrl,_that.totalLitres,_that.totalRoutes,_that.attendanceRatio,_that.totalBottles,_that.total1LBottles,_that.totalHalfLBottles);case _:
   return null;
 
 }
@@ -216,7 +218,7 @@ return $default(_that.dpId,_that.dpCode,_that.name,_that.photoUrl,_that.totalLit
 @JsonSerializable()
 
 class _DpPerformanceReport implements DpPerformanceReport {
-  const _DpPerformanceReport({required this.dpId, required this.dpCode, required this.name, this.photoUrl, required this.totalLitres, required this.totalRoutes, required this.attendanceRatio, required this.totalBottles});
+  const _DpPerformanceReport({required this.dpId, required this.dpCode, required this.name, this.photoUrl, required this.totalLitres, required this.totalRoutes, required this.attendanceRatio, required this.totalBottles, this.total1LBottles = 0, this.totalHalfLBottles = 0});
   factory _DpPerformanceReport.fromJson(Map<String, dynamic> json) => _$DpPerformanceReportFromJson(json);
 
 @override final  String dpId;
@@ -227,6 +229,8 @@ class _DpPerformanceReport implements DpPerformanceReport {
 @override final  int totalRoutes;
 @override final  String attendanceRatio;
 @override final  int totalBottles;
+@override@JsonKey() final  int total1LBottles;
+@override@JsonKey() final  int totalHalfLBottles;
 
 /// Create a copy of DpPerformanceReport
 /// with the given fields replaced by the non-null parameter values.
@@ -241,16 +245,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DpPerformanceReport&&(identical(other.dpId, dpId) || other.dpId == dpId)&&(identical(other.dpCode, dpCode) || other.dpCode == dpCode)&&(identical(other.name, name) || other.name == name)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.totalLitres, totalLitres) || other.totalLitres == totalLitres)&&(identical(other.totalRoutes, totalRoutes) || other.totalRoutes == totalRoutes)&&(identical(other.attendanceRatio, attendanceRatio) || other.attendanceRatio == attendanceRatio)&&(identical(other.totalBottles, totalBottles) || other.totalBottles == totalBottles));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DpPerformanceReport&&(identical(other.dpId, dpId) || other.dpId == dpId)&&(identical(other.dpCode, dpCode) || other.dpCode == dpCode)&&(identical(other.name, name) || other.name == name)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.totalLitres, totalLitres) || other.totalLitres == totalLitres)&&(identical(other.totalRoutes, totalRoutes) || other.totalRoutes == totalRoutes)&&(identical(other.attendanceRatio, attendanceRatio) || other.attendanceRatio == attendanceRatio)&&(identical(other.totalBottles, totalBottles) || other.totalBottles == totalBottles)&&(identical(other.total1LBottles, total1LBottles) || other.total1LBottles == total1LBottles)&&(identical(other.totalHalfLBottles, totalHalfLBottles) || other.totalHalfLBottles == totalHalfLBottles));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,dpId,dpCode,name,photoUrl,totalLitres,totalRoutes,attendanceRatio,totalBottles);
+int get hashCode => Object.hash(runtimeType,dpId,dpCode,name,photoUrl,totalLitres,totalRoutes,attendanceRatio,totalBottles,total1LBottles,totalHalfLBottles);
 
 @override
 String toString() {
-  return 'DpPerformanceReport(dpId: $dpId, dpCode: $dpCode, name: $name, photoUrl: $photoUrl, totalLitres: $totalLitres, totalRoutes: $totalRoutes, attendanceRatio: $attendanceRatio, totalBottles: $totalBottles)';
+  return 'DpPerformanceReport(dpId: $dpId, dpCode: $dpCode, name: $name, photoUrl: $photoUrl, totalLitres: $totalLitres, totalRoutes: $totalRoutes, attendanceRatio: $attendanceRatio, totalBottles: $totalBottles, total1LBottles: $total1LBottles, totalHalfLBottles: $totalHalfLBottles)';
 }
 
 
@@ -261,7 +265,7 @@ abstract mixin class _$DpPerformanceReportCopyWith<$Res> implements $DpPerforman
   factory _$DpPerformanceReportCopyWith(_DpPerformanceReport value, $Res Function(_DpPerformanceReport) _then) = __$DpPerformanceReportCopyWithImpl;
 @override @useResult
 $Res call({
- String dpId, String dpCode, String name, String? photoUrl, double totalLitres, int totalRoutes, String attendanceRatio, int totalBottles
+ String dpId, String dpCode, String name, String? photoUrl, double totalLitres, int totalRoutes, String attendanceRatio, int totalBottles, int total1LBottles, int totalHalfLBottles
 });
 
 
@@ -278,7 +282,7 @@ class __$DpPerformanceReportCopyWithImpl<$Res>
 
 /// Create a copy of DpPerformanceReport
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? dpId = null,Object? dpCode = null,Object? name = null,Object? photoUrl = freezed,Object? totalLitres = null,Object? totalRoutes = null,Object? attendanceRatio = null,Object? totalBottles = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? dpId = null,Object? dpCode = null,Object? name = null,Object? photoUrl = freezed,Object? totalLitres = null,Object? totalRoutes = null,Object? attendanceRatio = null,Object? totalBottles = null,Object? total1LBottles = null,Object? totalHalfLBottles = null,}) {
   return _then(_DpPerformanceReport(
 dpId: null == dpId ? _self.dpId : dpId // ignore: cast_nullable_to_non_nullable
 as String,dpCode: null == dpCode ? _self.dpCode : dpCode // ignore: cast_nullable_to_non_nullable
@@ -288,6 +292,8 @@ as String?,totalLitres: null == totalLitres ? _self.totalLitres : totalLitres //
 as double,totalRoutes: null == totalRoutes ? _self.totalRoutes : totalRoutes // ignore: cast_nullable_to_non_nullable
 as int,attendanceRatio: null == attendanceRatio ? _self.attendanceRatio : attendanceRatio // ignore: cast_nullable_to_non_nullable
 as String,totalBottles: null == totalBottles ? _self.totalBottles : totalBottles // ignore: cast_nullable_to_non_nullable
+as int,total1LBottles: null == total1LBottles ? _self.total1LBottles : total1LBottles // ignore: cast_nullable_to_non_nullable
+as int,totalHalfLBottles: null == totalHalfLBottles ? _self.totalHalfLBottles : totalHalfLBottles // ignore: cast_nullable_to_non_nullable
 as int,
   ));
 }

@@ -85,7 +85,7 @@ class _DpPerformanceScreenState extends ConsumerState<DpPerformanceScreen> {
 
     try {
       List<List<dynamic>> rows = [
-        ['Rank', 'DP Name', 'DP Code', 'Total Litres', 'Total Routes', 'Attendance', 'Total Bottles Collected']
+        ['Rank', 'DP Name', 'DP Code', 'Total Litres', 'Total Routes', 'Attendance', 'Bottles Collected (1L)', 'Bottles Collected (1/2L)', 'Total Bottles Collected']
       ];
 
       for (int i = 0; i < state.filteredReports.length; i++) {
@@ -97,6 +97,8 @@ class _DpPerformanceScreenState extends ConsumerState<DpPerformanceScreen> {
           dp.totalLitres,
           dp.totalRoutes,
           dp.attendanceRatio,
+          dp.total1LBottles,
+          dp.totalHalfLBottles,
           dp.totalBottles,
         ]);
       }
@@ -417,7 +419,7 @@ class _DpPerformanceCard extends StatelessWidget {
                         Expanded(flex: 2, child: _CompactMetric(label: 'Litres', value: '${dp.totalLitres}L', isHighlighted: isLitresSorted)),
                         Expanded(flex: 2, child: _CompactMetric(label: 'Routes', value: '${dp.totalRoutes}', isHighlighted: isRoutesSorted)),
                         Expanded(flex: 3, child: _CompactMetric(label: 'Attd', value: dp.attendanceRatio, isHighlighted: isAttendanceSorted)),
-                        Expanded(flex: 4, child: _CompactMetric(label: 'Bottles Collected', value: '${dp.totalBottles}', isHighlighted: isBottlesSorted)),
+                        Expanded(flex: 4, child: _CompactMetric(label: 'Bottles Collected', value: '1L(${dp.total1LBottles})+1/2L(${dp.totalHalfLBottles})', isHighlighted: isBottlesSorted)),
                       ],
                     ),
                   ],

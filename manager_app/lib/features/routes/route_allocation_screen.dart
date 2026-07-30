@@ -247,19 +247,24 @@ class _RouteCard extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    route.name,
-                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    route.area,
-                    style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                  ),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      route.name,
+                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      route.area,
+                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: AppConstants.spacing8),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -374,15 +379,15 @@ class _RouteCard extends ConsumerWidget {
             children: [
               const Icon(Icons.people, size: 16, color: Colors.grey),
               const SizedBox(width: AppConstants.spacing4),
-              Text('${route.customerCount} Customers', style: const TextStyle(fontSize: 12)),
+              Flexible(child: Text('${route.customerCount} Customers', style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis)),
               const SizedBox(width: AppConstants.spacing16),
               const Icon(Icons.local_drink, size: 16, color: Colors.grey),
               const SizedBox(width: AppConstants.spacing4),
-              Text('${route.milkQuantity} Ltr', style: const TextStyle(fontSize: 12)),
+              Flexible(child: Text('${route.milkQuantity} Ltr', style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis)),
               const SizedBox(width: AppConstants.spacing16),
               const Icon(Icons.keyboard_return, size: 16, color: Colors.grey),
               const SizedBox(width: AppConstants.spacing4),
-              Text('${route.expectedEmptyBottles} Expected', style: const TextStyle(fontSize: 12)),
+              Flexible(child: Text('${route.expectedEmptyBottles} Expected', style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis)),
             ],
           ),
           const SizedBox(height: AppConstants.spacing8),
@@ -395,12 +400,16 @@ class _RouteCard extends ConsumerWidget {
                   radius: 12,
                 ),
                 const SizedBox(width: AppConstants.spacing8),
-                Text(
-                  route.assignedDpName!,
-                  style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+                Expanded(
+                  child: Text(
+                    route.assignedDpName!,
+                    style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                const SizedBox(width: AppConstants.spacing8),
+                const SizedBox(width: 4), // Tightened spacing to give chip more room
                 Container(
+                  constraints: const BoxConstraints(maxWidth: 160), // Bound extreme edge cases, but let normal amounts fit fully
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: (route.assignedDpPetrolBalance > 0 ? Colors.teal : (route.assignedDpPetrolBalance < 0 ? Colors.orange : Colors.grey)).withAlpha(25),
@@ -416,9 +425,10 @@ class _RouteCard extends ConsumerWidget {
                       fontSize: 9,
                       fontWeight: FontWeight.bold,
                     ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const Spacer(),
+                const SizedBox(width: 4),
                 IconButton(
                   icon: Icon(Icons.edit, size: 20, color: theme.colorScheme.primary),
                   padding: EdgeInsets.zero,
@@ -557,23 +567,12 @@ class _AssignDpSheet extends ConsumerWidget {
         }
       }
     }
-    String paStatusText = 'PA: Not Given';
-    Color paColor = theme.colorScheme.primary;
-
-    if (route.petrolAllowanceGiven != null) {
-      final given = route.petrolAllowanceGiven!;
-      final expected = route.fixedPetrolAllowance;
-      if (given < expected) {
-        paStatusText = 'PA: Short ₹${expected - given}';
-        paColor = Colors.red;
-      } else if (given > expected) {
-        paStatusText = 'PA: Extra ₹${given - expected}';
-        paColor = Colors.orange;
-      } else {
-        paStatusText = 'PA: Fully Paid';
-        paColor = Colors.green;
-      }
-    }
+    String paStatusText = route.assignedDpPetrolBalance == 0
+        ? 'PA: Balanced (₹0)'
+        : 'PA: ${route.assignedDpPetrolBalance > 0 ? 'Extra' : 'Short'} ₹${route.assignedDpPetrolBalance.abs().toStringAsFixed(0)}';
+    Color paColor = route.assignedDpPetrolBalance > 0
+        ? Colors.teal
+        : (route.assignedDpPetrolBalance < 0 ? Colors.orange : Colors.grey);
 
     return ListView(
       controller: scrollController,
@@ -630,7 +629,7 @@ class _AssignDpSheet extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: () => _assign(context, ref, currentlyAssignedDp!),
+                        onPressed: route.deliveryCompleted == true ? null : () => _assign(context, ref, currentlyAssignedDp!),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(horizontal: 0),
                           minimumSize: const Size(0, 36),
@@ -642,7 +641,7 @@ class _AssignDpSheet extends ConsumerWidget {
                     const SizedBox(width: AppConstants.spacing8),
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: () => _showUnassignConfirm(context, ref),
+                        onPressed: route.deliveryCompleted == true ? null : () => _showUnassignConfirm(context, ref),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.red,
                           side: const BorderSide(color: Colors.red),
@@ -659,7 +658,7 @@ class _AssignDpSheet extends ConsumerWidget {
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton(
-                    onPressed: () {
+                    onPressed: route.deliveryCompleted == true ? null : () {
                       showModalBottomSheet(
                         context: context,
                         useRootNavigator: true,

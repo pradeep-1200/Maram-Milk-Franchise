@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:local_auth/local_auth.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../shared/app_button.dart';
@@ -23,9 +20,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
   bool _obscurePassword = true;
   String? _emailError;
   String? _passwordError;
-  String? _biometricError;
-  
-  final LocalAuthentication auth = LocalAuthentication();
 
   // Animations
   late AnimationController _animController;
@@ -99,46 +93,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
     }
   }
 
-  Future<void> _handleBiometricAuth() async {
-    setState(() {
-      _biometricError = null;
-    });
-
-    try {
-      final bool canAuthenticateWithBiometrics = await auth.canCheckBiometrics;
-      final bool canAuthenticate = canAuthenticateWithBiometrics || await auth.isDeviceSupported();
-
-      if (!canAuthenticate) {
-        setState(() {
-          _biometricError = 'Biometric login isn\'t set up on this device';
-        });
-        return;
-      }
-
-      final bool didAuthenticate = await auth.authenticate(
-        localizedReason: 'Authenticate to access Maram Milk Manager',
-        options: const AuthenticationOptions(
-          biometricOnly: true,
-          stickyAuth: true,
-        ),
-      );
-
-      if (didAuthenticate) {
-        if (mounted) {
-          context.go('/dashboard');
-        }
-      } else {
-        setState(() {
-          _biometricError = 'Biometric authentication failed. Try again or use your password.';
-        });
-      }
-    } on PlatformException catch (_) {
-      setState(() {
-        _biometricError = 'Biometric login isn\'t set up on this device';
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -188,19 +142,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
                                         ),
                                       ],
                                     ),
-                                    child: const Icon(
-                                      Icons.local_drink,
-                                      size: 46,
-                                      color: Colors.white,
+                                    child: ClipOval(
+                                      child: Image.asset(
+                                        'assets/icon/app_icon.png',
+                                        width: 46,
+                                        height: 46,
+                                        fit: BoxFit.cover,
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(height: AppConstants.spacing16),
                                   Text(
-                                    'MARAM MILK',
+                                    'Maram Milk',
                                     style: theme.textTheme.headlineSmall?.copyWith(
-                                      fontWeight: FontWeight.w900,
+                                      fontFamily: 'NautilusPompilius',
+                                      fontWeight: FontWeight.w700,
                                       color: theme.colorScheme.primary,
-                                      letterSpacing: 3.0,
+                                      letterSpacing: 1.5,
+                                      fontSize: 36,
                                     ),
                                   ),
                                   const SizedBox(height: 6),
@@ -334,28 +293,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
                                     isPill: true,
                                     onPressed: _validateAndLogin,
                                   ),
-
-                                  const SizedBox(height: AppConstants.spacing16),
-
-                                  // Biometric Button
-                                  AppButton.outlined(
-                                    text: 'Use Biometric',
-                                    isPill: true,
-                                    icon: Icon(
-                                      Icons.fingerprint,
-                                      color: theme.colorScheme.primary,
-                                    ),
-                                    onPressed: _handleBiometricAuth,
-                                  ),
-
-                                  if (_biometricError != null) ...[
-                                    const SizedBox(height: AppConstants.spacing8),
-                                    Text(
-                                      _biometricError!,
-                                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ],
                                 ],
                               ),
                             ),

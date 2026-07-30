@@ -196,10 +196,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProvider
                                       ),
                                     ],
                                   ),
-                                  child: const Icon(
-                                    Icons.local_drink,
-                                    size: 54,
-                                    color: Colors.white,
+                                  child: ClipOval(
+                                    child: Image.asset(
+                                      'assets/icon/app_icon.png',
+                                      width: 54,
+                                      height: 54,
+                                      fit: BoxFit.cover,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -221,22 +224,23 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProvider
                             opacity: _textFade.value,
                             child: Column(
                               children: [
-                                const Text(
-                                  'MARAM MILK',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: 4.0,
-                                    shadows: [
-                                      Shadow(
-                                        color: Colors.black26,
-                                        blurRadius: 8,
-                                        offset: Offset(0, 2),
-                                      ),
-                                    ],
+                                  const Text(
+                                    'Maram Milk',
+                                    style: TextStyle(
+                                      fontFamily: 'NautilusPompilius',
+                                      color: Colors.white,
+                                      fontSize: 48,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 2.0,
+                                      shadows: [
+                                        Shadow(
+                                          color: Colors.black26,
+                                          blurRadius: 8,
+                                          offset: Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
                                 const SizedBox(height: 10),
                                 Text(
                                   'Morning operations, simplified.',

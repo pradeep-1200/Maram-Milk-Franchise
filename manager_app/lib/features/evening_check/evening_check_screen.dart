@@ -326,6 +326,7 @@ class _RouteDpCard extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                       color: isUnassigned ? Colors.grey : theme.colorScheme.primary,
                     ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -333,11 +334,13 @@ class _RouteDpCard extends StatelessWidget {
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: isUnassigned ? Colors.grey : theme.colorScheme.onSurface,
                     ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                   if (route.dpId != null)
                     Text(
                       'ID: ${route.dpId}',
                       style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                      overflow: TextOverflow.ellipsis,
                     ),
                 ],
               ),
@@ -599,10 +602,12 @@ class _EveningCheckSheetState extends ConsumerState<_EveningCheckSheet> {
                       Text(
                         widget.route.dpName ?? 'Unknown',
                         style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.ellipsis,
                       ),
                       Text(
                         'Route: ${widget.route.routeName}',
                         style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),

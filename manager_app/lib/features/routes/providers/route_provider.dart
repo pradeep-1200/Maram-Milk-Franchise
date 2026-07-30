@@ -6,6 +6,7 @@ import '../../../core/network/api_client.dart';
 import '../../inventory/providers/inventory_provider.dart';
 import '../../evening_check/providers/evening_check_provider.dart';
 import '../../dispatch/providers/dispatch_provider.dart';
+import '../../profile/providers/staff_provider.dart';
 
 class RouteState {
   final List<DeliveryRoute> routes;
@@ -128,6 +129,9 @@ class RouteNotifier extends AsyncNotifier<RouteState> {
       ref.invalidate(inventoryProvider);
       ref.invalidate(eveningCheckProvider);
       ref.invalidate(dispatchProvider);
+      ref.invalidate(attendanceProvider);
+      ref.invalidate(staffProvider);
+      ref.invalidateSelf();
     } catch (e) {
       ref.invalidateSelf();
       rethrow;
@@ -174,6 +178,9 @@ class RouteNotifier extends AsyncNotifier<RouteState> {
       ref.invalidate(inventoryProvider);
       ref.invalidate(eveningCheckProvider);
       ref.invalidate(dispatchProvider);
+      ref.invalidate(attendanceProvider);
+      ref.invalidate(staffProvider);
+      ref.invalidateSelf();
     } catch (e) {
       ref.invalidateSelf();
       rethrow;
@@ -214,6 +221,9 @@ class RouteNotifier extends AsyncNotifier<RouteState> {
       );
       ref.invalidate(eveningCheckProvider);
       ref.invalidate(dispatchProvider);
+      ref.invalidate(attendanceProvider);
+      ref.invalidate(staffProvider);
+      ref.invalidateSelf();
     } catch (e) {
       ref.invalidateSelf();
     }
@@ -249,6 +259,8 @@ class RouteNotifier extends AsyncNotifier<RouteState> {
         );
         ref.invalidate(eveningCheckProvider);
         ref.invalidate(dispatchProvider);
+        ref.invalidate(staffProvider);
+        ref.invalidateSelf();
       } catch (e) {
         ref.invalidateSelf();
       }

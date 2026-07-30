@@ -7,6 +7,7 @@ import '../../shared/dp_avatar.dart';
 import 'providers/dashboard_provider.dart';
 import '../routes/providers/route_provider.dart';
 import '../evening_check/providers/evening_check_provider.dart';
+import '../attendance/providers/attendance_provider.dart';
 import 'package:intl/intl.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -68,7 +69,7 @@ class DashboardScreen extends ConsumerWidget {
                                 ),
                               ),
                               Text(
-                                'Manager • Downtown Branch',
+                                'Manager • Royapettah Branch',
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: theme.colorScheme.onSurfaceVariant,
                                 ),
@@ -157,23 +158,7 @@ class DashboardScreen extends ConsumerWidget {
                             fontSize: 18,
                           ),
                         ),
-                        Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(10),
-                            boxShadow: AppConstants.cardShadow,
-                            border: AppConstants.cardBorder,
-                          ),
-                          child: IconButton(
-                            padding: EdgeInsets.zero,
-                            icon: Icon(Icons.refresh, size: 18, color: theme.colorScheme.primary),
-                            onPressed: () {
-                              ref.invalidate(dashboardProvider);
-                            },
-                          ),
-                        ),
+                        const _ReloadStatsButton(),
                       ],
                     ),
                     const SizedBox(height: AppConstants.spacing16),
@@ -716,6 +701,60 @@ class _StatCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ReloadStatsButton extends ConsumerStatefulWidget {
+  const _ReloadStatsButton();
+
+  @override
+  ConsumerState<_ReloadStatsButton> createState() => _ReloadStatsButtonState();
+}
+
+class _ReloadStatsButtonState extends ConsumerState<_ReloadStatsButton> {
+  bool _isCoolingDown = false;
+
+  void _handleTap() {
+    if (_isCoolingDown) return;
+
+    setState(() {
+      _isCoolingDown = true;
+    });
+
+    ref.invalidate(attendanceProvider);
+
+    Future.delayed(const Duration(seconds: 10), () {
+      if (mounted) {
+        setState(() {
+          _isCoolingDown = false;
+        });
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    // Use withValues for opacity per modern Flutter standard if available, or withOpacity
+    final iconColor = _isCoolingDown 
+        ? theme.colorScheme.primary.withValues(alpha: 0.3) 
+        : theme.colorScheme.primary;
+
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: AppConstants.cardShadow,
+        border: AppConstants.cardBorder,
+      ),
+      child: IconButton(
+        padding: EdgeInsets.zero,
+        icon: Icon(Icons.refresh, size: 18, color: iconColor),
+        onPressed: _isCoolingDown ? null : _handleTap,
       ),
     );
   }

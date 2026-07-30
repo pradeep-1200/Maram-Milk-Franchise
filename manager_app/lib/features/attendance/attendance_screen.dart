@@ -87,31 +87,34 @@ class AttendanceScreen extends ConsumerWidget {
           final notifier = ref.read(attendanceProvider.notifier);
           return Column(
             children: [
-              // Filter Chips
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppConstants.spacing16,
-                  vertical: AppConstants.spacing8,
-                ),
-                child: Wrap(
-                  spacing: AppConstants.spacing8,
-                  runSpacing: 8.0,
+              // Filter Chips — horizontally scrollable so all 4 always fit in one row
+              SizedBox(
+                height: 44,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppConstants.spacing16,
+                    vertical: 4.0,
+                  ),
                   children: [
                     _FilterChip(
                       label: 'All ${state.countAll}',
                       isSelected: state.statusFilter == null,
                       onSelected: () => notifier.setStatusFilter(null),
                     ),
+                    const SizedBox(width: 6),
                     _FilterChip(
                       label: 'Present ${state.countPresent}',
                       isSelected: state.statusFilter == AttendanceStatus.present,
                       onSelected: () => notifier.setStatusFilter(AttendanceStatus.present),
                     ),
+                    const SizedBox(width: 6),
                     _FilterChip(
                       label: 'Absent ${state.countAbsent}',
                       isSelected: state.statusFilter == AttendanceStatus.absent,
                       onSelected: () => notifier.setStatusFilter(AttendanceStatus.absent),
                     ),
+                    const SizedBox(width: 6),
                     _FilterChip(
                       label: 'Standby ${state.countStandby}',
                       isSelected: state.statusFilter == AttendanceStatus.standby,
@@ -182,11 +185,15 @@ class _FilterChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return ActionChip(
-      label: Text(label),
+      label: Text(label, style: const TextStyle(fontSize: 12)),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+      labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+      visualDensity: VisualDensity.compact,
       backgroundColor: isSelected ? theme.colorScheme.primaryContainer : theme.colorScheme.surface,
       labelStyle: TextStyle(
         color: isSelected ? theme.colorScheme.onPrimaryContainer : theme.colorScheme.onSurface,
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        fontSize: 12,
       ),
       side: BorderSide(
         color: isSelected ? theme.colorScheme.primary : theme.dividerColor,
@@ -285,22 +292,22 @@ class _DPCard extends ConsumerWidget {
                 Text(
                   person.name,
                   style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
-                Row(
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 4,
+                  runSpacing: 2,
                   children: [
                     Text(
                       person.dpCode,
                       style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                     ),
-                    const SizedBox(width: 8),
                     // Primary badge (Present / Absent / Pending)
                     badge(primaryBadgeColor, primaryBadgeText),
                     // Additional Standby badge shown alongside Present
-                    if (isStandby) ...[
-                      const SizedBox(width: 4),
-                      badge(Colors.orange, 'Standby'),
-                    ],
+                    if (isStandby) badge(Colors.orange, 'Standby'),
                   ],
                 ),
               ],

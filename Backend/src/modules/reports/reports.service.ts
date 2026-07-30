@@ -54,7 +54,7 @@ export const getDpPerformance = async (range: 'today'|'week'|'month'|'custom', f
     
     const presentCount = dpAttendance.filter(a => a.status === 'PRESENT').length;
     const totalRecordedDays = dpAttendance.length;
-    const attendanceRatio = `${presentCount}/${totalRecordedDays}`;
+    const attendanceRatio = `${presentCount} of ${totalRecordedDays}`;
 
     const totalBottles = dpBottles.reduce((sum, b) => sum + b.oneLBottlesCollected + b.halfLBottlesCollected, 0);
 

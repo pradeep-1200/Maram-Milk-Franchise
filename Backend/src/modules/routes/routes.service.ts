@@ -49,6 +49,8 @@ export const getRoutesWithAllocation = async (date: string) => {
       qty1LBottle: allocation ? allocation.qty1LBottle : 0,
       qtyHalfLBottle: allocation ? allocation.qtyHalfLBottle : 0,
       qtyHalfLPacket: allocation ? allocation.qtyHalfLPacket : 0,
+      petrolAllowanceGiven: allocation ? allocation.petrolAllowanceGiven : null,
+      isPetrolAllowanceComplete: allocation ? (allocation.petrolAllowanceGiven !== null) : false,
       expectedEmptyBottles,
       status: allocation ? allocation.status : 'UNASSIGNED',
     };
@@ -125,7 +127,7 @@ export const updateRouteAllocation = async (
       qty1LBottle: new1L,
       qtyHalfLBottle: newHalfL,
       qtyHalfLPacket: newHalfLPacket,
-      petrolAllowanceGiven,
+      petrolAllowanceGiven: status === 'UNASSIGNED' ? null : petrolAllowanceGiven,
     },
     create: {
       routeId,
@@ -136,7 +138,7 @@ export const updateRouteAllocation = async (
       qty1LBottle: new1L,
       qtyHalfLBottle: newHalfL,
       qtyHalfLPacket: newHalfLPacket,
-      petrolAllowanceGiven,
+      petrolAllowanceGiven: status === 'UNASSIGNED' ? null : petrolAllowanceGiven,
     },
   });
 

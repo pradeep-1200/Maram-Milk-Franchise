@@ -61,19 +61,15 @@ class _DpPerformanceScreenState extends ConsumerState<DpPerformanceScreen> {
     super.dispose();
   }
 
-  Future<void> _selectCustomDateRange() async {
+  Future<DateTimeRange?> _selectCustomDateRange() async {
     final state = ref.read(dpPerformanceProvider).value;
     final now = DateTime.now();
-    final picked = await showDateRangePicker(
+    return await showDateRangePicker(
       context: context,
       firstDate: DateTime(now.year - 1),
       lastDate: now,
       initialDateRange: state?.customDateRange ?? DateTimeRange(start: now.subtract(const Duration(days: 7)), end: now),
     );
-    
-    if (picked != null) {
-      ref.read(dpPerformanceProvider.notifier).setCustomDateRange(picked);
-    }
   }
 
   Future<void> _exportReport() async {
@@ -89,7 +85,7 @@ class _DpPerformanceScreenState extends ConsumerState<DpPerformanceScreen> {
 
     try {
       List<List<dynamic>> rows = [
-        ['Rank', 'DP Name', 'DP Code', 'Total Litres', 'Total Routes', 'Attendance', 'Total Bottles']
+        ['Rank', 'DP Name', 'DP Code', 'Total Litres', 'Total Routes', 'Attendance', 'Total Bottles Collected']
       ];
 
       for (int i = 0; i < state.filteredReports.length; i++) {
@@ -205,11 +201,11 @@ class _DpPerformanceScreenState extends ConsumerState<DpPerformanceScreen> {
                           _FilterChip(
                             label: 'Custom',
                             isSelected: state.period == 'custom',
-                            onSelected: () {
-                              if (state.period != 'custom') {
-                                notifier.setPeriod('custom');
+                            onSelected: () async {
+                              final picked = await _selectCustomDateRange();
+                              if (picked != null) {
+                                notifier.setCustomDateRange(picked);
                               }
-                              _selectCustomDateRange();
                             },
                           ),
                         ],
@@ -243,7 +239,7 @@ class _DpPerformanceScreenState extends ConsumerState<DpPerformanceScreen> {
                               DropdownMenuItem(value: DpSortOption.litres, child: Text('Litres', overflow: TextOverflow.ellipsis)),
                               DropdownMenuItem(value: DpSortOption.routes, child: Text('Routes', overflow: TextOverflow.ellipsis)),
                               DropdownMenuItem(value: DpSortOption.attendance, child: Text('Attd', overflow: TextOverflow.ellipsis)),
-                              DropdownMenuItem(value: DpSortOption.bottles, child: Text('Bottles', overflow: TextOverflow.ellipsis)),
+                              DropdownMenuItem(value: DpSortOption.bottles, child: Text('Bottles Collected', overflow: TextOverflow.ellipsis)),
                             ],
                             onChanged: (val) {
                               if (val != null) {
@@ -400,6 +396,8 @@ class _DpPerformanceCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     RichText(
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                       text: TextSpan(
                         text: dp.name,
                         style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
@@ -416,10 +414,10 @@ class _DpPerformanceCard extends StatelessWidget {
                     // Metrics Row (4 columns)
                     Row(
                       children: [
-                        Expanded(child: _CompactMetric(label: 'Litres', value: '${dp.totalLitres}L', isHighlighted: isLitresSorted)),
-                        Expanded(child: _CompactMetric(label: 'Routes', value: '${dp.totalRoutes}', isHighlighted: isRoutesSorted)),
-                        Expanded(child: _CompactMetric(label: 'Attd', value: dp.attendanceRatio, isHighlighted: isAttendanceSorted)),
-                        Expanded(child: _CompactMetric(label: 'Bottles', value: '${dp.totalBottles}', isHighlighted: isBottlesSorted)),
+                        Expanded(flex: 2, child: _CompactMetric(label: 'Litres', value: '${dp.totalLitres}L', isHighlighted: isLitresSorted)),
+                        Expanded(flex: 2, child: _CompactMetric(label: 'Routes', value: '${dp.totalRoutes}', isHighlighted: isRoutesSorted)),
+                        Expanded(flex: 3, child: _CompactMetric(label: 'Attd', value: dp.attendanceRatio, isHighlighted: isAttendanceSorted)),
+                        Expanded(flex: 4, child: _CompactMetric(label: 'Bottles Collected', value: '${dp.totalBottles}', isHighlighted: isBottlesSorted)),
                       ],
                     ),
                   ],
@@ -453,7 +451,7 @@ class _CompactMetric extends StatelessWidget {
         Text(
           label,
           maxLines: 1,
-          overflow: TextOverflow.visible,
+          overflow: TextOverflow.ellipsis,
           style: theme.textTheme.labelSmall?.copyWith(
             fontSize: 10,
             color: isHighlighted ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
@@ -463,7 +461,7 @@ class _CompactMetric extends StatelessWidget {
         Text(
           value,
           maxLines: 1,
-          overflow: TextOverflow.visible,
+          overflow: TextOverflow.ellipsis,
           style: theme.textTheme.bodyMedium?.copyWith(
             fontWeight: FontWeight.bold,
             fontSize: 13,

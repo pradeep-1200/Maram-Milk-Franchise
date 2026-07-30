@@ -69,11 +69,13 @@ class MilkAllocationSheet extends ConsumerWidget {
                         color: theme.colorScheme.primary,
                         fontWeight: FontWeight.bold,
                       ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: AppConstants.spacing4),
                     Text(
                       'Assigned to: ${dp.name} (${dp.employeeId})',
                       style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),

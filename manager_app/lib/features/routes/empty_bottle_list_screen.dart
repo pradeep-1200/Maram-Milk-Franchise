@@ -78,9 +78,9 @@ class EmptyBottleListScreen extends ConsumerWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(status.routeName, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                              Text(status.routeName, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
                               const SizedBox(height: 4),
-                              Text('DP: ${status.dpName}', style: theme.textTheme.bodyMedium),
+                              Text('DP: ${status.dpName}', style: theme.textTheme.bodyMedium, overflow: TextOverflow.ellipsis),
                             ],
                           ),
                         ),
@@ -108,8 +108,8 @@ class EmptyBottleListScreen extends ConsumerWidget {
                               const SizedBox(height: 4),
                               Builder(
                                 builder: (context) {
-                                  final totalCollected = status.oneLBottlesCollected + status.halfLBottlesCollected + status.halfLPacketCollected;
-                                  final totalExpected = status.expected1LBottles + status.expectedHalfLBottles + status.expectedHalfLPacket;
+                                  final totalCollected = status.oneLBottlesCollected + status.halfLBottlesCollected;
+                                  final totalExpected = status.expected1LBottles + status.expectedHalfLBottles;
 
                                   String tagText;
                                   Color tagColor;

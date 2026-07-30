@@ -22,6 +22,7 @@ export const getDpPerformance = async (range: 'today'|'week'|'month'|'custom', f
   }
 
   const dps = await prisma.deliveryPerson.findMany({
+    where: { isActive: true },
     orderBy: { dpCode: 'asc' },
   });
 

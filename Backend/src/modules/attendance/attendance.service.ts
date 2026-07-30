@@ -4,6 +4,7 @@ import { checkAndUpdateAttendanceCompletion } from '../dispatch/dispatch.service
 
 export const getAttendanceForDate = async (date: string) => {
   const dps = await prisma.deliveryPerson.findMany({
+    where: { isActive: true },
     orderBy: { dpCode: 'asc' },
   });
   

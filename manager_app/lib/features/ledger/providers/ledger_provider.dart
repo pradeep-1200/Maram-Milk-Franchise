@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
 import '../models/ledger_transaction.dart';
@@ -5,29 +7,30 @@ import '../models/ledger_transaction.dart';
 class LedgerState {
   final List<LedgerTransaction> transactions;
   final String? filterType;
+  final String? period;
+  final DateTimeRange? customDateRange;
 
   const LedgerState({
     required this.transactions,
     this.filterType,
+    this.period,
+    this.customDateRange,
   });
 
-  List<LedgerTransaction> get filteredTransactions {
-    if (filterType == null || filterType == 'all') return transactions;
-    
-    final targetType = filterType == 'fully_paid' ? 'PETROL_ALLOWANCE' :
-                       filterType == 'short_paid' ? 'SHORTAGE' :
-                       filterType == 'extra_paid' ? 'EXTRA_PAID' : filterType;
-                       
-    return transactions.where((t) => t.type == targetType).toList();
-  }
+  // filteredTransactions now just returns the list since everything is server-side
+  List<LedgerTransaction> get filteredTransactions => transactions;
 
   LedgerState copyWith({
     List<LedgerTransaction>? transactions,
     String? Function()? filterType,
+    String? Function()? period,
+    DateTimeRange? Function()? customDateRange,
   }) {
     return LedgerState(
       transactions: transactions ?? this.transactions,
       filterType: filterType != null ? filterType() : this.filterType,
+      period: period != null ? period() : this.period,
+      customDateRange: customDateRange != null ? customDateRange() : this.customDateRange,
     );
   }
 }
@@ -36,26 +39,78 @@ class LedgerNotifier extends AsyncNotifier<LedgerState> {
   @override
   Future<LedgerState> build() async {
     try {
-      return await _fetchLedger();
+      return await _fetchLedger(filterType: 'all', period: 'all');
     } catch (e, st) {
       return Future.error(e, st);
     }
   }
 
-  Future<LedgerState> _fetchLedger() async {
-    final response = await ref.read(apiClientProvider).get('/ledger');
+  Future<LedgerState> _fetchLedger({
+    String? filterType,
+    String? period,
+    DateTimeRange? customDateRange,
+  }) async {
+    String url = '/ledger?';
+    if (filterType != null && filterType != 'all') {
+      url += 'type=$filterType&';
+    }
+    if (period != null && period != 'all') {
+      if (period != 'custom') {
+        url += 'range=$period&';
+      } else if (customDateRange != null) {
+        url += 'range=custom&';
+        final from = DateFormat('yyyy-MM-dd').format(customDateRange.start);
+        final to = DateFormat('yyyy-MM-dd').format(customDateRange.end);
+        url += 'from=$from&to=$to&';
+      }
+    }
+
+    final response = await ref.read(apiClientProvider).get(url);
     final List<dynamic> data = response.data;
     final transactions = data.map((json) => LedgerTransaction.fromJson(json)).toList();
     
-    // Preserve the filter if we are reloading
-    final currentFilter = state.value?.filterType;
-    return LedgerState(transactions: transactions, filterType: currentFilter);
+    return LedgerState(
+      transactions: transactions,
+      filterType: filterType,
+      period: period,
+      customDateRange: customDateRange,
+    );
   }
 
-  void setFilter(String? type) {
-    if (state.value != null) {
-      state = AsyncData(state.value!.copyWith(filterType: () => type));
-    }
+  Future<void> setFilter(String? type) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      final current = state.value;
+      return _fetchLedger(
+        filterType: type,
+        period: current?.period,
+        customDateRange: current?.customDateRange,
+      );
+    });
+  }
+
+  Future<void> setPeriod(String period) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      final current = state.value;
+      return _fetchLedger(
+        filterType: current?.filterType,
+        period: period,
+        customDateRange: null,
+      );
+    });
+  }
+
+  Future<void> setCustomDateRange(DateTimeRange range) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      final current = state.value;
+      return _fetchLedger(
+        filterType: current?.filterType,
+        period: 'custom',
+        customDateRange: range,
+      );
+    });
   }
 
   Future<void> addTransaction({
@@ -74,7 +129,12 @@ class LedgerNotifier extends AsyncNotifier<LedgerState> {
         'note': note,
         'date': date,
       });
-      return _fetchLedger();
+      final current = state.value;
+      return _fetchLedger(
+        filterType: current?.filterType,
+        period: current?.period,
+        customDateRange: current?.customDateRange,
+      );
     });
   }
 }

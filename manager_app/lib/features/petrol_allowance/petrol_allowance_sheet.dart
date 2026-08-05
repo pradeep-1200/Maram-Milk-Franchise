@@ -28,6 +28,7 @@ class PetrolAllowanceSheet extends ConsumerStatefulWidget {
 
 class _PetrolAllowanceSheetState extends ConsumerState<PetrolAllowanceSheet> {
   bool _isEditing = false;
+  bool _isSubmitting = false;
   late TextEditingController _amountController;
   late FocusNode _amountFocusNode;
 
@@ -310,12 +311,28 @@ class _PetrolAllowanceSheetState extends ConsumerState<PetrolAllowanceSheet> {
                 // Action Button
                 AppButton(
                   text: 'Save & Complete',
-                  onPressed: givenAmount > 0 ? () {
-                    ref.read(routeProvider.notifier).markPetrolAllowanceComplete(widget.route.id, givenAmount);
-                    if (widget.isInStepFlow) {
-                      context.go('/dashboard');
-                    } else {
-                      context.pop();
+                  isLoading: _isSubmitting,
+                  onPressed: (givenAmount > 0 && !_isSubmitting) ? () async {
+                    setState(() => _isSubmitting = true);
+                    try {
+                      await ref.read(routeProvider.notifier).markPetrolAllowanceComplete(widget.route.id, givenAmount);
+                      if (context.mounted) {
+                        if (widget.isInStepFlow) {
+                          context.go('/dashboard');
+                        } else {
+                          context.pop();
+                        }
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Failed to save: $e'), backgroundColor: Colors.red),
+                        );
+                      }
+                    } finally {
+                      if (mounted) {
+                        setState(() => _isSubmitting = false);
+                      }
                     }
                   } : null,
                 ),

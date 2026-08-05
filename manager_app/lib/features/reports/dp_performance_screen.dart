@@ -414,13 +414,21 @@ class _DpPerformanceCard extends StatelessWidget {
                     const SizedBox(height: 8),
                     
                     // Metrics Row (4 columns)
-                    Row(
-                      children: [
-                        Expanded(flex: 2, child: _CompactMetric(label: 'Litres', value: '${dp.totalLitres}L', isHighlighted: isLitresSorted)),
-                        Expanded(flex: 2, child: _CompactMetric(label: 'Routes', value: '${dp.totalRoutes}', isHighlighted: isRoutesSorted)),
-                        Expanded(flex: 3, child: _CompactMetric(label: 'Attd', value: dp.attendanceRatio, isHighlighted: isAttendanceSorted)),
-                        Expanded(flex: 4, child: _CompactMetric(label: 'Bottles Collected', value: '1L(${dp.total1LBottles})+1/2L(${dp.totalHalfLBottles})', isHighlighted: isBottlesSorted)),
-                      ],
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          SizedBox(width: 60, child: _CompactMetric(label: 'Litres', value: '${dp.totalLitres}L', isHighlighted: isLitresSorted)),
+                          const SizedBox(width: 12),
+                          SizedBox(width: 60, child: _CompactMetric(label: 'Routes', value: '${dp.totalRoutes}', isHighlighted: isRoutesSorted)),
+                          const SizedBox(width: 12),
+                          SizedBox(width: 70, child: _CompactMetric(label: 'Attd', value: dp.attendanceRatio, isHighlighted: isAttendanceSorted)),
+                          const SizedBox(width: 12),
+                          _CompactMetric(label: 'Bottles Collected', value: 'F(${dp.total1LBottles})+H(${dp.totalHalfLBottles})', isHighlighted: isBottlesSorted),
+                          const SizedBox(width: 12),
+                          _CompactMetric(label: 'Petrol Allowance', value: '₹${dp.totalPetrolAllowance}', isHighlighted: false),
+                        ],
+                      ),
                     ),
                   ],
                 ),

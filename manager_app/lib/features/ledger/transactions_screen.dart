@@ -1,17 +1,47 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../shared/app_card.dart';
 import '../../shared/async_value_widget.dart';
 import 'providers/ledger_provider.dart';
 
-class TransactionsScreen extends ConsumerWidget {
+class TransactionsScreen extends ConsumerStatefulWidget {
   const TransactionsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TransactionsScreen> createState() => _TransactionsScreenState();
+}
+
+class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
+  Future<DateTimeRange?> _selectCustomDateRange(LedgerState state) async {
+    final now = DateTime.now();
+    return await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(now.year - 1),
+      lastDate: now,
+      initialDateRange: state.customDateRange ?? DateTimeRange(start: now.subtract(const Duration(days: 7)), end: now),
+    );
+  }
+
+  Future<DateTimeRange?> _selectCustomDate(LedgerState state) async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: state.customDateRange?.start ?? now,
+      firstDate: DateTime(now.year - 1),
+      lastDate: now,
+    );
+    if (picked != null) {
+      return DateTimeRange(start: picked, end: picked);
+    }
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final asyncState = ref.watch(ledgerProvider);
     final notifier = ref.read(ledgerProvider.notifier);
     final theme = Theme.of(context);
@@ -36,192 +66,257 @@ class TransactionsScreen extends ConsumerWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Filters
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppConstants.spacing16,
-                  vertical: AppConstants.spacing8,
-                ),
-                child: Row(
+              // Filters Section
+              Container(
+                color: theme.colorScheme.surface,
+                padding: const EdgeInsets.symmetric(vertical: AppConstants.spacing8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _FilterChip(
-                      label: 'All',
-                      isSelected: state.filterType == null || state.filterType == 'all',
-                      onSelected: () => notifier.setFilter('all'),
+                    // Date Filters
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: AppConstants.spacing16),
+                      child: Row(
+                        children: [
+                          _FilterChip(
+                            label: 'All Time',
+                            isSelected: state.period == null || state.period == 'all',
+                            onSelected: () => notifier.setPeriod('all'),
+                          ),
+                          const SizedBox(width: AppConstants.spacing8),
+                          _FilterChip(
+                            label: 'Today',
+                            isSelected: state.period == 'today',
+                            onSelected: () => notifier.setPeriod('today'),
+                          ),
+                          const SizedBox(width: AppConstants.spacing8),
+                          _FilterChip(
+                            label: 'Yesterday',
+                            isSelected: state.period == 'yesterday',
+                            onSelected: () => notifier.setPeriod('yesterday'),
+                          ),
+                          const SizedBox(width: AppConstants.spacing8),
+                          _FilterChip(
+                            label: 'This Week',
+                            isSelected: state.period == 'week',
+                            onSelected: () => notifier.setPeriod('week'),
+                          ),
+                          const SizedBox(width: AppConstants.spacing8),
+                          _FilterChip(
+                            label: 'This Month',
+                            isSelected: state.period == 'month',
+                            onSelected: () => notifier.setPeriod('month'),
+                          ),
+                          const SizedBox(width: AppConstants.spacing8),
+                          _FilterChip(
+                            label: 'Custom Date',
+                            isSelected: state.period == 'custom' && state.customDateRange != null && state.customDateRange!.start == state.customDateRange!.end,
+                            onSelected: () async {
+                              final picked = await _selectCustomDate(state);
+                              if (picked != null) {
+                                notifier.setCustomDateRange(picked);
+                              }
+                            },
+                          ),
+                          const SizedBox(width: AppConstants.spacing8),
+                          _FilterChip(
+                            label: 'Custom Range',
+                            isSelected: state.period == 'custom' && (state.customDateRange == null || state.customDateRange!.start != state.customDateRange!.end),
+                            onSelected: () async {
+                              final picked = await _selectCustomDateRange(state);
+                              if (picked != null) {
+                                notifier.setCustomDateRange(picked);
+                              }
+                            },
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(width: AppConstants.spacing8),
-                    _FilterChip(
-                      label: 'Fully Paid',
-                      isSelected: state.filterType == 'fully_paid',
-                      onSelected: () => notifier.setFilter('fully_paid'),
-                    ),
-                    const SizedBox(width: AppConstants.spacing8),
-                    _FilterChip(
-                      label: 'Short Paid',
-                      isSelected: state.filterType == 'short_paid',
-                      onSelected: () => notifier.setFilter('short_paid'),
-                    ),
-                    const SizedBox(width: AppConstants.spacing8),
-                    _FilterChip(
-                      label: 'Extra Paid',
-                      isSelected: state.filterType == 'extra_paid',
-                      onSelected: () => notifier.setFilter('extra_paid'),
+                    if (state.period == 'custom' && state.customDateRange != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
+                        child: Text(
+                          '${DateFormat('MMM d, yyyy').format(state.customDateRange!.start)} - ${DateFormat('MMM d, yyyy').format(state.customDateRange!.end)}',
+                          style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    const SizedBox(height: AppConstants.spacing8),
+                    // Status Filters
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: AppConstants.spacing16),
+                      child: Row(
+                        children: [
+                          _FilterChip(
+                            label: 'All Status',
+                            isSelected: state.filterType == null || state.filterType == 'all',
+                            onSelected: () => notifier.setFilter('all'),
+                          ),
+                          const SizedBox(width: AppConstants.spacing8),
+                          _FilterChip(
+                            label: 'Fully Paid',
+                            isSelected: state.filterType == 'fully_paid',
+                            onSelected: () => notifier.setFilter('fully_paid'),
+                          ),
+                          const SizedBox(width: AppConstants.spacing8),
+                          _FilterChip(
+                            label: 'Short Paid',
+                            isSelected: state.filterType == 'short_paid',
+                            onSelected: () => notifier.setFilter('short_paid'),
+                          ),
+                          const SizedBox(width: AppConstants.spacing8),
+                          _FilterChip(
+                            label: 'Extra Paid',
+                            isSelected: state.filterType == 'extra_paid',
+                            onSelected: () => notifier.setFilter('extra_paid'),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
               const Divider(height: 1),
               Expanded(
-                child: state.filteredTransactions.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    ref.invalidate(ledgerProvider);
+                    try {
+                      await ref.read(ledgerProvider.future);
+                    } catch (_) {}
+                  },
+                  child: state.filteredTransactions.isEmpty
+                      ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
                           children: [
+                            SizedBox(height: MediaQuery.of(context).size.height * 0.3),
                             Icon(Icons.receipt_long, size: 48, color: theme.colorScheme.onSurfaceVariant.withAlpha(100)),
                             const SizedBox(height: AppConstants.spacing16),
                             Text(
                               'No transactions found',
+                              textAlign: TextAlign.center,
                               style: theme.textTheme.titleMedium?.copyWith(
                                 color: theme.colorScheme.onSurfaceVariant,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                           ],
-                        ),
-                      )
-                    : ListView.separated(
-                        padding: const EdgeInsets.only(
-                          left: AppConstants.spacing16,
-                          right: AppConstants.spacing16,
-                          top: AppConstants.spacing8,
-                          bottom: 100, // Padding for FAB in MainShell
-                        ),
-                        itemCount: state.filteredTransactions.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: AppConstants.spacing8),
-                        itemBuilder: (context, index) {
-                          final tx = state.filteredTransactions[index];
-                          
-                          // Parsing date format (Backend sends YYYY-MM-DD or full ISO date)
-                          DateTime txDate;
-                          try {
-                            txDate = DateTime.parse(tx.date);
-                          } catch (e) {
-                            txDate = DateTime.now();
-                          }
-
-                          Color statusColor;
-                          String statusText;
-                          IconData statusIcon;
-
-                          if (tx.type == 'PETROL_ALLOWANCE') {
-                            statusColor = Colors.green;
-                            statusText = 'Fully Paid';
-                            statusIcon = Icons.check_circle;
-                          } else if (tx.type == 'SHORTAGE') {
-                            statusColor = Colors.orange;
-                            statusText = 'Short Paid';
-                            statusIcon = Icons.warning;
-                          } else {
-                            statusColor = Colors.blue;
-                            statusText = 'Extra Paid';
-                            statusIcon = Icons.add_circle;
-                          }
-
-                          return AppCard(
-                            padding: const EdgeInsets.symmetric(horizontal: AppConstants.spacing16, vertical: AppConstants.spacing12),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: statusColor.withAlpha(30),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    statusIcon,
-                                    color: statusColor,
-                                  ),
-                                ),
-                                const SizedBox(width: AppConstants.spacing16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        tx.dp?.name ?? 'Unknown DP',
-                                        style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                        )
+                      : ListView.separated(
+                          padding: const EdgeInsets.all(AppConstants.spacing16),
+                          itemCount: state.filteredTransactions.length,
+                          separatorBuilder: (context, index) => const SizedBox(height: AppConstants.spacing12),
+                          itemBuilder: (context, index) {
+                            final tx = state.filteredTransactions[index];
+                            final isPositive = tx.type == 'PETROL_ALLOWANCE' || tx.type == 'EXTRA_PAID';
+                            final isShortage = tx.type == 'SHORTAGE';
+                            
+                            return AppCard(
+                              child: Padding(
+                                padding: const EdgeInsets.all(AppConstants.spacing16),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: isPositive 
+                                            ? Colors.green.withAlpha(30) 
+                                            : Colors.orange.withAlpha(30),
+                                        shape: BoxShape.circle,
                                       ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        'Route: ${tx.route != null ? tx.route!['name'] : 'N/A'}',
-                                        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                                      child: Icon(
+                                        isPositive ? Icons.add_circle : Icons.remove_circle,
+                                        color: isPositive ? Colors.green : Colors.orange,
                                       ),
-                                      const SizedBox(height: 4),
-                                      Row(
+                                    ),
+                                    const SizedBox(width: AppConstants.spacing16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                            decoration: BoxDecoration(
-                                              color: statusColor,
-                                              borderRadius: BorderRadius.circular(4),
-                                            ),
-                                            child: Text(
-                                              statusText,
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.bold,
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  tx.dp?.name ?? 'Unknown DP',
+                                                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
                                               ),
+                                              Text(
+                                                DateFormat('MMM d, yyyy').format(DateTime.parse(tx.date)),
+                                                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: theme.colorScheme.surfaceContainerHighest,
+                                                  borderRadius: BorderRadius.circular(4),
+                                                ),
+                                                child: Text(
+                                                  isShortage ? 'Short Paid' : (tx.type == 'EXTRA_PAID' ? 'Extra Paid' : 'Fully Paid'),
+                                                  style: theme.textTheme.labelSmall?.copyWith(
+                                                    color: theme.colorScheme.onSurfaceVariant,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                              if (tx.route != null) ...[
+                                                const SizedBox(width: 8),
+                                                Expanded(
+                                                  child: Text(
+                                                    tx.route!['name'],
+                                                    style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ]
+                                            ],
+                                          ),
+                                          if (tx.note != null && tx.note!.isNotEmpty) ...[
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              tx.note!,
+                                              style: theme.textTheme.bodyMedium,
                                             ),
-                                          ),
-                                          const Spacer(),
-                                          Text(
-                                            '${txDate.day}/${txDate.month}/${txDate.year}',
-                                            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                                          ),
+                                          ],
                                         ],
                                       ),
-                                      if (tx.note != null && tx.note!.isNotEmpty) ...[
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          tx.note!,
-                                          style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ],
-                                    ],
-                                  ),
+                                    ),
+                                    const SizedBox(width: AppConstants.spacing16),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                          Text(
+                                            '₹${tx.amount.toStringAsFixed(0)}',
+                                            style: theme.textTheme.titleMedium?.copyWith(
+                                              color: theme.colorScheme.primary,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          if (tx.note == null || tx.note!.isEmpty)
+                                            Text(
+                                              'of ₹${tx.defaultAllowance.toStringAsFixed(0)}',
+                                              style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                                            ),
+                                        ],
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: AppConstants.spacing16),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                      Text(
-                                        '₹${tx.amount.toStringAsFixed(0)}',
-                                        style: theme.textTheme.titleMedium?.copyWith(
-                                          color: theme.colorScheme.primary,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      if (tx.note == null || tx.note!.isEmpty)
-                                        Text(
-                                          'of ₹${tx.defaultAllowance.toStringAsFixed(0)}',
-                                          style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                                        ),
-                                    ],
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
               ),
             ],
           );
@@ -245,14 +340,25 @@ class _FilterChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return ChoiceChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (_) => onSelected(),
-      selectedColor: theme.colorScheme.primaryContainer,
-      labelStyle: TextStyle(
-        color: isSelected ? theme.colorScheme.onPrimaryContainer : theme.colorScheme.onSurface,
-        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+    
+    return GestureDetector(
+      onTap: onSelected,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? theme.colorScheme.primary : theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outlineVariant,
+          ),
+        ),
+        child: Text(
+          label,
+          style: theme.textTheme.labelLarge?.copyWith(
+            color: isSelected ? theme.colorScheme.onPrimary : theme.colorScheme.onSurface,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
       ),
     );
   }

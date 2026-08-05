@@ -82,11 +82,10 @@ async function main() {
     }
   }
 
-  // 4. Inventory Items
   const inventoryData = [
-    { name: 'Milk', unit: '1L', material: 'Bottle' },
-    { name: 'Milk', unit: '500ml', material: 'Bottle' },
-    { name: 'Milk', unit: '500ml', material: 'Packet' },
+    { name: '1L Bottle', unit: '1L', material: 'Bottle' },
+    { name: 'Half Litre Bottle', unit: '500ml', material: 'Bottle' },
+    { name: '500ml Packet', unit: '500ml', material: 'Packet' },
   ];
 
   for (const item of inventoryData) {

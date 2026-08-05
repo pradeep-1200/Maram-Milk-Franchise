@@ -16,6 +16,8 @@ abstract class DpPerformanceReport with _$DpPerformanceReport {
     required int totalBottles,
     @Default(0) int total1LBottles,
     @Default(0) int totalHalfLBottles,
+    @Default(0) int totalPackets,
+    @Default(0) int totalPetrolAllowance,
   }) = _DpPerformanceReport;
 
   factory DpPerformanceReport.fromJson(Map<String, dynamic> json) => _$DpPerformanceReportFromJson(json);

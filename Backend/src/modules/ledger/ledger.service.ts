@@ -1,7 +1,8 @@
 import { prisma } from '../../config/db';
 import { Prisma, LedgerTransactionType } from '@prisma/client';
+import { getReportDateRange } from '../reports/reports.service';
 
-export const getLedger = async (dpId?: string, from?: string, to?: string, type?: string) => {
+export const getLedger = async (dpId?: string, range?: 'today'|'yesterday'|'week'|'month'|'custom', from?: string, to?: string, type?: string) => {
   const where: Prisma.LedgerTransactionWhereInput = {
     // Only return petrol transactions since this is the petrol ledger
     type: { in: ['PETROL_ALLOWANCE', 'SHORTAGE', 'EXTRA_PAID'] }
@@ -9,7 +10,12 @@ export const getLedger = async (dpId?: string, from?: string, to?: string, type?
   
   if (dpId) where.dpId = dpId;
   
-  if (from || to) {
+  if (range) {
+    const { startDate, endDate } = getReportDateRange(range, new Date(), from, to);
+    if (startDate && endDate) {
+      where.date = { gte: startDate, lte: endDate };
+    }
+  } else if (from || to) {
     where.date = {};
     if (from) where.date.gte = from;
     if (to) where.date.lte = to;

@@ -18,6 +18,9 @@ _DpPerformanceReport _$DpPerformanceReportFromJson(Map<String, dynamic> json) =>
       totalBottles: (json['totalBottles'] as num).toInt(),
       total1LBottles: (json['total1LBottles'] as num?)?.toInt() ?? 0,
       totalHalfLBottles: (json['totalHalfLBottles'] as num?)?.toInt() ?? 0,
+      totalPackets: (json['totalPackets'] as num?)?.toInt() ?? 0,
+      totalPetrolAllowance:
+          (json['totalPetrolAllowance'] as num?)?.toInt() ?? 0,
     );
 
 Map<String, dynamic> _$DpPerformanceReportToJson(
@@ -33,4 +36,6 @@ Map<String, dynamic> _$DpPerformanceReportToJson(
   'totalBottles': instance.totalBottles,
   'total1LBottles': instance.total1LBottles,
   'totalHalfLBottles': instance.totalHalfLBottles,
+  'totalPackets': instance.totalPackets,
+  'totalPetrolAllowance': instance.totalPetrolAllowance,
 };

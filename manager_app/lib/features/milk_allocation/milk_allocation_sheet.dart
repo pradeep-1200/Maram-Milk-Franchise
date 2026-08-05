@@ -11,7 +11,7 @@ import '../routes/providers/route_provider.dart';
 import '../inventory/providers/inventory_provider.dart';
 import 'package:dio/dio.dart';
 
-class MilkAllocationSheet extends ConsumerWidget {
+class MilkAllocationSheet extends ConsumerStatefulWidget {
   final DeliveryRoute route;
   final DeliveryPerson dp;
   final ScrollController scrollController;
@@ -26,8 +26,15 @@ class MilkAllocationSheet extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final routeAllocation = ref.watch(milkAllocationProvider.select((state) => state.allocations[route.id] ?? const RouteMilkAllocation()));
+  ConsumerState<MilkAllocationSheet> createState() => _MilkAllocationSheetState();
+}
+
+class _MilkAllocationSheetState extends ConsumerState<MilkAllocationSheet> {
+  bool _isSubmitting = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final routeAllocation = ref.watch(milkAllocationProvider.select((state) => state.allocations[widget.route.id] ?? const RouteMilkAllocation()));
     final notifier = ref.read(milkAllocationProvider.notifier);
     final theme = Theme.of(context);
     
@@ -41,9 +48,9 @@ class MilkAllocationSheet extends ConsumerWidget {
       final itemHalfLPacket = inventoryState.items.where((i) => i.subtitle.contains('500ml') && i.subtitle.contains('Packet')).firstOrNull;
       
       // Max limit is current available stock + what was already allocated to this route previously
-      max1L = (item1L?.currentStock.toInt() ?? 0) + route.qty1LBottle;
-      maxHalfL = (itemHalfL?.currentStock.toInt() ?? 0) + route.qtyHalfLBottle;
-      maxHalfLPacket = (itemHalfLPacket?.currentStock.toInt() ?? 0) + route.qtyHalfLPacket;
+      max1L = (item1L?.currentStock.toInt() ?? 0) + widget.route.qty1LBottle;
+      maxHalfL = (itemHalfL?.currentStock.toInt() ?? 0) + widget.route.qtyHalfLBottle;
+      maxHalfLPacket = (itemHalfLPacket?.currentStock.toInt() ?? 0) + widget.route.qtyHalfLPacket;
     }
 
     return Column(
@@ -64,7 +71,7 @@ class MilkAllocationSheet extends ConsumerWidget {
                     ),
                     const SizedBox(height: AppConstants.spacing4),
                     Text(
-                      route.name,
+                      widget.route.name,
                       style: theme.textTheme.titleMedium?.copyWith(
                         color: theme.colorScheme.primary,
                         fontWeight: FontWeight.bold,
@@ -73,14 +80,14 @@ class MilkAllocationSheet extends ConsumerWidget {
                     ),
                     const SizedBox(height: AppConstants.spacing4),
                     Text(
-                      'Assigned to: ${dp.name} (${dp.employeeId})',
+                      'Assigned to: ${widget.dp.name} (${widget.dp.employeeId})',
                       style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
-              if (!isInStepFlow)
+              if (!widget.isInStepFlow)
                 IconButton(
                   icon: const Icon(Icons.close),
                   onPressed: () => context.pop(),
@@ -93,7 +100,7 @@ class MilkAllocationSheet extends ConsumerWidget {
         // Products List
         Expanded(
           child: ListView(
-            controller: scrollController,
+            controller: widget.scrollController,
             padding: const EdgeInsets.symmetric(vertical: AppConstants.spacing8),
             children: [
               _ProductRow(
@@ -101,9 +108,9 @@ class MilkAllocationSheet extends ConsumerWidget {
                 title: '1L Bottle',
                 subtitle: 'Standard Glass',
                 quantity: routeAllocation.qty1LBottle,
-                onDecrement: () => notifier.update1LBottle(route.id, -1),
-                onIncrement: () => notifier.update1LBottle(route.id, 1, maxLimit: max1L),
-                onSetValue: (v) => notifier.set1LBottle(route.id, v, maxLimit: max1L),
+                onDecrement: () => notifier.update1LBottle(widget.route.id, -1),
+                onIncrement: () => notifier.update1LBottle(widget.route.id, 1, maxLimit: max1L),
+                onSetValue: (v) => notifier.set1LBottle(widget.route.id, v, maxLimit: max1L),
                 maxLimit: max1L,
               ),
               _ProductRow(
@@ -111,9 +118,9 @@ class MilkAllocationSheet extends ConsumerWidget {
                 title: 'Half L Bottle',
                 subtitle: 'Standard Glass',
                 quantity: routeAllocation.qtyHalfLBottle,
-                onDecrement: () => notifier.updateHalfLBottle(route.id, -1),
-                onIncrement: () => notifier.updateHalfLBottle(route.id, 1, maxLimit: maxHalfL),
-                onSetValue: (v) => notifier.setHalfLBottle(route.id, v, maxLimit: maxHalfL),
+                onDecrement: () => notifier.updateHalfLBottle(widget.route.id, -1),
+                onIncrement: () => notifier.updateHalfLBottle(widget.route.id, 1, maxLimit: maxHalfL),
+                onSetValue: (v) => notifier.setHalfLBottle(widget.route.id, v, maxLimit: maxHalfL),
                 maxLimit: maxHalfL,
               ),
               _ProductRow(
@@ -121,9 +128,9 @@ class MilkAllocationSheet extends ConsumerWidget {
                 title: 'Half L Packet',
                 subtitle: 'Plastic Pouch',
                 quantity: routeAllocation.qtyHalfLPacket,
-                onDecrement: () => notifier.updateHalfLPacket(route.id, -1),
-                onIncrement: () => notifier.updateHalfLPacket(route.id, 1, maxLimit: maxHalfLPacket),
-                onSetValue: (v) => notifier.setHalfLPacket(route.id, v, maxLimit: maxHalfLPacket),
+                onDecrement: () => notifier.updateHalfLPacket(widget.route.id, -1),
+                onIncrement: () => notifier.updateHalfLPacket(widget.route.id, 1, maxLimit: maxHalfLPacket),
+                onSetValue: (v) => notifier.setHalfLPacket(widget.route.id, v, maxLimit: maxHalfLPacket),
                 maxLimit: maxHalfLPacket,
               ),
             ],
@@ -165,7 +172,8 @@ class MilkAllocationSheet extends ConsumerWidget {
               const SizedBox(height: AppConstants.spacing8),
               AppButton(
                 text: 'Confirm & Next',
-                onPressed: () async {
+                isLoading: _isSubmitting,
+                onPressed: _isSubmitting ? null : () async {
                   final totalVolume = routeAllocation.totalVolume;
                   if (totalVolume <= 0) {
                     if (context.mounted) {
@@ -176,12 +184,14 @@ class MilkAllocationSheet extends ConsumerWidget {
                     return;
                   }
 
+                  setState(() => _isSubmitting = true);
+
                   try {
-                    if (route.assignedDpId == null || route.assignedDpId != dp.id) {
+                    if (widget.route.assignedDpId == null || widget.route.assignedDpId != widget.dp.id) {
                       await ref.read(routeProvider.notifier).assignRoute(
-                        route.id, 
-                        dp.id, 
-                        dp.name, 
+                        widget.route.id, 
+                        widget.dp.id, 
+                        widget.dp.name, 
                         totalVolume,
                         qty1LBottle: routeAllocation.qty1LBottle,
                         qtyHalfLBottle: routeAllocation.qtyHalfLBottle,
@@ -189,7 +199,7 @@ class MilkAllocationSheet extends ConsumerWidget {
                       );
                     } else {
                       await ref.read(routeProvider.notifier).updateRouteAllocationLitres(
-                        route.id, 
+                        widget.route.id, 
                         totalVolume,
                         qty1LBottle: routeAllocation.qty1LBottle,
                         qtyHalfLBottle: routeAllocation.qtyHalfLBottle,
@@ -198,11 +208,11 @@ class MilkAllocationSheet extends ConsumerWidget {
                     }
 
                     if (context.mounted) {
-                      if (isInStepFlow) {
+                      if (widget.isInStepFlow) {
                         context.push('/dispatch/petrol-allowance');
                       } else {
                         context.pop();
-                        _showPetrolAllowanceSheet(context, route, dp);
+                        _showPetrolAllowanceSheet(context, widget.route, widget.dp);
                       }
                     }
                   } catch (e) {
@@ -217,6 +227,10 @@ class MilkAllocationSheet extends ConsumerWidget {
                           backgroundColor: Colors.red,
                         ),
                       );
+                    }
+                  } finally {
+                    if (mounted) {
+                      setState(() => _isSubmitting = false);
                     }
                   }
                 },

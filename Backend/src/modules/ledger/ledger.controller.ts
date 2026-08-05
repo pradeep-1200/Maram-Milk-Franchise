@@ -4,8 +4,8 @@ import { ledgerQuerySchema, createLedgerSchema } from './ledger.validation';
 
 export const getLedger = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { dpId, from, to, type } = ledgerQuerySchema.parse(req.query);
-    const transactions = await ledgerService.getLedger(dpId, from, to, type);
+    const { dpId, range, from, to, type } = ledgerQuerySchema.parse(req.query);
+    const transactions = await ledgerService.getLedger(dpId, range as any, from, to, type);
     res.json(transactions);
   } catch (error: any) {
     if (error.name === 'ZodError') {

@@ -8,7 +8,7 @@ import 'error_interceptor.dart';
 final apiClientProvider = Provider<Dio>((ref) {
   final dio = Dio(
     BaseOptions(
-      baseUrl: dotenv.env['API_BASE_URL'] ?? 'https://maram-milk-backend.onrender.com/api/v1',
+      baseUrl: dotenv.env['API_BASE_URL'] ?? 'https://maram-milk-backend-hmz7.onrender.com/api/v1',
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
     ),

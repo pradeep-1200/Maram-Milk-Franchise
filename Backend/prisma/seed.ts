@@ -4,7 +4,10 @@ import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 
 const connectionString = process.env.DATABASE_URL;
-const pool = new Pool({ connectionString });
+const pool = new Pool({ 
+  connectionString,
+  ssl: { rejectUnauthorized: false }
+});
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
@@ -63,7 +66,8 @@ async function main() {
   const dpsList = [
     "Ansar", "Arun", "Avinash", "Dinesh", "Junaid", "Nagarjunaa", 
     "Nandagopal", "Noorullah", "Prabhu", "Samsudeen", "Santhosh", 
-    "Shabeer", "Shanmugam", "Suresh", "Sri Ram", "Uma Shankar", "Vignesh"
+    "Shabeer", "Shanmugam", "Suresh", "Sri Ram", "Uma Shankar", "Vignesh",
+    "Adam", "Test", "Pradeep"
   ];
 
   for (let i = 0; i < dpsList.length; i++) {

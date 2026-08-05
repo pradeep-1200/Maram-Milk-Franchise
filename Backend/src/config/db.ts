@@ -8,7 +8,10 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 const connectionString = env.DATABASE_URL;
-const pool = new Pool({ connectionString });
+const pool = new Pool({
+  connectionString,
+  ...(env.NODE_ENV === 'production' && { ssl: { rejectUnauthorized: false } }),
+});
 const adapter = new PrismaPg(pool);
 
 export const prisma =

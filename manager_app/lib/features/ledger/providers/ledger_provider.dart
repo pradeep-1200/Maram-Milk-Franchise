@@ -9,28 +9,40 @@ class LedgerState {
   final String? filterType;
   final String? period;
   final DateTimeRange? customDateRange;
+  final String searchQuery;
 
   const LedgerState({
     required this.transactions,
     this.filterType,
     this.period,
     this.customDateRange,
+    this.searchQuery = '',
   });
 
-  // filteredTransactions now just returns the list since everything is server-side
-  List<LedgerTransaction> get filteredTransactions => transactions;
+  // Filter client-side by search query
+  List<LedgerTransaction> get filteredTransactions {
+    if (searchQuery.isEmpty) return transactions;
+    final query = searchQuery.toLowerCase();
+    return transactions.where((t) {
+      final nameMatches = t.dp?.name.toLowerCase().contains(query) ?? false;
+      final codeMatches = t.dp?.employeeId.toLowerCase().contains(query) ?? false;
+      return nameMatches || codeMatches;
+    }).toList();
+  }
 
   LedgerState copyWith({
     List<LedgerTransaction>? transactions,
     String? Function()? filterType,
     String? Function()? period,
     DateTimeRange? Function()? customDateRange,
+    String? searchQuery,
   }) {
     return LedgerState(
       transactions: transactions ?? this.transactions,
       filterType: filterType != null ? filterType() : this.filterType,
       period: period != null ? period() : this.period,
       customDateRange: customDateRange != null ? customDateRange() : this.customDateRange,
+      searchQuery: searchQuery ?? this.searchQuery,
     );
   }
 }
@@ -81,23 +93,32 @@ class LedgerNotifier extends AsyncNotifier<LedgerState> {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final current = state.value;
-      return _fetchLedger(
+      final newState = await _fetchLedger(
         filterType: type,
         period: current?.period,
         customDateRange: current?.customDateRange,
       );
+      return newState.copyWith(searchQuery: current?.searchQuery);
     });
+  }
+
+  void setSearchQuery(String query) {
+    final current = state.value;
+    if (current != null) {
+      state = AsyncData(current.copyWith(searchQuery: query));
+    }
   }
 
   Future<void> setPeriod(String period) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final current = state.value;
-      return _fetchLedger(
+      final newState = await _fetchLedger(
         filterType: current?.filterType,
         period: period,
         customDateRange: null,
       );
+      return newState.copyWith(searchQuery: current?.searchQuery);
     });
   }
 
@@ -105,11 +126,12 @@ class LedgerNotifier extends AsyncNotifier<LedgerState> {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final current = state.value;
-      return _fetchLedger(
+      final newState = await _fetchLedger(
         filterType: current?.filterType,
         period: 'custom',
         customDateRange: range,
       );
+      return newState.copyWith(searchQuery: current?.searchQuery);
     });
   }
 
@@ -130,11 +152,12 @@ class LedgerNotifier extends AsyncNotifier<LedgerState> {
         'date': date,
       });
       final current = state.value;
-      return _fetchLedger(
+      final newState = await _fetchLedger(
         filterType: current?.filterType,
         period: current?.period,
         customDateRange: current?.customDateRange,
       );
+      return newState.copyWith(searchQuery: current?.searchQuery);
     });
   }
 }

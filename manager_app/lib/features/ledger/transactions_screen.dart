@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../shared/app_card.dart';
+import '../../shared/app_text_field.dart';
 import '../../shared/async_value_widget.dart';
 import 'providers/ledger_provider.dart';
 
@@ -16,6 +17,13 @@ class TransactionsScreen extends ConsumerStatefulWidget {
 }
 
 class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
   Future<DateTimeRange?> _selectCustomDateRange(LedgerState state) async {
     final now = DateTime.now();
     return await showDateRangePicker(
@@ -143,34 +151,44 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                         ),
                       ),
                     const SizedBox(height: AppConstants.spacing8),
-                    // Status Filters
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
+                    // Filter Control and Search
+                    Padding(
                       padding: const EdgeInsets.symmetric(horizontal: AppConstants.spacing16),
                       child: Row(
                         children: [
-                          _FilterChip(
-                            label: 'All Status',
-                            isSelected: state.filterType == null || state.filterType == 'all',
-                            onSelected: () => notifier.setFilter('all'),
+                          SizedBox(
+                            width: 140,
+                            child: DropdownButtonFormField<String>(
+                              value: state.filterType ?? 'all',
+                              isExpanded: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Filter By',
+                                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                border: OutlineInputBorder(),
+                              ),
+                              items: const [
+                                DropdownMenuItem(value: 'all', child: Text('All', overflow: TextOverflow.ellipsis)),
+                                DropdownMenuItem(value: 'fully_paid', child: Text('Fully Paid', overflow: TextOverflow.ellipsis)),
+                                DropdownMenuItem(value: 'short_paid', child: Text('Short Paid', overflow: TextOverflow.ellipsis)),
+                                DropdownMenuItem(value: 'extra_paid', child: Text('Extra Paid', overflow: TextOverflow.ellipsis)),
+                              ],
+                              onChanged: (val) {
+                                if (val != null) {
+                                  notifier.setFilter(val);
+                                }
+                              },
+                            ),
                           ),
-                          const SizedBox(width: AppConstants.spacing8),
-                          _FilterChip(
-                            label: 'Fully Paid',
-                            isSelected: state.filterType == 'fully_paid',
-                            onSelected: () => notifier.setFilter('fully_paid'),
-                          ),
-                          const SizedBox(width: AppConstants.spacing8),
-                          _FilterChip(
-                            label: 'Short Paid',
-                            isSelected: state.filterType == 'short_paid',
-                            onSelected: () => notifier.setFilter('short_paid'),
-                          ),
-                          const SizedBox(width: AppConstants.spacing8),
-                          _FilterChip(
-                            label: 'Extra Paid',
-                            isSelected: state.filterType == 'extra_paid',
-                            onSelected: () => notifier.setFilter('extra_paid'),
+                          const SizedBox(width: 12.0),
+                          Expanded(
+                            child: AppTextField(
+                              controller: _searchController,
+                              hintText: 'Search Name/ID',
+                              prefixIcon: const Icon(Icons.search),
+                              onChanged: (val) {
+                                notifier.setSearchQuery(val);
+                              },
+                            ),
                           ),
                         ],
                       ),

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:csv/csv.dart';
 import 'package:flutter/material.dart';
@@ -85,7 +86,7 @@ class _DpPerformanceScreenState extends ConsumerState<DpPerformanceScreen> {
 
     try {
       List<List<dynamic>> rows = [
-        ['Rank', 'DP Name', 'DP Code', 'Total Litres', 'Total Routes', 'Attendance', 'Bottles Collected (1L)', 'Bottles Collected (1/2L)', 'Total Bottles Collected']
+        ['Rank', 'DP Name', 'DP Code', 'Total Litres', 'Total Routes', 'Attendance', 'Bottles Collected (Full L)', 'Bottles Collected (Half L)', 'Total Bottles Collected', 'Petrol Allowance']
       ];
 
       for (int i = 0; i < state.filteredReports.length; i++) {
@@ -100,6 +101,7 @@ class _DpPerformanceScreenState extends ConsumerState<DpPerformanceScreen> {
           dp.total1LBottles,
           dp.totalHalfLBottles,
           dp.totalBottles,
+          '₹${dp.totalPetrolAllowance}',
         ]);
       }
 
@@ -120,9 +122,15 @@ class _DpPerformanceScreenState extends ConsumerState<DpPerformanceScreen> {
 
       final path = '${directory.path}/DP_Performance_Report_$periodLabel.csv';
       final file = File(path);
-      await file.writeAsString(csvData);
+      
+      // Write BOM (Byte Order Mark) natively at the byte level for UTF-8
+      final List<int> bom = [0xEF, 0xBB, 0xBF];
+      final List<int> bytes = utf8.encode(csvData);
+      
+      await file.writeAsBytes([...bom, ...bytes]);
 
-      final xfile = XFile(path);
+      // Set explicit mimeType so Android shares it as UTF-8
+      final xfile = XFile(path, mimeType: 'text/csv; charset=utf-8');
       if (mounted) {
         // ignore: deprecated_member_use
         await Share.shareXFiles([xfile], text: 'DP Performance Report');

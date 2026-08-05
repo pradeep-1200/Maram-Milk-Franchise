@@ -20,23 +20,8 @@ class InventoryScreen extends ConsumerWidget {
     final notifier = ref.read(inventoryProvider.notifier);
     final theme = Theme.of(context);
 
-    // Save condition: must have items, and if there is a negative manual adjustment or negative current stock,
-    // a reason must be provided.
-    final bool canSave = state.items.isNotEmpty && !state.items.any((i) {
-      final needsReason = i.variance != 0 || i.currentStock < 0;
-      return needsReason && (i.reason == null || i.reason!.isEmpty);
-    });
-    
-    String varianceText;
-    if (state.totalShort == 0 && state.totalOver == 0) {
-      varianceText = 'All matching';
-    } else {
-      final List<String> parts = [];
-      if (state.totalShort > 0) parts.add('${state.totalShort} short');
-      if (state.totalOver > 0) parts.add('${state.totalOver} over');
-      varianceText = parts.join(' / ');
-    }
-
+    // Save condition: must have items.
+    final bool canSave = state.items.isNotEmpty;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -205,25 +190,7 @@ class InventoryScreen extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Total Variance',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    varianceText,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: (state.totalShort == 0 && state.totalOver == 0) ? Colors.green : Colors.orange.shade800,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppConstants.spacing8),
+
               SizedBox(
                 width: double.infinity,
                 child: AppButton(
@@ -274,39 +241,7 @@ class _InventoryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final currentQty = item.currentStock;
-    
-    Widget badge;
-    if (item.variance == 0) {
-      badge = Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        decoration: BoxDecoration(
-          color: Colors.green.withAlpha(30),
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: const Text('Matches', style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
-      );
-    } else if (item.variance > 0) {
-      badge = Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        decoration: BoxDecoration(
-          color: Colors.red.withAlpha(30),
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: Text('${item.variance} short', style: const TextStyle(color: Colors.red, fontSize: 10, fontWeight: FontWeight.bold)),
-      );
-    } else {
-      badge = Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        decoration: BoxDecoration(
-          color: Colors.orange.withAlpha(30),
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: Text('${item.variance.abs()} over', style: TextStyle(color: Colors.orange.shade800, fontSize: 10, fontWeight: FontWeight.bold)),
-      );
-    }
 
-    final bool needsReason = item.variance != 0 || item.currentStock < 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -338,7 +273,6 @@ class _InventoryRow extends StatelessWidget {
                         item.name,
                         style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                       ),
-                      badge,
                     ],
                   ),
                   const SizedBox(height: 2),
@@ -458,68 +392,6 @@ class _InventoryRow extends StatelessWidget {
                             ),
                           ],
                         ),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 8.0),
-                          child: Divider(height: 1),
-                        ),
-                        // Current Stock Widget
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Current Stock',
-                                  style: theme.textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: theme.colorScheme.onSurface,
-                                  ),
-                                ),
-                                // Removed mock allocations from UI as backend expects physical count.
-                              ],
-                            ),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.remove_circle_outline),
-                                  color: currentQty > 0 ? theme.colorScheme.primary : theme.disabledColor,
-                                  onPressed: currentQty > 0 ? () => onUpdate(-1.0) : null,
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                                ),
-                                Column(
-                                  children: [
-                                    SizedBox(
-                                      width: 40,
-                                      child: Text(
-                                        '${currentQty.toInt()}',
-                                        textAlign: TextAlign.center,
-                                        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                    if (item.litresPerUnit > 0)
-                                      Text(
-                                        '${(currentQty * item.litresPerUnit).toStringAsFixed(1)} L',
-                                        style: theme.textTheme.labelSmall?.copyWith(
-                                          color: theme.colorScheme.onSurfaceVariant.withAlpha(150),
-                                          fontSize: 9,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.add_circle),
-                                  color: theme.colorScheme.primary,
-                                  onPressed: () => onUpdate(1.0),
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
                       ],
                     ),
                   ),
@@ -528,27 +400,6 @@ class _InventoryRow extends StatelessWidget {
             ),
           ],
         ),
-        if (needsReason)
-          Padding(
-            padding: const EdgeInsets.only(top: 12.0, left: 56.0),
-            child: DropdownButtonFormField<String>(
-              value: item.reason,
-              hint: const Text('Select Reason *'),
-              isExpanded: true,
-              decoration: InputDecoration(
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                errorText: (item.reason == null || item.reason!.isEmpty) ? 'Required' : null,
-              ),
-              items: ['Breakage', 'Spillage', 'Unaccounted / missing', 'Other']
-                  .map((r) => DropdownMenuItem(value: r, child: Text(r)))
-                  .toList(),
-              onChanged: onReasonChanged,
-            ),
-          ),
       ],
     );
   }

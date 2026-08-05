@@ -12,6 +12,7 @@ import dispatchRouter from './modules/dispatch/dispatch.router';
 import emptyBottlesRouter from './modules/empty-bottles/empty-bottles.router';
 import ledgerRouter from './modules/ledger/ledger.router';
 import reportsRouter from './modules/reports/reports.router';
+import managerInventoryRouter from './modules/manager-inventory/manager-inventory.router';
 
 const app: Application = express();
 
@@ -37,6 +38,7 @@ app.use('/api/v1/dispatch', dispatchRouter);
 app.use('/api/v1/empty-bottles', emptyBottlesRouter);
 app.use('/api/v1/ledger', ledgerRouter);
 app.use('/api/v1/reports', reportsRouter);
+app.use('/api/v1/manager-inventory', managerInventoryRouter);
 
 // Centralized Error Handling (must be last)
 app.use(errorHandler);

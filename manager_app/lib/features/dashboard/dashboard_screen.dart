@@ -8,6 +8,7 @@ import 'providers/dashboard_provider.dart';
 import '../routes/providers/route_provider.dart';
 import '../evening_check/providers/evening_check_provider.dart';
 import '../attendance/providers/attendance_provider.dart';
+import '../manager_inventory/manager_inventory_section.dart';
 import 'package:intl/intl.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -554,6 +555,8 @@ class DashboardScreen extends ConsumerWidget {
                         }
                       ),
                     ),
+                    const SizedBox(height: 24),
+                    const ManagerInventorySection(),
                   ],
                 ),
               ),

@@ -46,6 +46,7 @@ model Manager {
   updatedAt    DateTime           @updatedAt
 
   attendanceRecords AttendanceRecord[]
+  managerInventoryLogs ManagerInventoryLog[]
 }
 
 model DeliveryPerson {
@@ -224,4 +225,18 @@ model LedgerTransaction {
   dp DeliveryPerson? @relation(fields: [dpId], references: [id])
   routeId   String?
   route     Route?   @relation(fields: [routeId], references: [id])
+}
+
+model ManagerInventoryLog {
+  id        String   @id @default(uuid())
+  date      String   // YYYY-MM-DD
+  product   String   // "1L Bottle", "500ml Bottle", "500ml Packet"
+  quantity  Int
+  managerId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  manager Manager @relation(fields: [managerId], references: [id])
+
+  @@unique([date, product, managerId])
 }

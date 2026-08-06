@@ -86,7 +86,6 @@ const getPreviousEmptyBottleLog = async (routeId: string, dpId: string, date: st
 
 export const updateEmptyBottleLog = async (
   routeId: string,
-  dpId: string,
   date: string,
   data: { 
     deliveryCompleted: boolean; 
@@ -97,20 +96,26 @@ export const updateEmptyBottleLog = async (
     actualDeliveredHalfL: number;
     actualDeliveredPacket: number;
     flagIssue: boolean;
-    reason?: string;
-    brokenBottleCount?: number;
-    brokenBottleCount1L?: number;
-    brokenBottleCountHalfL?: number;
-    notes?: string;
+    reason?: string | null;
+    brokenBottleCount?: number | null;
+    brokenBottleCount1L?: number | null;
+    brokenBottleCountHalfL?: number | null;
+    notes?: string | null;
   }
 ) => {
-  const allocation = await prisma.routeAllocation.findUnique({
-    where: { routeId_dpId_date: { routeId, dpId, date } }
+  const allocation = await prisma.routeAllocation.findFirst({
+    where: { 
+      routeId, 
+      date,
+      status: { in: ['ASSIGNED', 'COMPLETED'] }
+    }
   });
 
-  if (!allocation || (allocation.status !== 'ASSIGNED' && allocation.status !== 'COMPLETED')) {
+  if (!allocation) {
     throw new Error('Cannot update empty bottles for an unassigned route.');
   }
+
+  const dpId = allocation.dpId;
 
   const existingLog = await prisma.emptyBottleLog.findUnique({
     where: { routeId_dpId_date: { routeId, dpId, date } }

@@ -100,6 +100,7 @@ model Route {
   routeAllocations RouteAllocation[]
   emptyBottleLogs  EmptyBottleLog[]
   ledgerTransactions LedgerTransaction[]
+  emptyBottleBalances RouteEmptyBottleBalance[]
 }
 
 model AttendanceRecord {
@@ -132,7 +133,7 @@ model RouteAllocation {
   route Route          @relation(fields: [routeId], references: [id])
   dp    DeliveryPerson @relation(fields: [dpId], references: [id])
 
-  @@unique([routeId, date])
+  @@unique([routeId, dpId, date])
 }
 
 model InventoryItem {
@@ -199,7 +200,7 @@ model EmptyBottleLog {
   route Route          @relation(fields: [routeId], references: [id])
   dp    DeliveryPerson @relation(fields: [dpId], references: [id])
 
-  @@unique([routeId, date])
+  @@unique([routeId, dpId, date])
 }
 
 model DispatchDay {
@@ -240,3 +241,16 @@ model ManagerInventoryLog {
 
   @@unique([date, product, managerId])
 }
+
+model RouteEmptyBottleBalance {
+  id         String   @id @default(uuid())
+  routeId    String
+  bottleType String   // "1L" | "HalfL"
+  balance    Int      @default(0)
+  updatedAt  DateTime @updatedAt
+
+  route Route @relation(fields: [routeId], references: [id])
+
+  @@unique([routeId, bottleType])
+}
+

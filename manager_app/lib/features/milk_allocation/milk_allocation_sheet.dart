@@ -47,10 +47,14 @@ class _MilkAllocationSheetState extends ConsumerState<MilkAllocationSheet> {
       final itemHalfL = inventoryState.items.where((i) => i.subtitle.contains('500ml') && i.subtitle.contains('Bottle')).firstOrNull;
       final itemHalfLPacket = inventoryState.items.where((i) => i.subtitle.contains('500ml') && i.subtitle.contains('Packet')).firstOrNull;
       
+      int prev1L = widget.route.allocations.fold(0, (sum, a) => sum + a.qty1LBottle);
+      int prevHalfL = widget.route.allocations.fold(0, (sum, a) => sum + a.qtyHalfLBottle);
+      int prevHalfLPacket = widget.route.allocations.fold(0, (sum, a) => sum + a.qtyHalfLPacket);
+      
       // Max limit is current available stock + what was already allocated to this route previously
-      max1L = (item1L?.currentStock.toInt() ?? 0) + widget.route.qty1LBottle;
-      maxHalfL = (itemHalfL?.currentStock.toInt() ?? 0) + widget.route.qtyHalfLBottle;
-      maxHalfLPacket = (itemHalfLPacket?.currentStock.toInt() ?? 0) + widget.route.qtyHalfLPacket;
+      max1L = (item1L?.currentStock.toInt() ?? 0) + prev1L;
+      maxHalfL = (itemHalfL?.currentStock.toInt() ?? 0) + prevHalfL;
+      maxHalfLPacket = (itemHalfLPacket?.currentStock.toInt() ?? 0) + prevHalfLPacket;
     }
 
     return Column(
@@ -187,7 +191,7 @@ class _MilkAllocationSheetState extends ConsumerState<MilkAllocationSheet> {
                   setState(() => _isSubmitting = true);
 
                   try {
-                    if (widget.route.assignedDpId == null || widget.route.assignedDpId != widget.dp.id) {
+                    if (!widget.route.allocations.any((a) => a.dpId == widget.dp.id)) {
                       await ref.read(routeProvider.notifier).assignRoute(
                         widget.route.id, 
                         widget.dp.id, 
@@ -200,6 +204,7 @@ class _MilkAllocationSheetState extends ConsumerState<MilkAllocationSheet> {
                     } else {
                       await ref.read(routeProvider.notifier).updateRouteAllocationLitres(
                         widget.route.id, 
+                        widget.dp.id,
                         totalVolume,
                         qty1LBottle: routeAllocation.qty1LBottle,
                         qtyHalfLBottle: routeAllocation.qtyHalfLBottle,

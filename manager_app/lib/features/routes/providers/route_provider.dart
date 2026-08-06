@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/delivery_route.dart';
+
+export '../models/delivery_route.dart';
 import '../../attendance/providers/attendance_provider.dart';
 import '../../../core/network/api_client.dart';
 import '../../inventory/providers/inventory_provider.dart';
@@ -31,14 +33,14 @@ class RouteState {
   List<DeliveryRoute> get filteredRoutes {
     return routes.where((r) {
       if (isAssignedFilter == null) return true;
-      final isAssigned = r.assignedDpId != null;
+      final isAssigned = r.allocations.isNotEmpty;
       return isAssigned == isAssignedFilter;
     }).toList();
   }
 
   int get countAll => routes.length;
-  int get countAssigned => routes.where((r) => r.assignedDpId != null).length;
-  int get countUnassigned => routes.where((r) => r.assignedDpId == null).length;
+  int get countAssigned => routes.where((r) => r.allocations.isNotEmpty).length;
+  int get countUnassigned => routes.where((r) => r.allocations.isEmpty).length;
 }
 
 class RouteNotifier extends AsyncNotifier<RouteState> {
@@ -63,14 +65,6 @@ class RouteNotifier extends AsyncNotifier<RouteState> {
     final List<dynamic> data = response.data;
     
     final routes = data.map((json) {
-      // If litresAllocated is present and > 0, we use it as the milkQuantity for this assigned route
-      if (json['litresAllocated'] != null && (json['litresAllocated'] as num) > 0) {
-        json['defaultLitres'] = (json['litresAllocated'] as num).toDouble();
-      }
-      json['deliveryCompleted'] = json['status'] == 'COMPLETED';
-      json['qty1LBottle'] = json['qty1LBottle'] ?? 0;
-      json['qtyHalfLBottle'] = json['qtyHalfLBottle'] ?? 0;
-      json['qtyHalfLPacket'] = json['qtyHalfLPacket'] ?? 0;
       json['expectedEmptyBottles'] = json['expectedEmptyBottles'] ?? 0;
       return DeliveryRoute.fromJson(json);
     }).toList();
@@ -97,19 +91,8 @@ class RouteNotifier extends AsyncNotifier<RouteState> {
     final date = _getLocalToday();
 
     if (state.value != null) {
-      final updated = state.value!.routes.map((r) {
-        if (r.id == routeId) {
-          return r.copyWith(
-            assignedDpId: dpId, 
-            assignedDpName: dpName, 
-            milkQuantity: litresAllocated,
-            qty1LBottle: qty1LBottle ?? r.qty1LBottle,
-            qtyHalfLBottle: qtyHalfLBottle ?? r.qtyHalfLBottle,
-          );
-        }
-        return r;
-      }).toList();
-      state = AsyncValue.data(state.value!.copyWith(routes: updated));
+      // We don't optimistically update here for now because it's complex with multiple DPs.
+      // The API call will reload anyway.
     }
 
     try {
@@ -140,7 +123,7 @@ class RouteNotifier extends AsyncNotifier<RouteState> {
     }
   }
 
-  Future<void> updateRouteAllocationLitres(String routeId, double litresAllocated, {int? qty1LBottle, int? qtyHalfLBottle, int? qtyHalfLPacket, int? petrolAllowanceGiven}) async {
+  Future<void> updateRouteAllocationLitres(String routeId, String dpId, double litresAllocated, {int? qty1LBottle, int? qtyHalfLBottle, int? qtyHalfLPacket, int? petrolAllowanceGiven}) async {
     final dio = ref.read(apiClientProvider);
     final date = _getLocalToday();
 
@@ -148,11 +131,18 @@ class RouteNotifier extends AsyncNotifier<RouteState> {
     if (state.value != null) {
       final updated = state.value!.routes.map((r) {
         if (r.id == routeId) {
-          return r.copyWith(
-            milkQuantity: litresAllocated,
-            qty1LBottle: qty1LBottle ?? r.qty1LBottle,
-            qtyHalfLBottle: qtyHalfLBottle ?? r.qtyHalfLBottle,
-          );
+          final updatedAllocations = r.allocations.map((a) {
+            if (a.dpId == dpId) {
+              return a.copyWith(
+                litresAllocated: litresAllocated,
+                qty1LBottle: qty1LBottle ?? a.qty1LBottle,
+                qtyHalfLBottle: qtyHalfLBottle ?? a.qtyHalfLBottle,
+                qtyHalfLPacket: qtyHalfLPacket ?? a.qtyHalfLPacket,
+              );
+            }
+            return a;
+          }).toList();
+          return r.copyWith(allocations: updatedAllocations);
         }
         return r;
       }).toList();
@@ -160,15 +150,12 @@ class RouteNotifier extends AsyncNotifier<RouteState> {
     }
 
     try {
-      // Get current route to get dpId
-      final route = state.value?.routes.firstWhere((r) => r.id == routeId);
-      if (route == null || route.assignedDpId == null) return;
       
       await dio.put(
         '/routes/$routeId/allocation',
         queryParameters: {'date': date},
         data: {
-          'dpId': route.assignedDpId,
+          'dpId': dpId,
           'litresAllocated': litresAllocated,
           'status': 'ASSIGNED',
           if (qty1LBottle != null) 'qty1LBottle': qty1LBottle,
@@ -190,26 +177,12 @@ class RouteNotifier extends AsyncNotifier<RouteState> {
     }
   }
 
-  Future<void> unassignRoute(String routeId) async {
+  Future<void> unassignRoute(String routeId, String dpId) async {
     final dio = ref.read(apiClientProvider);
     final date = _getLocalToday();
 
-    String? dpId;
     if (state.value != null) {
-      final route = state.value!.routes.firstWhere((r) => r.id == routeId);
-      dpId = route.assignedDpId;
-      final updated = state.value!.routes.map((r) {
-        if (r.id == routeId) {
-          return r.copyWith(
-            assignedDpId: null,
-            assignedDpName: null,
-            isPetrolAllowanceComplete: false,
-            petrolAllowanceGiven: null,
-          );
-        }
-        return r;
-      }).toList();
-      state = AsyncValue.data(state.value!.copyWith(routes: updated));
+      // Optimistic update omitted due to complex multi-DP logic
     }
 
     try {
@@ -233,30 +206,21 @@ class RouteNotifier extends AsyncNotifier<RouteState> {
     }
   }
 
-  Future<void> markPetrolAllowanceComplete(String routeId, int givenAmount) async {
+  Future<void> markPetrolAllowanceComplete(String routeId, String dpId, int givenAmount) async {
     final dio = ref.read(apiClientProvider);
     final date = _getLocalToday();
 
     if (state.value != null) {
       final route = state.value!.routes.firstWhere((r) => r.id == routeId);
-      final updated = state.value!.routes.map((r) {
-        if (r.id == routeId) {
-          return r.copyWith(
-            isPetrolAllowanceComplete: true,
-            petrolAllowanceGiven: givenAmount,
-          );
-        }
-        return r;
-      }).toList();
-      state = AsyncValue.data(state.value!.copyWith(routes: updated));
-
+      final allocation = route.allocations.firstWhere((a) => a.dpId == dpId);
+      
       try {
         await dio.put(
           '/routes/$routeId/allocation',
           queryParameters: {'date': date},
           data: {
-            'dpId': route.assignedDpId,
-            'litresAllocated': route.milkQuantity,
+            'dpId': dpId,
+            'litresAllocated': allocation.litresAllocated,
             'status': 'ASSIGNED',
             'petrolAllowanceGiven': givenAmount,
           },
@@ -272,32 +236,7 @@ class RouteNotifier extends AsyncNotifier<RouteState> {
     }
   }
 
-  void saveEveningCheckData(
-    String routeId, {
-    required bool completed,
-    int? bottles1L,
-    int? bottlesHalfL,
-    bool? hasFlag,
-    String? bottleNote,
-  }) {
-    if (state.value != null) {
-      final updated = state.value!.routes.map((r) {
-        if (r.id == routeId) {
-          return r.copyWith(
-            deliveryCompleted: completed,
-            emptyBottles1L: bottles1L,
-            emptyBottlesHalfL: bottlesHalfL,
-            hasBottleReturnFlag: hasFlag ?? false,
-            bottleReturnNote: bottleNote,
-          );
-        }
-        return r;
-      }).toList();
-      state = AsyncValue.data(state.value!.copyWith(routes: updated));
-    }
-  }
 }
-
 final routeProvider = AsyncNotifierProvider<RouteNotifier, RouteState>(() {
   return RouteNotifier();
 });

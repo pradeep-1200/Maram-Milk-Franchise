@@ -64,7 +64,7 @@ final dashboardProvider = Provider<DashboardState>((ref) {
 
   if (routeState != null) {
     totalRoutes = routeState.routes.length;
-    assignedRoutes = routeState.routes.where((r) => r.assignedDpId != null).length;
+    assignedRoutes = routeState.routes.where((r) => r.allocations.isNotEmpty).length;
     unassignedRoutes = totalRoutes - assignedRoutes;
   }
 

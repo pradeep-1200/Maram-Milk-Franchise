@@ -11,6 +11,7 @@ export const updateInventorySchema = z.object({
     z.object({
       inventoryItemId: z.string().uuid(),
       currentStock: z.number().min(0),
+      newStockAdded: z.number().min(0).optional(),
     })
   ).min(1, 'At least one record is required'),
 });

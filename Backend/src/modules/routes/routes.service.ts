@@ -12,26 +12,28 @@ export const getRoutesWithAllocation = async (date: string) => {
     include: { dp: true },
   });
 
-  const previousLogs = await prisma.emptyBottleLog.findMany({
-    where: { date: { lt: date } },
-    orderBy: { date: 'desc' },
-    distinct: ['routeId'],
-  });
+  const routeBalances = await prisma.routeEmptyBottleBalance.findMany();
+  const balanceMap = new Map();
+  for (const b of routeBalances) {
+    if (!balanceMap.has(b.routeId)) {
+      balanceMap.set(b.routeId, { '1L': 0, 'HalfL': 0 });
+    }
+    balanceMap.get(b.routeId)[b.bottleType] = b.balance;
+  }
 
-  const allocationMap = new Map(allocations.map(a => [a.routeId, a]));
-  const previousLogMap = new Map(previousLogs.map(l => [l.routeId, l]));
+  const allocationMap = new Map<string, typeof allocations>();
+  for (const a of allocations) {
+    if (!allocationMap.has(a.routeId)) {
+      allocationMap.set(a.routeId, []);
+    }
+    allocationMap.get(a.routeId)!.push(a);
+  }
 
   return routes.map(route => {
-    const allocation = allocationMap.get(route.id);
-    const previousLog = previousLogMap.get(route.id);
+    const routeAllocations = allocationMap.get(route.id) || [];
     
-    const carriedOver1L = previousLog?.outstanding1L ?? 0;
-    const carriedOverHalfL = previousLog?.outstandingHalfL ?? 0;
-    
-    // Total expected excluding packets
-    const expectedEmptyBottles = carriedOver1L + carriedOverHalfL + 
-      (allocation?.qty1LBottle ?? 0) + 
-      (allocation?.qtyHalfLBottle ?? 0);
+    const balances = balanceMap.get(route.id) || { '1L': 0, 'HalfL': 0 };
+    const expectedEmptyBottles = Math.max(0, balances['1L']) + Math.max(0, balances['HalfL']);
 
     return {
       routeId: route.id,
@@ -40,19 +42,23 @@ export const getRoutesWithAllocation = async (date: string) => {
       customerCount: route.customerCount,
       defaultLitres: route.litres,
       fixedPetrolAllowance: route.defaultPetrolAllowance,
-      allocationId: allocation ? allocation.id : null,
-      assignedDpId: (allocation && (allocation.status === 'ASSIGNED' || allocation.status === 'COMPLETED')) ? allocation.dpId : null,
-      assignedDpName: (allocation?.dp && (allocation.status === 'ASSIGNED' || allocation.status === 'COMPLETED')) ? allocation.dp.name : null,
-      assignedDpPhotoUrl: (allocation?.dp && (allocation.status === 'ASSIGNED' || allocation.status === 'COMPLETED')) ? allocation.dp.photoUrl : null,
-      assignedDpPetrolBalance: (allocation?.dp && (allocation.status === 'ASSIGNED' || allocation.status === 'COMPLETED')) ? allocation.dp.petrolBalance : 0,
-      litresAllocated: allocation ? allocation.litresAllocated : 0,
-      qty1LBottle: allocation ? allocation.qty1LBottle : 0,
-      qtyHalfLBottle: allocation ? allocation.qtyHalfLBottle : 0,
-      qtyHalfLPacket: allocation ? allocation.qtyHalfLPacket : 0,
-      petrolAllowanceGiven: allocation ? allocation.petrolAllowanceGiven : null,
-      isPetrolAllowanceComplete: allocation ? (allocation.petrolAllowanceGiven !== null) : false,
       expectedEmptyBottles,
-      status: allocation ? allocation.status : 'UNASSIGNED',
+      allocations: routeAllocations
+        .filter(allocation => allocation.status === 'ASSIGNED' || allocation.status === 'COMPLETED')
+        .map(allocation => ({
+          allocationId: allocation.id,
+          dpId: allocation.dpId,
+          dpName: allocation.dp?.name,
+          dpPhotoUrl: allocation.dp?.photoUrl,
+          dpPetrolBalance: allocation.dp?.petrolBalance || 0,
+          litresAllocated: allocation.litresAllocated,
+          qty1LBottle: allocation.qty1LBottle,
+          qtyHalfLBottle: allocation.qtyHalfLBottle,
+          qtyHalfLPacket: allocation.qtyHalfLPacket,
+          petrolAllowanceGiven: allocation.petrolAllowanceGiven,
+          isPetrolAllowanceComplete: allocation.petrolAllowanceGiven !== null,
+          status: allocation.status,
+        })),
     };
   });
 };
@@ -73,7 +79,7 @@ export const updateRouteAllocation = async (
   const result = await prisma.$transaction(async (tx) => {
     // 1. Get previous allocation to compute delta
     const previous = await tx.routeAllocation.findUnique({
-      where: { routeId_date: { routeId, date } }
+      where: { routeId_dpId_date: { routeId, dpId, date } }
     });
 
     const old1L = previous?.qty1LBottle ?? 0;
@@ -132,7 +138,7 @@ export const updateRouteAllocation = async (
     // 3. Update Allocation
     const allocation = await tx.routeAllocation.upsert({
       where: {
-        routeId_date: { routeId, date },
+        routeId_dpId_date: { routeId, dpId, date },
       },
       update: {
         dpId,
@@ -155,6 +161,34 @@ export const updateRouteAllocation = async (
         petrolAllowanceGiven: newPA,
       },
     });
+
+    // 4. Update RouteEmptyBottleBalance based on allocated deltas
+    if (delta1L !== 0 || deltaHalfL !== 0) {
+      if (delta1L !== 0) {
+        // Fetch current to use max(0)
+        const current1L = await tx.routeEmptyBottleBalance.findUnique({
+          where: { routeId_bottleType: { routeId, bottleType: '1L' } }
+        });
+        const currentBalance1L = current1L?.balance ?? 0;
+        await tx.routeEmptyBottleBalance.upsert({
+          where: { routeId_bottleType: { routeId, bottleType: '1L' } },
+          update: { balance: currentBalance1L + delta1L },
+          create: { routeId, bottleType: '1L', balance: delta1L }
+        });
+      }
+      
+      if (deltaHalfL !== 0) {
+        const currentHalfL = await tx.routeEmptyBottleBalance.findUnique({
+          where: { routeId_bottleType: { routeId, bottleType: 'HalfL' } }
+        });
+        const currentBalanceHalfL = currentHalfL?.balance ?? 0;
+        await tx.routeEmptyBottleBalance.upsert({
+          where: { routeId_bottleType: { routeId, bottleType: 'HalfL' } },
+          update: { balance: currentBalanceHalfL + deltaHalfL },
+          create: { routeId, bottleType: 'HalfL', balance: deltaHalfL }
+        });
+      }
+    }
 
     // 4. Process Inventory decrements
     if (delta1L !== 0 || deltaHalfL !== 0 || deltaHalfLPacket !== 0) {

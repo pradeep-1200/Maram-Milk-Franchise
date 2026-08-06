@@ -273,7 +273,7 @@ class DashboardScreen extends ConsumerWidget {
                           Builder(
                             builder: (context) {
                               final routeState = ref.watch(routeProvider).value ?? const RouteState();
-                              final pendingRoutes = routeState.routes.where((r) => r.assignedDpId == null || !r.isPetrolAllowanceComplete).toList();
+                              final pendingRoutes = routeState.routes.where((r) => r.allocations.isEmpty || r.allocations.any((a) => !a.isPetrolAllowanceComplete)).toList();
                               
                               if (pendingRoutes.isEmpty) {
                                 return Row(
@@ -293,7 +293,7 @@ class DashboardScreen extends ConsumerWidget {
                                   separatorBuilder: (_, __) => const SizedBox(width: AppConstants.spacing8),
                                   itemBuilder: (context, index) {
                                     final route = pendingRoutes[index];
-                                    final bool needsDp = route.assignedDpId == null;
+                                    final bool needsDp = route.allocations.isEmpty;
                                     return ActionChip(
                                       label: Text(route.name),
                                       avatar: Icon(needsDp ? Icons.person_add : Icons.local_gas_station, size: 16, color: Colors.white),
@@ -344,8 +344,10 @@ class DashboardScreen extends ConsumerWidget {
                               final milkPerDp = <String, double>{};
                               
                               for (final r in routeState.routes) {
-                                if (r.assignedDpId != null && r.assignedDpName != null) {
-                                  milkPerDp[r.assignedDpName!] = (milkPerDp[r.assignedDpName!] ?? 0) + r.milkQuantity;
+                                for (final a in r.allocations) {
+                                  if (a.dpName != null) {
+                                    milkPerDp[a.dpName!] = (milkPerDp[a.dpName!] ?? 0) + a.litresAllocated;
+                                  }
                                 }
                               }
                               
@@ -364,7 +366,7 @@ class DashboardScreen extends ConsumerWidget {
                               
                               String? topDpPhotoUrl;
                               try {
-                                topDpPhotoUrl = routes.firstWhere((r) => r.assignedDpName == topDpName).assignedDpPhotoUrl;
+                                topDpPhotoUrl = routes.expand((r) => r.allocations).firstWhere((a) => a.dpName == topDpName).dpPhotoUrl;
                               } catch (_) {}
                               
                               return Row(

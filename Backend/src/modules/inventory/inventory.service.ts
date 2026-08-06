@@ -78,29 +78,47 @@ export const getInventoryForDate = async (date: string) => {
 /**
  * Bulk updates the counted inventory by the manager.
  */
-export const bulkUpdateInventory = async (date: string, records: { inventoryItemId: string; currentStock: number }[]) => {
+export const bulkUpdateInventory = async (date: string, records: { inventoryItemId: string; currentStock: number; newStockAdded?: number }[]) => {
+  const existingRecords = await getInventoryForDate(date);
+
   const results = await prisma.$transaction(
-    records.map(r =>
-      prisma.inventoryDailyRecord.upsert({
+    records.map(r => {
+      const currentRecord = existingRecords.find(i => i.inventoryItemId === r.inventoryItemId);
+      
+      let updateData: any = {
+        currentStock: r.currentStock,
+      };
+      
+      let expectedStock = r.currentStock; // fallback
+      if (currentRecord) {
+        expectedStock = currentRecord.carriedOverStock ?? 0;
+        if (r.newStockAdded !== undefined) {
+          updateData.newStockAdded = r.newStockAdded;
+          expectedStock += r.newStockAdded;
+        } else {
+          expectedStock += currentRecord.newStockAdded ?? 0;
+        }
+        updateData.expectedStock = expectedStock;
+      }
+
+      return prisma.inventoryDailyRecord.upsert({
         where: {
           inventoryItemId_date: {
             inventoryItemId: r.inventoryItemId,
             date,
           },
         },
-        update: {
-          currentStock: r.currentStock,
-        },
+        update: updateData,
         create: {
           inventoryItemId: r.inventoryItemId,
           date,
-          expectedStock: r.currentStock, // Fallback if created directly here
+          expectedStock: expectedStock,
           currentStock: r.currentStock,
           carriedOverStock: 0,
-          newStockAdded: 0,
+          newStockAdded: r.newStockAdded ?? 0,
         },
-      })
-    )
+      });
+    })
   );
 
   await checkAndUpdateInventoryCompletion(date);

@@ -33,15 +33,17 @@ class InventoryItemState {
   InventoryItemState copyWith({
     double? currentStock,
     String? reason,
+    double? newStockAdded,
+    double? expectedQty,
   }) {
     return InventoryItemState(
       id: id,
       recordId: recordId,
       name: name,
       subtitle: subtitle,
-      expectedQty: expectedQty,
+      expectedQty: expectedQty ?? this.expectedQty,
       carryOverQty: carryOverQty,
-      newStockAdded: newStockAdded,
+      newStockAdded: newStockAdded ?? this.newStockAdded,
       currentStock: currentStock ?? this.currentStock,
       litresPerUnit: litresPerUnit,
       reason: reason ?? this.reason,
@@ -66,10 +68,12 @@ class InventoryItemState {
 class InventoryState {
   final List<InventoryItemState> items;
   final bool isSaved;
+  final bool isDirty;
 
   const InventoryState({
     required this.items,
     this.isSaved = false,
+    this.isDirty = false,
   });
 
   double get totalExpected => items.fold(0.0, (sum, item) => sum + item.expectedQty);
@@ -81,10 +85,12 @@ class InventoryState {
   InventoryState copyWith({
     List<InventoryItemState>? items,
     bool? isSaved,
+    bool? isDirty,
   }) {
     return InventoryState(
       items: items ?? this.items,
       isSaved: isSaved ?? this.isSaved,
+      isDirty: isDirty ?? this.isDirty,
     );
   }
 }
@@ -146,7 +152,7 @@ class InventoryNotifier extends AsyncNotifier<InventoryState> {
       );
     }).toList();
 
-    state = AsyncValue.data(currentState.copyWith(items: updatedItems, isSaved: false));
+    state = AsyncValue.data(currentState.copyWith(items: updatedItems, isSaved: false, isDirty: true));
   }
 
   void updateReason(String id, String? reason) {
@@ -158,7 +164,7 @@ class InventoryNotifier extends AsyncNotifier<InventoryState> {
       return item.copyWith(reason: reason);
     }).toList();
     
-    state = AsyncValue.data(currentState.copyWith(items: updatedItems, isSaved: false));
+    state = AsyncValue.data(currentState.copyWith(items: updatedItems, isSaved: false, isDirty: true));
   }
 
   Future<void> saveInventory() async {
@@ -170,6 +176,7 @@ class InventoryNotifier extends AsyncNotifier<InventoryState> {
     final records = currentState.items.map((i) => {
       'inventoryItemId': i.id,
       'currentStock': i.currentStock,
+      'newStockAdded': i.newStockAdded,
     }).toList();
 
     try {
@@ -179,7 +186,7 @@ class InventoryNotifier extends AsyncNotifier<InventoryState> {
         data: {'records': records},
       );
       
-      state = AsyncValue.data(currentState.copyWith(isSaved: true));
+      state = AsyncValue.data(currentState.copyWith(isSaved: true, isDirty: false));
       ref.invalidate(dispatchProvider);
     } catch (e) {
       rethrow;
@@ -204,6 +211,27 @@ class InventoryNotifier extends AsyncNotifier<InventoryState> {
     
     // Refresh to get the new expectedQty and variance recalculated by the server
     await reload();
+  }
+
+  void updateNewStockLocally(String id, double newStock) {
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    final updatedItems = currentState.items.map((item) {
+      if (item.id != id) return item;
+      
+      final newExpected = item.carryOverQty + newStock;
+      final variance = item.currentStock - item.expectedQty;
+      final newCurrent = newExpected + variance;
+
+      return item.copyWith(
+        newStockAdded: newStock,
+        expectedQty: newExpected,
+        currentStock: newCurrent,
+      );
+    }).toList();
+
+    state = AsyncValue.data(currentState.copyWith(items: updatedItems, isSaved: false, isDirty: true));
   }
 }
 

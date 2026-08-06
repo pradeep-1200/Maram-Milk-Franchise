@@ -54,10 +54,9 @@ class ReportsScreen extends ConsumerWidget {
     final totalRevenue = (totalInventoryCurrent * 25) + 1200; // Mock calculation using currentStock
 
     // Empty Bottles (always live since it happens post-dispatch)
-    final totalBottles1L = routeState.routes.fold(0, (sum, r) => sum + (r.emptyBottles1L ?? 0));
-    final totalBottlesHalfL = routeState.routes.fold(0, (sum, r) => sum + (r.emptyBottlesHalfL ?? 0));
+    final totalBottles1L = routeState.routes.fold(0, (sum, r) => sum + r.allocations.fold(0, (s, a) => s + (a.emptyBottles1L ?? 0)));
+    final totalBottlesHalfL = routeState.routes.fold(0, (sum, r) => sum + r.allocations.fold(0, (s, a) => s + (a.emptyBottlesHalfL ?? 0)));
     final flaggedCount = routeState.routes.where((r) => r.hasBottleReturnFlag).length;
-
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(

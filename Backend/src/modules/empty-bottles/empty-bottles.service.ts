@@ -14,28 +14,33 @@ export const getEmptyBottleStatus = async (date: string) => {
     where: { date },
   });
 
-  const previousLogs = await prisma.emptyBottleLog.findMany({
-    where: { date: { lt: date } },
-    orderBy: { date: 'desc' },
-    distinct: ['routeId'],
-  });
+  const routeBalances = await prisma.routeEmptyBottleBalance.findMany();
+  const balanceMap = new Map();
+  for (const b of routeBalances) {
+    if (!balanceMap.has(b.routeId)) {
+      balanceMap.set(b.routeId, { '1L': 0, 'HalfL': 0 });
+    }
+    balanceMap.get(b.routeId)[b.bottleType] = b.balance;
+  }
 
   const allocationMap = new Map(allocations.map(a => [a.routeId, a]));
   const logMap = new Map(emptyBottleLogs.map(l => [l.routeId, l]));
-  const previousLogMap = new Map(previousLogs.map(l => [l.routeId, l]));
 
   return routes.map(route => {
     const allocation = allocationMap.get(route.id);
     const log = logMap.get(route.id);
-    const previousLog = previousLogMap.get(route.id);
+    const balances = balanceMap.get(route.id) || { '1L': 0, 'HalfL': 0 };
+    const currentBalance1L = balances['1L'];
+    const currentBalanceHalfL = balances['HalfL'];
 
-    const carriedOver1L = previousLog?.outstanding1L ?? 0;
-    const carriedOverHalfL = previousLog?.outstandingHalfL ?? 0;
-    const carriedOverPacket = previousLog?.outstandingPacket ?? 0;
+    // If log exists, the balance has already been reduced by today's collection/broken,
+    // so we reconstruct the pre-collection expected value.
+    // If log doesn't exist, log is null, so we just use the current balance.
+    const expected1L = Math.max(0, currentBalance1L + (log?.oneLBottlesCollected || 0) + (log?.brokenBottleCount1L || 0));
+    const expectedHalfL = Math.max(0, currentBalanceHalfL + (log?.halfLBottlesCollected || 0) + (log?.brokenBottleCountHalfL || 0));
+    const expectedPacket = (allocation?.qtyHalfLPacket || 0); // Packets don't have running balance
 
-    const expectedEmptyBottles = carriedOver1L + carriedOverHalfL + 
-      (allocation?.qty1LBottle ?? 0) + 
-      (allocation?.qtyHalfLBottle ?? 0);
+    const expectedEmptyBottles = expected1L + expectedHalfL;
 
     return {
       routeId: route.id,
@@ -48,9 +53,9 @@ export const getEmptyBottleStatus = async (date: string) => {
       halfLBottlesCollected: log?.halfLBottlesCollected || 0,
       halfLPacketCollected: log?.halfLPacketCollected || 0,
       
-      expected1LBottles: log?.expected1L ?? (carriedOver1L + (allocation?.qty1LBottle || 0)),
-      expectedHalfLBottles: log?.expectedHalfL ?? (carriedOverHalfL + (allocation?.qtyHalfLBottle || 0)),
-      expectedHalfLPacket: log?.expectedPacket ?? (carriedOverPacket + (allocation?.qtyHalfLPacket || 0)),
+      expected1LBottles: expected1L,
+      expectedHalfLBottles: expectedHalfL,
+      expectedHalfLPacket: expectedPacket,
       expectedEmptyBottles,
       
       actualDelivered1L: log?.actualDelivered1L ?? (allocation?.qty1LBottle || 0),
@@ -68,10 +73,11 @@ export const getEmptyBottleStatus = async (date: string) => {
   });
 };
 
-const getPreviousEmptyBottleLog = async (routeId: string, date: string) => {
+const getPreviousEmptyBottleLog = async (routeId: string, dpId: string, date: string) => {
   return await prisma.emptyBottleLog.findFirst({
     where: {
       routeId,
+      dpId,
       date: { lt: date },
     },
     orderBy: { date: 'desc' },
@@ -80,6 +86,7 @@ const getPreviousEmptyBottleLog = async (routeId: string, date: string) => {
 
 export const updateEmptyBottleLog = async (
   routeId: string,
+  dpId: string,
   date: string,
   data: { 
     deliveryCompleted: boolean; 
@@ -98,17 +105,67 @@ export const updateEmptyBottleLog = async (
   }
 ) => {
   const allocation = await prisma.routeAllocation.findUnique({
-    where: { routeId_date: { routeId, date } },
+    where: { routeId_dpId_date: { routeId, dpId, date } }
   });
 
   if (!allocation || (allocation.status !== 'ASSIGNED' && allocation.status !== 'COMPLETED')) {
     throw new Error('Cannot update empty bottles for an unassigned route.');
   }
 
-  // Calculate carry over from previous log
-  const previousLog = await getPreviousEmptyBottleLog(routeId, date);
-  const carriedOver1L = previousLog?.outstanding1L ?? 0;
-  const carriedOverHalfL = previousLog?.outstandingHalfL ?? 0;
+  const existingLog = await prisma.emptyBottleLog.findUnique({
+    where: { routeId_dpId_date: { routeId, dpId, date } }
+  });
+
+  // Calculate deltas for RouteEmptyBottleBalance update
+  const oldCollected1L = existingLog?.oneLBottlesCollected || 0;
+  const oldBroken1L = existingLog?.brokenBottleCount1L || 0;
+  const newCollected1L = data.oneLBottlesCollected;
+  const newBroken1L = data.brokenBottleCount1L || 0;
+  const delta1L = (newCollected1L + newBroken1L) - (oldCollected1L + oldBroken1L);
+
+  const oldCollectedHalfL = existingLog?.halfLBottlesCollected || 0;
+  const oldBrokenHalfL = existingLog?.brokenBottleCountHalfL || 0;
+  const newCollectedHalfL = data.halfLBottlesCollected;
+  const newBrokenHalfL = data.brokenBottleCountHalfL || 0;
+  const deltaHalfL = (newCollectedHalfL + newBrokenHalfL) - (oldCollectedHalfL + oldBrokenHalfL);
+
+  // Update RouteEmptyBottleBalance
+  if (delta1L !== 0) {
+    const current1L = await prisma.routeEmptyBottleBalance.findUnique({
+      where: { routeId_bottleType: { routeId, bottleType: '1L' } }
+    });
+    if (current1L) {
+      await prisma.routeEmptyBottleBalance.update({
+        where: { id: current1L.id },
+        data: { balance: current1L.balance - delta1L }
+      });
+    }
+  }
+
+  if (deltaHalfL !== 0) {
+    const currentHalfL = await prisma.routeEmptyBottleBalance.findUnique({
+      where: { routeId_bottleType: { routeId, bottleType: 'HalfL' } }
+    });
+    if (currentHalfL) {
+      await prisma.routeEmptyBottleBalance.update({
+        where: { id: currentHalfL.id },
+        data: { balance: currentHalfL.balance - deltaHalfL }
+      });
+    }
+  }
+
+  // Calculate expected/outstanding for history logs
+  const newBalance1L = await prisma.routeEmptyBottleBalance.findUnique({ where: { routeId_bottleType: { routeId, bottleType: '1L' } }});
+  const newBalanceHalfL = await prisma.routeEmptyBottleBalance.findUnique({ where: { routeId_bottleType: { routeId, bottleType: 'HalfL' } }});
+
+  const expected1L = Math.max(0, (newBalance1L?.balance || 0) + newCollected1L + newBroken1L);
+  const expectedHalfL = Math.max(0, (newBalanceHalfL?.balance || 0) + newCollectedHalfL + newBrokenHalfL);
+
+  const outstanding1L = Math.max(0, newBalance1L?.balance || 0);
+  const outstandingHalfL = Math.max(0, newBalanceHalfL?.balance || 0);
+
+  // For packets, we still need previous log logic
+  const previousLog = await getPreviousEmptyBottleLog(routeId, dpId, date);
   const carriedOverPacket = previousLog?.outstandingPacket ?? 0;
 
   // Handle actual delivered logic for "Not Delivered" scenarios
@@ -117,31 +174,19 @@ export const updateEmptyBottleLog = async (
   let finalActualDeliveredPacket = data.actualDeliveredPacket;
 
   if (!data.deliveryCompleted && data.reason !== 'Partial delivery completed') {
-    // If not delivered (full failure, broken, etc.) and NOT a partial delivery, zero out actual delivery.
     finalActualDelivered1L = 0;
     finalActualDeliveredHalfL = 0;
     finalActualDeliveredPacket = 0;
   }
 
-  // Calculate expected
-  const expected1L = carriedOver1L + finalActualDelivered1L;
-  const expectedHalfL = carriedOverHalfL + finalActualDeliveredHalfL;
   const expectedPacket = carriedOverPacket + finalActualDeliveredPacket;
-
-  // Calculate outstanding (Remaining = Expected - Collected - Broken)
-  const outstanding1L = expected1L - data.oneLBottlesCollected - (data.brokenBottleCount1L || 0);
-  const outstandingHalfL = expectedHalfL - data.halfLBottlesCollected - (data.brokenBottleCountHalfL || 0);
   const outstandingPacket = expectedPacket - data.halfLPacketCollected;
-
-  const existingLog = await prisma.emptyBottleLog.findFirst({
-    where: { routeId, date },
-  });
 
   if (existingLog) {
     await prisma.emptyBottleLog.update({
       where: { id: existingLog.id },
       data: {
-        dpId: allocation.dpId,
+        dpId,
         deliveryCompleted: data.deliveryCompleted,
         oneLBottlesCollected: data.oneLBottlesCollected,
         halfLBottlesCollected: data.halfLBottlesCollected,
@@ -155,9 +200,6 @@ export const updateEmptyBottleLog = async (
         actualDelivered1L: finalActualDelivered1L,
         actualDeliveredHalfL: finalActualDeliveredHalfL,
         actualDeliveredPacket: finalActualDeliveredPacket,
-        carriedOver1L,
-        carriedOverHalfL,
-        carriedOverPacket,
         expected1L,
         expectedHalfL,
         expectedPacket,
@@ -170,7 +212,7 @@ export const updateEmptyBottleLog = async (
     await prisma.emptyBottleLog.create({
       data: {
         routeId,
-        dpId: allocation.dpId,
+        dpId,
         date,
         deliveryCompleted: data.deliveryCompleted,
         oneLBottlesCollected: data.oneLBottlesCollected,
@@ -185,9 +227,6 @@ export const updateEmptyBottleLog = async (
         actualDelivered1L: finalActualDelivered1L,
         actualDeliveredHalfL: finalActualDeliveredHalfL,
         actualDeliveredPacket: finalActualDeliveredPacket,
-        carriedOver1L,
-        carriedOverHalfL,
-        carriedOverPacket,
         expected1L,
         expectedHalfL,
         expectedPacket,
@@ -200,7 +239,7 @@ export const updateEmptyBottleLog = async (
 
   // Update RouteAllocation status based on deliveryCompleted
   await prisma.routeAllocation.update({
-    where: { routeId_date: { routeId, date } },
+    where: { routeId_dpId_date: { routeId, dpId, date } },
     data: { status: data.deliveryCompleted ? 'COMPLETED' : 'ASSIGNED' },
   });
 

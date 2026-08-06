@@ -174,7 +174,7 @@ class InventoryScreen extends ConsumerWidget {
         },
       ),
       // Sticky Bottom Bar
-      bottomNavigationBar: SafeArea(
+      bottomNavigationBar: state.isDirty ? SafeArea(
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: AppConstants.spacing16, vertical: AppConstants.spacing8),
           decoration: BoxDecoration(
@@ -222,7 +222,7 @@ class InventoryScreen extends ConsumerWidget {
             ],
           ),
         ),
-      ),
+      ) : null,
     );
   }
 }
@@ -298,19 +298,21 @@ class _InventoryRow extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Expected',
-                                  style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                                ),
-                                if (item.carryOverQty > 0 || item.newStockAdded > 0)
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
                                   Text(
-                                    '(${item.carryOverQty} carried over + ${item.newStockAdded} new)',
-                                    style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                                    'Expected',
+                                    style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                                   ),
-                              ],
+                                  if (item.carryOverQty > 0 || item.newStockAdded > 0)
+                                    Text(
+                                      '(${item.carryOverQty} carried over + ${item.newStockAdded} new)',
+                                      style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                                    ),
+                                ],
+                              ),
                             ),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
@@ -379,10 +381,12 @@ class _InventoryRow extends StatelessWidget {
                                         contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                                         border: OutlineInputBorder(),
                                       ),
-                                      onFieldSubmitted: (val) {
+                                      onChanged: (val) {
                                         final numValue = double.tryParse(val);
                                         if (numValue != null) {
-                                          ref.read(inventoryProvider.notifier).updateManagerStock(item.id, numValue);
+                                          ref.read(inventoryProvider.notifier).updateNewStockLocally(item.id, numValue);
+                                        } else if (val.isEmpty) {
+                                          ref.read(inventoryProvider.notifier).updateNewStockLocally(item.id, 0);
                                         }
                                       },
                                     ),

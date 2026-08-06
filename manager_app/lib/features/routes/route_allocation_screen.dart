@@ -392,48 +392,56 @@ class _RouteCard extends ConsumerWidget {
           ),
           const SizedBox(height: AppConstants.spacing8),
           if (isAssigned)
-            Row(
+            Column(
               children: [
-                DpAvatar(
-                  photoUrl: route.assignedDpPhotoUrl,
-                  name: route.assignedDpName ?? '?',
-                  radius: 12,
-                ),
-                const SizedBox(width: AppConstants.spacing8),
-                Expanded(
-                  child: Text(
-                    route.assignedDpName!,
-                    style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
-                    overflow: TextOverflow.ellipsis,
+                ...route.allocations.map((a) => Padding(
+                  padding: const EdgeInsets.only(bottom: AppConstants.spacing8),
+                  child: Row(
+                    children: [
+                      DpAvatar(
+                        photoUrl: a.dpPhotoUrl,
+                        name: a.dpName ?? '?',
+                        radius: 12,
+                      ),
+                      const SizedBox(width: AppConstants.spacing8),
+                      Expanded(
+                        child: Text(
+                          a.dpName ?? 'Unknown',
+                          style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Container(
+                        constraints: const BoxConstraints(maxWidth: 160),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: (a.dpPetrolBalance > 0 ? Colors.teal : (a.dpPetrolBalance < 0 ? Colors.orange : Colors.grey)).withAlpha(25),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: a.dpPetrolBalance > 0 ? Colors.teal : (a.dpPetrolBalance < 0 ? Colors.orange : Colors.grey)),
+                        ),
+                        child: Text(
+                          a.dpPetrolBalance == 0 
+                            ? 'Running PA: ₹0' 
+                            : 'Running PA: ${a.dpPetrolBalance > 0 ? 'Extra' : 'Short'} ₹${a.dpPetrolBalance.abs().toStringAsFixed(0)}',
+                          style: TextStyle(
+                            color: a.dpPetrolBalance > 0 ? Colors.teal : (a.dpPetrolBalance < 0 ? Colors.orange : Colors.grey),
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 4), // Tightened spacing to give chip more room
-                Container(
-                  constraints: const BoxConstraints(maxWidth: 160), // Bound extreme edge cases, but let normal amounts fit fully
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: (route.assignedDpPetrolBalance > 0 ? Colors.teal : (route.assignedDpPetrolBalance < 0 ? Colors.orange : Colors.grey)).withAlpha(25),
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: route.assignedDpPetrolBalance > 0 ? Colors.teal : (route.assignedDpPetrolBalance < 0 ? Colors.orange : Colors.grey)),
+                )),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    icon: Icon(Icons.edit, size: 20, color: theme.colorScheme.primary),
+                    label: Text('Manage DPs', style: TextStyle(color: theme.colorScheme.primary)),
+                    onPressed: onAssignTapped,
                   ),
-                  child: Text(
-                    route.assignedDpPetrolBalance == 0 
-                      ? 'Running PA: ₹0' 
-                      : 'Running PA: ${route.assignedDpPetrolBalance > 0 ? 'Extra' : 'Short'} ₹${route.assignedDpPetrolBalance.abs().toStringAsFixed(0)}',
-                    style: TextStyle(
-                      color: route.assignedDpPetrolBalance > 0 ? Colors.teal : (route.assignedDpPetrolBalance < 0 ? Colors.orange : Colors.grey),
-                      fontSize: 9,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                IconButton(
-                  icon: Icon(Icons.edit, size: 20, color: theme.colorScheme.primary),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  onPressed: onAssignTapped,
                 ),
               ],
             )
@@ -457,7 +465,7 @@ class _AssignDpSheet extends ConsumerWidget {
     required this.scrollController,
   });
 
-  void _showUnassignConfirm(BuildContext context, WidgetRef ref) {
+  void _showUnassignConfirm(BuildContext context, WidgetRef ref, String dpId) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -470,7 +478,7 @@ class _AssignDpSheet extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () {
-              ref.read(routeProvider.notifier).unassignRoute(route.id);
+              ref.read(routeProvider.notifier).unassignRoute(route.id, dpId);
               ctx.pop(); // close dialog
               context.pop(); // close sheet
             },
@@ -542,15 +550,16 @@ class _AssignDpSheet extends ConsumerWidget {
     final theme = Theme.of(context);
     final allRoutes = (ref.watch(routeProvider).value?.routes ?? []);
     
+    final assignedDpIds = route.allocations.map((a) => a.dpId).toSet();
     final availableDps = (ref.watch(attendanceProvider).value?.persons ?? []).where((dp) {
       return (dp.displayStatus == AttendanceStatus.present || dp.displayStatus == AttendanceStatus.standby)
-          && dp.dpId != route.assignedDpId;
+          && !assignedDpIds.contains(dp.dpId);
     }).toList();
     
     // Sort so unassigned DPs appear first, then by ID
     availableDps.sort((a, b) {
-      final aAssigned = allRoutes.any((r) => r.assignedDpId == a.dpId);
-      final bAssigned = allRoutes.any((r) => r.assignedDpId == b.dpId);
+      final aAssigned = allRoutes.any((r) => r.allocations.any((alloc) => alloc.dpId == a.dpId));
+      final bAssigned = allRoutes.any((r) => r.allocations.any((alloc) => alloc.dpId == b.dpId));
       
       if (aAssigned == bAssigned) {
         return a.dpId.compareTo(b.dpId); // Or compare by name
@@ -558,21 +567,15 @@ class _AssignDpSheet extends ConsumerWidget {
       return aAssigned ? 1 : -1;
     });
 
-    AttendanceEntry? currentlyAssignedDp;
-    if (route.assignedDpId != null) {
+    List<AttendanceEntry> currentlyAssignedDps = [];
+    for (final dpId in assignedDpIds) {
       for (final dp in (ref.read(attendanceProvider).value?.persons ?? [])) {
-        if (dp.dpId == route.assignedDpId) {
-          currentlyAssignedDp = dp;
+        if (dp.dpId == dpId) {
+          currentlyAssignedDps.add(dp);
           break;
         }
       }
     }
-    String paStatusText = route.assignedDpPetrolBalance == 0
-        ? 'PA: Balanced (₹0)'
-        : 'PA: ${route.assignedDpPetrolBalance > 0 ? 'Extra' : 'Short'} ₹${route.assignedDpPetrolBalance.abs().toStringAsFixed(0)}';
-    Color paColor = route.assignedDpPetrolBalance > 0
-        ? Colors.teal
-        : (route.assignedDpPetrolBalance < 0 ? Colors.orange : Colors.grey);
 
     return ListView(
       controller: scrollController,
@@ -586,8 +589,7 @@ class _AssignDpSheet extends ConsumerWidget {
           ),
         ),
         const Divider(height: 1),
-        
-        if (currentlyAssignedDp != null) ...[
+        if (currentlyAssignedDps.isNotEmpty) ...[
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppConstants.spacing16, vertical: AppConstants.spacing8),
             child: Align(
@@ -595,7 +597,15 @@ class _AssignDpSheet extends ConsumerWidget {
               child: Text('CURRENTLY ASSIGNED', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
             ),
           ),
-          Padding(
+          ...currentlyAssignedDps.map((currentlyAssignedDp) {
+            final allocation = route.allocations.firstWhere((a) => a.dpId == currentlyAssignedDp.dpId);
+            String paStatusText = allocation.dpPetrolBalance == 0
+                ? 'PA: Balanced (₹0)'
+                : 'PA: ${allocation.dpPetrolBalance > 0 ? 'Extra' : 'Short'} ₹${allocation.dpPetrolBalance.abs().toStringAsFixed(0)}';
+            Color paColor = allocation.dpPetrolBalance > 0
+                ? Colors.teal
+                : (allocation.dpPetrolBalance < 0 ? Colors.orange : Colors.grey);
+            return Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppConstants.spacing16, vertical: AppConstants.spacing8),
             child: Column(
               children: [
@@ -629,7 +639,7 @@ class _AssignDpSheet extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: route.deliveryCompleted == true ? null : () => _assign(context, ref, currentlyAssignedDp!),
+                        onPressed: route.deliveryCompleted == true ? null : () => _assign(context, ref, currentlyAssignedDp),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(horizontal: 0),
                           minimumSize: const Size(0, 36),
@@ -641,7 +651,7 @@ class _AssignDpSheet extends ConsumerWidget {
                     const SizedBox(width: AppConstants.spacing8),
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: route.deliveryCompleted == true ? null : () => _showUnassignConfirm(context, ref),
+                        onPressed: route.deliveryCompleted == true ? null : () => _showUnassignConfirm(context, ref, currentlyAssignedDp.dpId),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.red,
                           side: const BorderSide(color: Colors.red),
@@ -672,7 +682,7 @@ class _AssignDpSheet extends ConsumerWidget {
                             child: PetrolAllowanceSheet(
                               route: route,
                               dp: DeliveryPerson(
-                                id: currentlyAssignedDp!.dpId, 
+                                id: currentlyAssignedDp.dpId, 
                                 name: currentlyAssignedDp.name, 
                                 employeeId: currentlyAssignedDp.dpCode,
                               ),
@@ -691,8 +701,8 @@ class _AssignDpSheet extends ConsumerWidget {
                   ),
                 ),
               ],
-            ),
-          ),
+            );
+          }),
           const Divider(height: 1),
         ],
 
@@ -703,7 +713,7 @@ class _AssignDpSheet extends ConsumerWidget {
           )
         else
           ...availableDps.map((dp) {
-            final otherRoutes = allRoutes.where((r) => r.id != route.id && r.assignedDpId == dp.dpId).toList();
+            final otherRoutes = allRoutes.where((r) => r.id != route.id && r.allocations.any((a) => a.dpId == dp.dpId)).toList();
             return Dismissible(
               key: ValueKey(dp.dpId),
               direction: DismissDirection.endToStart,
@@ -732,8 +742,31 @@ class _AssignDpSheet extends ConsumerWidget {
                       ],
                     ),
                   );
-                  return confirm ?? false;
+                  if (confirm != true) return false;
                 }
+                
+                if (route.allocations.isNotEmpty) {
+                  final assignedNames = route.allocations.map((a) => a.dpName ?? 'Unknown').join(', ');
+                  final bool? confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Multiple DPs Assigned'),
+                      content: Text('${route.name} is already assigned to $assignedNames. Assign ${dp.name} as well?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => ctx.pop(false),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () => ctx.pop(true),
+                          child: const Text('Confirm', style: TextStyle(color: Colors.blue)),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirm != true) return false;
+                }
+                
                 return true;
               },
               onDismissed: (_) => _assign(context, ref, dp),

@@ -4,6 +4,32 @@ part 'delivery_route.freezed.dart';
 part 'delivery_route.g.dart';
 
 @freezed
+abstract class RouteAllocation with _$RouteAllocation {
+  const factory RouteAllocation({
+    String? allocationId,
+    required String dpId,
+    String? dpName,
+    String? dpPhotoUrl,
+    @Default(0.0) double dpPetrolBalance,
+    @Default(0.0) double litresAllocated,
+    @Default(0) int qty1LBottle,
+    @Default(0) int qtyHalfLBottle,
+    @Default(0) int qtyHalfLPacket,
+    int? petrolAllowanceGiven,
+    @Default(false) bool isPetrolAllowanceComplete,
+    @Default('ASSIGNED') String status,
+    bool? deliveryCompleted,
+    int? emptyBottles1L,
+    int? emptyBottlesHalfL,
+    @Default(false) bool hasBottleReturnFlag,
+    String? bottleReturnNote,
+  }) = _RouteAllocation;
+
+  factory RouteAllocation.fromJson(Map<String, dynamic> json) =>
+      _$RouteAllocationFromJson(json);
+}
+
+@freezed
 abstract class DeliveryRoute with _$DeliveryRoute {
   const factory DeliveryRoute({
     @JsonKey(name: 'routeId') required String id,
@@ -11,25 +37,24 @@ abstract class DeliveryRoute with _$DeliveryRoute {
     @JsonKey(name: 'zone') required String area,
     required int customerCount,
     @JsonKey(name: 'defaultLitres') required double milkQuantity,
-    String? assignedDpId,
-    String? assignedDpName,
-    String? assignedDpPhotoUrl,
-    @Default(0.0) double assignedDpPetrolBalance,
-    String? allocationId,
-    @Default(0) int qty1LBottle,
-    @Default(0) int qtyHalfLBottle,
-    @Default(0) int qtyHalfLPacket,
     @Default(0) int expectedEmptyBottles,
     @Default(80) int fixedPetrolAllowance,
-    @Default(false) bool isPetrolAllowanceComplete,
-    int? petrolAllowanceGiven,
-    bool? deliveryCompleted,
-    int? emptyBottles1L,
-    int? emptyBottlesHalfL,
-    @Default(false) bool hasBottleReturnFlag,
-    String? bottleReturnNote,
+    @Default([]) List<RouteAllocation> allocations,
   }) = _DeliveryRoute;
 
   factory DeliveryRoute.fromJson(Map<String, dynamic> json) =>
       _$DeliveryRouteFromJson(json);
+}
+
+extension DeliveryRouteX on DeliveryRoute {
+  bool get deliveryCompleted => allocations.isNotEmpty && allocations.every((a) => a.deliveryCompleted == true);
+  bool get hasBottleReturnFlag => allocations.any((a) => a.hasBottleReturnFlag);
+  
+  String? get assignedDpId => allocations.isNotEmpty ? allocations.first.dpId : null;
+  double get assignedDpPetrolBalance => allocations.isNotEmpty ? allocations.first.dpPetrolBalance : 0.0;
+  bool get isPetrolAllowanceComplete => allocations.isNotEmpty && allocations.every((a) => a.isPetrolAllowanceComplete);
+  int? get petrolAllowanceGiven => allocations.isNotEmpty ? allocations.first.petrolAllowanceGiven : null;
+  int get qty1LBottle => allocations.fold(0, (sum, a) => sum + a.qty1LBottle);
+  int get qtyHalfLBottle => allocations.fold(0, (sum, a) => sum + a.qtyHalfLBottle);
+  int get qtyHalfLPacket => allocations.fold(0, (sum, a) => sum + a.qtyHalfLPacket);
 }

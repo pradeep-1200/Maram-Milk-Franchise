@@ -66,7 +66,7 @@ class _ManagerInventorySectionState extends ConsumerState<ManagerInventorySectio
                 Icon(Icons.inventory_rounded, color: theme.colorScheme.primary),
                 const SizedBox(width: AppConstants.spacing8),
                 Text(
-                  'Manager Inventory (End of Day)',
+                  'Manager Inventory',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -75,7 +75,7 @@ class _ManagerInventorySectionState extends ConsumerState<ManagerInventorySectio
             ),
             const SizedBox(height: AppConstants.spacing8),
             Text(
-              'Physically count and enter the remaining stock for today. This is independent of the main inventory logic.',
+              'Physically count and enter the remaining stock for today.',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),

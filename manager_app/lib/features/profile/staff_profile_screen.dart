@@ -61,7 +61,7 @@ class StaffProfileScreen extends ConsumerWidget {
           ),
         );
 
-        final routes = (ref.watch(routeProvider).value?.routes ?? []).where((r) => r.assignedDpId == dp.id).map((r) => r.name).toList();
+        final routes = (ref.watch(routeProvider).value?.routes ?? []).where((r) => r.allocations.any((a) => a.dpId == dp.id)).map((r) => r.name).toList();
         final routesAssignedText = routes.isEmpty ? 'Unassigned' : routes.join(', ');
 
         return Scaffold(

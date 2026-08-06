@@ -26,14 +26,14 @@ class PetrolAllowanceScreen extends ConsumerWidget {
 
     final targetRoute = route ??
         routeState.routes.firstWhere(
-          (r) => r.assignedDpId != null,
+          (r) => r.allocations.isNotEmpty,
           orElse: () => routeState.routes.first,
         );
 
     DeliveryPerson? targetDp = dp;
     if (targetDp == null && attendanceState.persons.isNotEmpty) {
       final entry = attendanceState.persons.firstWhere(
-        (p) => p.dpId == targetRoute.assignedDpId,
+        (p) => targetRoute.allocations.any((a) => a.dpId == p.dpId),
         orElse: () => attendanceState.persons.first,
       );
       targetDp = DeliveryPerson(id: entry.dpId, name: entry.name, employeeId: entry.dpCode);
@@ -71,6 +71,7 @@ class PetrolAllowanceScreen extends ConsumerWidget {
             onPressed: () {
               ref.read(routeProvider.notifier).markPetrolAllowanceComplete(
                 targetRoute.id,
+                targetDp!.id,
                 targetRoute.fixedPetrolAllowance,
               );
               context.go('/dashboard');

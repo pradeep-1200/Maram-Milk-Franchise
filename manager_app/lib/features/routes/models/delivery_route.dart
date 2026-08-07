@@ -47,9 +47,12 @@ abstract class DeliveryRoute with _$DeliveryRoute {
 }
 
 extension DeliveryRouteX on DeliveryRoute {
-  bool get deliveryCompleted => allocations.isNotEmpty && allocations.every((a) => a.deliveryCompleted == true);
+  bool get deliveryCompleted => allocations.isNotEmpty && allocations.every((a) => a.status == 'COMPLETED');
+  bool get hasIncompleteDeliveries => allocations.isNotEmpty && allocations.any((a) => a.status != 'COMPLETED');
   bool get hasBottleReturnFlag => allocations.any((a) => a.hasBottleReturnFlag);
   
+  double get allocatedLitres => allocations.fold(0.0, (sum, a) => sum + a.litresAllocated);
+
   String? get assignedDpId => allocations.isNotEmpty ? allocations.first.dpId : null;
   double get assignedDpPetrolBalance => allocations.isNotEmpty ? allocations.first.dpPetrolBalance : 0.0;
   bool get isPetrolAllowanceComplete => allocations.isNotEmpty && allocations.every((a) => a.isPetrolAllowanceComplete);

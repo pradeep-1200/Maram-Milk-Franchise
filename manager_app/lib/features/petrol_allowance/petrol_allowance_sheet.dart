@@ -40,9 +40,9 @@ class _PetrolAllowanceSheetState extends ConsumerState<PetrolAllowanceSheet> {
     _amountFocusNode.addListener(_onFocusChange);
     // Initialize state with the actual given amount if editing, or fallback to fixed allowance
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final allocation = widget.route.allocations.firstWhere((a) => a.dpId == widget.dp.id);
-      print('PA Popup Open -> allocation.petrolAllowanceGiven: ${allocation.petrolAllowanceGiven}, route.fixedPetrolAllowance: ${widget.route.fixedPetrolAllowance}, dp.petrolBalance: ${widget.dp.petrolBalance}');
-      final initialAmount = allocation.petrolAllowanceGiven ?? widget.route.fixedPetrolAllowance;
+      final allocation = widget.route.allocations.where((a) => a.dpId == widget.dp.id).firstOrNull;
+      print('PA Popup Open -> allocation.petrolAllowanceGiven: ${allocation?.petrolAllowanceGiven}, route.fixedPetrolAllowance: ${widget.route.fixedPetrolAllowance}, dp.petrolBalance: ${widget.dp.petrolBalance}');
+      final initialAmount = allocation?.petrolAllowanceGiven ?? widget.route.fixedPetrolAllowance;
       ref.read(petrolAllowanceProvider.notifier).init(initialAmount);
     });
   }
@@ -146,8 +146,8 @@ class _PetrolAllowanceSheetState extends ConsumerState<PetrolAllowanceSheet> {
                             orElse: () => widget.dp,
                           );
                           final balance = realDp.petrolBalance;
-                          final allocation = widget.route.allocations.firstWhere((a) => a.dpId == widget.dp.id);
-                          final initialAmount = allocation.petrolAllowanceGiven ?? widget.route.fixedPetrolAllowance;
+                          final allocation = widget.route.allocations.where((a) => a.dpId == widget.dp.id).firstOrNull;
+                          final initialAmount = allocation?.petrolAllowanceGiven ?? widget.route.fixedPetrolAllowance;
                           final givenAmount = ref.watch(petrolAllowanceProvider);
                           
                           final previewBalance = balance + (givenAmount - initialAmount);
@@ -188,11 +188,13 @@ class _PetrolAllowanceSheetState extends ConsumerState<PetrolAllowanceSheet> {
           ),
           const Divider(),
 
-          Padding(
-            padding: const EdgeInsets.all(AppConstants.spacing16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
+          Flexible(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(AppConstants.spacing16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
                 // Fixed Petrol Allowance Card
                 AppCard(
                   padding: const EdgeInsets.symmetric(horizontal: AppConstants.spacing16, vertical: AppConstants.spacing8),
@@ -341,7 +343,9 @@ class _PetrolAllowanceSheetState extends ConsumerState<PetrolAllowanceSheet> {
               ],
             ),
           ),
-        ],
+        ),
+      ),
+    ],
       ),
     );
   }

@@ -9,6 +9,8 @@ import '../../features/attendance/attendance_screen.dart';
 import '../../features/routes/route_allocation_screen.dart';
 import '../../features/dispatch/dispatch_ready_screen.dart';
 import '../../features/dispatch/dispatch_summary_screen.dart';
+import '../../features/manager_inventory/manager_inventory_screen.dart';
+import '../../features/shop_sale/shop_sale_screen.dart';
 
 import '../../features/inventory/inventory_screen.dart';
 import '../../features/reports/reports_screen.dart';
@@ -158,6 +160,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       path: '/evening-check',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => const EveningCheckScreen(),
+    ),
+    GoRoute(
+      path: '/manager-inventory',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const ManagerInventoryScreen(),
+    ),
+    GoRoute(
+      path: '/shop-sale',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const ShopSaleScreen(),
     ),
     GoRoute(
       path: '/staff-directory',

@@ -231,6 +231,15 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                             final isPositive = tx.type == 'PETROL_ALLOWANCE' || tx.type == 'EXTRA_PAID';
                             final isShortage = tx.type == 'SHORTAGE';
                             
+                            Color statusColor;
+                            if (isShortage) {
+                              statusColor = Colors.orange;
+                            } else if (tx.type == 'EXTRA_PAID') {
+                              statusColor = Colors.blue;
+                            } else {
+                              statusColor = Colors.green;
+                            }
+                            
                             return AppCard(
                               child: Padding(
                                 padding: const EdgeInsets.all(AppConstants.spacing16),
@@ -239,14 +248,12 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                                     Container(
                                       padding: const EdgeInsets.all(12),
                                       decoration: BoxDecoration(
-                                        color: isPositive 
-                                            ? Colors.green.withAlpha(30) 
-                                            : Colors.orange.withAlpha(30),
+                                        color: statusColor.withAlpha(30),
                                         shape: BoxShape.circle,
                                       ),
                                       child: Icon(
                                         isPositive ? Icons.add_circle : Icons.remove_circle,
-                                        color: isPositive ? Colors.green : Colors.orange,
+                                        color: statusColor,
                                       ),
                                     ),
                                     const SizedBox(width: AppConstants.spacing16),
@@ -276,13 +283,13 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                                               Container(
                                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                                 decoration: BoxDecoration(
-                                                  color: theme.colorScheme.surfaceContainerHighest,
+                                                  color: statusColor,
                                                   borderRadius: BorderRadius.circular(4),
                                                 ),
                                                 child: Text(
                                                   isShortage ? 'Short Paid' : (tx.type == 'EXTRA_PAID' ? 'Extra Paid' : 'Fully Paid'),
                                                   style: theme.textTheme.labelSmall?.copyWith(
-                                                    color: theme.colorScheme.onSurfaceVariant,
+                                                    color: Colors.white,
                                                     fontWeight: FontWeight.bold,
                                                   ),
                                                 ),
@@ -317,7 +324,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                                           Text(
                                             '₹${tx.amount.toStringAsFixed(0)}',
                                             style: theme.textTheme.titleMedium?.copyWith(
-                                              color: theme.colorScheme.primary,
+                                              color: statusColor,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),

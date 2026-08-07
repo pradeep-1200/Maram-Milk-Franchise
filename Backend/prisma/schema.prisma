@@ -254,3 +254,11 @@ model RouteEmptyBottleBalance {
   @@unique([routeId, bottleType])
 }
 
+model ShopSale {
+  id              String   @id @default(uuid())
+  date            String   // YYYY-MM-DD
+  qty1LBottle     Int      @default(0)
+  qtyHalfLBottle  Int      @default(0)
+  qtyHalfLPacket  Int      @default(0)
+  createdAt       DateTime @default(now())
+}

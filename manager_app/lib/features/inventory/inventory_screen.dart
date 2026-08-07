@@ -399,12 +399,116 @@ class _InventoryRow extends StatelessWidget {
                       ],
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Consumer(
+                      builder: (context, ref, child) {
+                        return OutlinedButton.icon(
+                          icon: const Icon(Icons.sync_problem, size: 16),
+                          label: const Text('Reconcile Stock'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: theme.colorScheme.error,
+                            side: BorderSide(color: theme.colorScheme.error.withAlpha(100)),
+                          ),
+                          onPressed: () {
+                            _showReconcileDialog(context, ref, item, theme);
+                          },
+                        );
+                      }
+                    ),
+                  ),
                 ],
               ),
             ),
           ],
         ),
       ],
+    );
+  }
+
+  void _showReconcileDialog(BuildContext context, WidgetRef ref, InventoryItemState item, ThemeData theme) {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Reconcile ${item.name}'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'This is a destructive action to reset drifting stock numbers to ground truth.',
+                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  labelText: 'Actual Physical Stock',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => context.pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: theme.colorScheme.error),
+              onPressed: () async {
+                final actual = double.tryParse(controller.text);
+                if (actual != null) {
+                  final confirm = await _showConfirmDialog(context, item.name, actual);
+                  if (confirm == true && context.mounted) {
+                    context.pop();
+                    try {
+                      await ref.read(inventoryProvider.notifier).reconcileStock(item.id, actual);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Stock reconciled successfully.')));
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+                      }
+                    }
+                  }
+                }
+              },
+              child: const Text('Reconcile'),
+            ),
+          ],
+        );
+      }
+    );
+  }
+
+  Future<bool?> _showConfirmDialog(BuildContext context, String name, double amount) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Are you sure?'),
+          content: Text('This will overwrite the current stock number for $name to $amount. Are you sure?'),
+          actions: [
+            TextButton(
+              onPressed: () => context.pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+              onPressed: () => context.pop(true),
+              child: const Text('Overwrite'),
+            ),
+          ],
+        );
+      }
     );
   }
 }

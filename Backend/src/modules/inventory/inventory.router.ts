@@ -11,5 +11,6 @@ inventoryRouter.put('/', inventoryController.updateInventory);
 inventoryRouter.post('/admin-stock', inventoryController.addAdminStock);
 // TEMPORARY_MANUAL_STOCK_ENTRY
 inventoryRouter.put('/manager-stock', inventoryController.setManagerStock);
+inventoryRouter.put('/reconcile-stock', inventoryController.reconcileStock);
 
 export default inventoryRouter;

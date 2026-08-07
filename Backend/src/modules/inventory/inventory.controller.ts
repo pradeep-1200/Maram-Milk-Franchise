@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as inventoryService from './inventory.service';
-import { inventoryQuerySchema, updateInventorySchema, adminStockSchema, managerStockSchema } from './inventory.validation';
+import { inventoryQuerySchema, updateInventorySchema, adminStockSchema, managerStockSchema, reconcileStockSchema } from './inventory.validation';
 
 export const getInventory = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -54,6 +54,21 @@ export const setManagerStock = async (req: Request, res: Response, next: NextFun
     const { inventoryItemId, newStockAdded } = managerStockSchema.parse(req.body);
 
     const record = await inventoryService.setManagerStock(date, inventoryItemId, newStockAdded);
+    res.json(record);
+  } catch (error: any) {
+    if (error.name === 'ZodError') {
+      return res.status(400).json({ error: { message: 'Validation failed', code: 'VALIDATION_ERROR', details: error.errors } });
+    }
+    next(error);
+  }
+};
+
+export const reconcileStock = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { date } = inventoryQuerySchema.parse(req.query);
+    const { inventoryItemId, actualStock } = reconcileStockSchema.parse(req.body);
+
+    const record = await inventoryService.reconcileStock(date, inventoryItemId, actualStock);
     res.json(record);
   } catch (error: any) {
     if (error.name === 'ZodError') {

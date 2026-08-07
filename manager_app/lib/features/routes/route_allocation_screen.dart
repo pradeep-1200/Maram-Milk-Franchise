@@ -333,42 +333,44 @@ class _RouteCard extends ConsumerWidget {
                       },
                     ),
                   ],
-                  if (route.deliveryCompleted == true) ...[
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.green.withAlpha(25),
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: Colors.green),
-                      ),
-                      child: const Text(
-                        'CHECK COMPLETED',
-                        style: TextStyle(
-                          color: Colors.green,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+                  if (isAssigned) ...[
+                    if (route.deliveryCompleted) ...[
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withAlpha(25),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: Colors.green),
+                        ),
+                        child: const Text(
+                          'CHECK COMPLETED',
+                          style: TextStyle(
+                            color: Colors.green,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                    ),
-                  ] else if (route.deliveryCompleted == false) ...[
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.red.withAlpha(25),
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: Colors.red),
-                      ),
-                      child: const Text(
-                        'DELIVERY INCOMPLETE',
-                        style: TextStyle(
-                          color: Colors.red,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+                    ] else if (route.hasIncompleteDeliveries) ...[
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withAlpha(25),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: Colors.red),
+                        ),
+                        child: const Text(
+                          'DELIVERY INCOMPLETE',
+                          style: TextStyle(
+                            color: Colors.red,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ],
                 ],
               ),
@@ -383,7 +385,7 @@ class _RouteCard extends ConsumerWidget {
               const SizedBox(width: AppConstants.spacing16),
               const Icon(Icons.local_drink, size: 16, color: Colors.grey),
               const SizedBox(width: AppConstants.spacing4),
-              Flexible(child: Text('${route.milkQuantity} Ltr', style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis)),
+              Flexible(child: Text('${route.allocatedLitres} Ltr', style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis)),
               const SizedBox(width: AppConstants.spacing16),
               const Icon(Icons.keyboard_return, size: 16, color: Colors.grey),
               const SizedBox(width: AppConstants.spacing4),
@@ -701,7 +703,8 @@ class _AssignDpSheet extends ConsumerWidget {
                   ),
                 ),
               ],
-            );
+            ),
+          );
           }),
           const Divider(height: 1),
         ],

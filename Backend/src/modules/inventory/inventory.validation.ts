@@ -26,3 +26,8 @@ export const managerStockSchema = z.object({
   inventoryItemId: z.string().uuid(),
   newStockAdded: z.number().min(0),
 });
+
+export const reconcileStockSchema = z.object({
+  inventoryItemId: z.string().uuid(),
+  actualStock: z.number().min(0),
+});

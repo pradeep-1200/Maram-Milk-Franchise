@@ -213,6 +213,24 @@ class InventoryNotifier extends AsyncNotifier<InventoryState> {
     await reload();
   }
 
+  Future<void> reconcileStock(String inventoryItemId, double actualStock) async {
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    final dio = ref.read(apiClientProvider);
+    
+    await dio.put(
+      '/inventory/reconcile-stock',
+      queryParameters: {'date': _getLocalToday()},
+      data: {
+        'inventoryItemId': inventoryItemId,
+        'actualStock': actualStock,
+      },
+    );
+    
+    await reload();
+  }
+
   void updateNewStockLocally(String id, double newStock) {
     final currentState = state.value;
     if (currentState == null) return;

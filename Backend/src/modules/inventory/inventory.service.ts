@@ -87,52 +87,36 @@ export const getInventoryForDate = async (date: string) => {
 
 /**
  * Bulk updates the counted inventory by the manager.
+ * Now stops echoing back currentStock as a silent pass-through. 
+ * Only marks the inventory step as completed.
  */
-export const bulkUpdateInventory = async (date: string, records: { inventoryItemId: string; currentStock: number; newStockAdded?: number }[]) => {
-  const existingRecords = await getInventoryForDate(date);
-
-  const results = await prisma.$transaction(
-    records.map(r => {
-      const currentRecord = existingRecords.find(i => i.inventoryItemId === r.inventoryItemId);
-      
-      let updateData: any = {
-        currentStock: r.currentStock,
-      };
-      
-      let expectedStock = r.currentStock; // fallback
-      if (currentRecord) {
-        expectedStock = currentRecord.carriedOverStock ?? 0;
-        if (r.newStockAdded !== undefined) {
-          updateData.newStockAdded = r.newStockAdded;
-          expectedStock += r.newStockAdded;
-        } else {
-          expectedStock += currentRecord.newStockAdded ?? 0;
-        }
-        updateData.expectedStock = expectedStock;
-      }
-
-      return prisma.inventoryDailyRecord.upsert({
-        where: {
-          inventoryItemId_date: {
-            inventoryItemId: r.inventoryItemId,
-            date,
-          },
-        },
-        update: updateData,
-        create: {
-          inventoryItemId: r.inventoryItemId,
-          date,
-          expectedStock: expectedStock,
-          currentStock: r.currentStock,
-          carriedOverStock: 0,
-          newStockAdded: r.newStockAdded ?? 0,
-        },
-      });
-    })
-  );
-
+export const bulkUpdateInventory = async (date: string, records: { inventoryItemId: string; currentStock?: number; newStockAdded?: number }[]) => {
+  // We no longer update currentStock or expectedStock here since there is no UI for it 
+  // on the save action, avoiding silent overwriting of drifted values.
+  
   await checkAndUpdateInventoryCompletion(date);
-  return results;
+  return []; // Return empty or a success signal
+};
+
+/**
+ * Reconciles stock: a deliberate, occasional action to hard-reset current and expected stock to ground truth.
+ */
+export const reconcileStock = async (date: string, inventoryItemId: string, actualStock: number) => {
+  const items = await getInventoryForDate(date);
+  const currentRecord = items.find(i => i.inventoryItemId === inventoryItemId);
+  if (!currentRecord) throw new Error('Item not found');
+
+  const record = await prisma.inventoryDailyRecord.update({
+    where: {
+      inventoryItemId_date: { inventoryItemId, date },
+    },
+    data: {
+      expectedStock: actualStock,
+      currentStock: actualStock,
+    },
+  });
+
+  return record;
 };
 
 /**
@@ -166,12 +150,11 @@ export const setManagerStock = async (date: string, inventoryItemId: string, new
   const currentRecord = items.find(i => i.inventoryItemId === inventoryItemId);
   if (!currentRecord) throw new Error('Item not found');
 
-  // We are setting newStockAdded, so expected becomes carriedOver + newStockAdded
-  const newExpected = (currentRecord.carriedOverStock ?? 0) + newStockAdded;
-  
-  // If the manager hasn't recorded a variance yet (current == expected), keep them in sync
-  const variance = currentRecord.currentStock - currentRecord.expectedStock;
-  const newCurrent = newExpected + variance;
+  // Instead of recalculating newExpected from scratch (which wipes out Route Allocation decrements),
+  // we calculate the delta of the new stock being added/removed, and apply that delta directly.
+  const deltaNewStock = newStockAdded - (currentRecord.newStockAdded ?? 0);
+  const newExpected = currentRecord.expectedStock + deltaNewStock;
+  const newCurrent = currentRecord.currentStock + deltaNewStock;
 
   const record = await prisma.inventoryDailyRecord.update({
     where: {

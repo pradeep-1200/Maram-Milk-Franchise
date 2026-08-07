@@ -71,8 +71,18 @@ export const getInventoryForDate = async (date: string) => {
       litresPerUnit: parseUnitToLitres(item.unit),
     });
   }
+  // Custom sort order requested by the user
+  const orderMap: Record<string, number> = {
+    '1L Bottle': 1,
+    'Half Litre Bottle': 2,
+    '500ml Packet': 3,
+  };
 
-  return results;
+  return results.sort((a, b) => {
+    const orderA = orderMap[a.name] ?? 99;
+    const orderB = orderMap[b.name] ?? 99;
+    return orderA - orderB;
+  });
 };
 
 /**

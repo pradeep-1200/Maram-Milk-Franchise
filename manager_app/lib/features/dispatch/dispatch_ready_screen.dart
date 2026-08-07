@@ -30,17 +30,11 @@ class DispatchReadyScreen extends ConsumerWidget {
     final routesAssigned = routeAsync.value?.countAssigned ?? 0;
     final routesComplete = routesCount > 0 && routesAssigned >= routesCount;
 
-    // Use dispatch provider for the final completedAt truth on inventory, or local isSaved
-    final inventoryComplete = (invAsync.value?.isSaved == true) || (dispatchAsync.value?.inventory.completedAt != null);
-
-    final bool allComplete = attendanceComplete && inventoryComplete && routesComplete;
+    final bool allComplete = attendanceComplete && routesComplete;
 
     final List<String> pendingItems = [];
     if (!attendanceComplete) {
       pendingItems.add('${attCount - attMarked} DP(s) need attendance marked');
-    }
-    if (!inventoryComplete) {
-      pendingItems.add('Inventory count pending');
     }
     if (!routesComplete) {
       pendingItems.add('${routesCount - routesAssigned} route(s) need assignment');
@@ -116,13 +110,6 @@ class DispatchReadyScreen extends ConsumerWidget {
                             subtitle: '$attMarked/$attCount Marked',
                             isComplete: attendanceComplete,
                             onTap: () => context.push('/dispatch/attendance'),
-                          ),
-                          const Divider(),
-                          _ChecklistItem(
-                            title: 'Inventory',
-                            subtitle: attendanceComplete ? 'Completed' : 'Pending',
-                            isComplete: inventoryComplete,
-                            onTap: () => context.push('/dispatch/inventory'),
                           ),
                           const Divider(),
                           _ChecklistItem(

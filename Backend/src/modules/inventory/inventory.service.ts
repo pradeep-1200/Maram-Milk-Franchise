@@ -98,26 +98,6 @@ export const bulkUpdateInventory = async (date: string, records: { inventoryItem
   return []; // Return empty or a success signal
 };
 
-/**
- * Reconciles stock: a deliberate, occasional action to hard-reset current and expected stock to ground truth.
- */
-export const reconcileStock = async (date: string, inventoryItemId: string, actualStock: number) => {
-  const items = await getInventoryForDate(date);
-  const currentRecord = items.find(i => i.inventoryItemId === inventoryItemId);
-  if (!currentRecord) throw new Error('Item not found');
-
-  const record = await prisma.inventoryDailyRecord.update({
-    where: {
-      inventoryItemId_date: { inventoryItemId, date },
-    },
-    data: {
-      expectedStock: actualStock,
-      currentStock: actualStock,
-    },
-  });
-
-  return record;
-};
 
 /**
  * Admin logic: Adds new stock to the day's expected balance.

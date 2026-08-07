@@ -53,9 +53,9 @@ class ShopSaleScreen extends ConsumerWidget {
             return const Center(child: Text('No inventory items found'));
           }
 
-          final item1L = loadedState.items.cast<InventoryItemState?>().firstWhere((i) => i?.unit == '1L' && i?.subtitle == 'Bottle', orElse: () => null);
-          final itemHalfL = loadedState.items.cast<InventoryItemState?>().firstWhere((i) => i?.unit == '500ml' && i?.subtitle == 'Bottle', orElse: () => null);
-          final itemPacket = loadedState.items.cast<InventoryItemState?>().firstWhere((i) => i?.unit == '500ml' && i?.subtitle == 'Packet', orElse: () => null);
+          final item1L = loadedState.items.cast<InventoryItemState?>().firstWhere((i) => i?.subtitle == 'Bottle - 1L', orElse: () => null);
+          final itemHalfL = loadedState.items.cast<InventoryItemState?>().firstWhere((i) => i?.subtitle == 'Bottle - 500ml', orElse: () => null);
+          final itemPacket = loadedState.items.cast<InventoryItemState?>().firstWhere((i) => i?.subtitle == 'Packet - 500ml', orElse: () => null);
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(AppConstants.spacing16),

@@ -75,17 +75,6 @@ class _DispatchSummaryScreenState extends ConsumerState<DispatchSummaryScreen> {
               ),
               const SizedBox(height: AppConstants.spacing8),
               
-              _SummarySection(
-                title: 'Inventory',
-                icon: Icons.inventory_2,
-                children: [
-                  _SummaryRow('Counted', '${inv.counted}/${inv.totalItems}', theme.colorScheme.primary),
-                  _SummaryRow('Matches', '${inv.matched}', Colors.green),
-                  if ((inv.counted - inv.matched) > 0)
-                    _SummaryRow('Mismatches', '${inv.counted - inv.matched}', Colors.orange.shade800),
-                ],
-              ),
-              const SizedBox(height: AppConstants.spacing8),
               
               _SummarySection(
                 title: 'Routes',

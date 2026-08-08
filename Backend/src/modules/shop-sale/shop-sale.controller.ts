@@ -4,8 +4,8 @@ import { getShopSalesSchema, createShopSaleSchema } from './shop-sale.validation
 
 export const getShopSales = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { date } = getShopSalesSchema.parse(req.query);
-    const sales = await shopSaleService.getShopSalesForDate(date);
+    const { date, range, from, to } = getShopSalesSchema.parse(req.query);
+    const sales = await shopSaleService.getShopSalesForDate(date, range, from, to);
     res.json(sales);
   } catch (error: any) {
     if (error.name === 'ZodError') {

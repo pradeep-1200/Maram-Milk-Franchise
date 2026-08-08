@@ -5,6 +5,7 @@ import '../../shared/app_button.dart';
 import 'providers/manager_inventory_provider.dart';
 
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 class ManagerInventoryScreen extends ConsumerStatefulWidget {
   const ManagerInventoryScreen({super.key});
@@ -54,6 +55,7 @@ class _ManagerInventoryScreenState extends ConsumerState<ManagerInventoryScreen>
 
     return Scaffold(
       appBar: AppBar(
+        centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
@@ -64,7 +66,17 @@ class _ManagerInventoryScreenState extends ConsumerState<ManagerInventoryScreen>
             }
           },
         ),
-        title: const Text('Manager Inventory', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Column(
+          children: [
+            const Text('Manager Inventory', style: TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              DateFormat('MMM d, yyyy').format(DateTime.now()),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppConstants.spacing16),
@@ -99,39 +111,86 @@ class _ManagerInventoryScreenState extends ConsumerState<ManagerInventoryScreen>
                   ),
                 ),
                 const SizedBox(height: AppConstants.spacing16),
-                ..._products.map((product) => Padding(
-                  padding: const EdgeInsets.only(bottom: AppConstants.spacing12),
-                  child: Row(
+                ..._products.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final product = entry.value;
+                  String subtitle = 'Standard Glass';
+                  if (product.contains('Packet')) subtitle = 'Plastic Pouch';
+
+                  IconData icon = Icons.local_drink;
+                  Color iconColor = Colors.green;
+                  Color bgColor = Colors.green.withAlpha(30);
+
+                  if (product.contains('500ml Bottle')) {
+                    iconColor = Colors.blue;
+                    bgColor = Colors.blue.withAlpha(30);
+                  } else if (product.contains('Packet')) {
+                    icon = Icons.inventory_2;
+                    iconColor = Colors.orange;
+                    bgColor = Colors.orange.withAlpha(30);
+                  }
+
+                  return Column(
                     children: [
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          product,
-                          style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 1,
-                        child: TextFormField(
-                          controller: _controllers[product],
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            isDense: true,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                            border: OutlineInputBorder(),
-                            hintText: '0',
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: bgColor,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(icon, color: iconColor),
                           ),
-                          onChanged: (val) {
-                            final count = int.tryParse(val);
-                            if (count != null) {
-                              notifier.updateCount(product, count);
-                            }
-                          },
-                        ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  product,
+                                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                                ),
+                                Text(
+                                  subtitle,
+                                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(
+                            width: 80,
+                            child: TextFormField(
+                              controller: _controllers[product],
+                              keyboardType: TextInputType.number,
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                              decoration: const InputDecoration(
+                                isDense: true,
+                                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                border: OutlineInputBorder(),
+                                hintText: '0',
+                              ),
+                              onChanged: (val) {
+                                final count = int.tryParse(val);
+                                if (count != null) {
+                                  notifier.updateCount(product, count);
+                                }
+                              },
+                            ),
+                          ),
+                        ],
                       ),
+                      if (index < _products.length - 1)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12.0),
+                          child: Divider(height: 1),
+                        )
+                      else
+                        const SizedBox(height: 16),
                     ],
-                  ),
-                )),
+                  );
+                }),
                 const SizedBox(height: AppConstants.spacing8),
                 if (state.error != null)
                   Padding(
@@ -145,6 +204,7 @@ class _ManagerInventoryScreenState extends ConsumerState<ManagerInventoryScreen>
                   width: double.infinity,
                   child: AppButton(
                     text: state.isSaved ? 'Saved' : 'Save Physical Count',
+                    icon: Icon(Icons.check, color: theme.colorScheme.onPrimary, size: 20),
                     onPressed: (state.isLoading || state.counts.isEmpty) ? null : () async {
                       try {
                         await notifier.submitCounts();

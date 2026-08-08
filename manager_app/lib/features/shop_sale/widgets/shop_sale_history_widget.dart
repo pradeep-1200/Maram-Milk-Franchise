@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../shared/app_card.dart';
 import '../providers/shop_sale_provider.dart';
 
 class ShopSaleHistoryWidget extends ConsumerWidget {
@@ -37,25 +38,101 @@ class ShopSaleHistoryWidget extends ConsumerWidget {
         final createdAt = DateTime.parse(sale['createdAt']).toLocal();
         final timeStr = DateFormat('h:mm a').format(createdAt);
 
-        List<String> items = [];
-        if (qty1L > 0) items.add('$qty1L × 1L Bottle');
-        if (qtyHalfL > 0) items.add('$qtyHalfL × 500ml Bottle');
-        if (qtyPacket > 0) items.add('$qtyPacket × 500ml Packet');
-
-        return Card(
-          elevation: 0,
-          color: theme.colorScheme.surfaceContainerHighest.withAlpha(50),
-          margin: const EdgeInsets.symmetric(vertical: 4),
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: theme.colorScheme.primaryContainer,
-              child: Icon(Icons.storefront, color: theme.colorScheme.onPrimaryContainer, size: 20),
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: AppCard(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primary.withAlpha(30),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Icon(Icons.storefront, color: theme.colorScheme.primary, size: 16),
+                          ),
+                          const SizedBox(width: 8),
+                          const Flexible(
+                            child: Text(
+                              'Sale recorded', 
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(timeStr, style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey)),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    if (qty1L > 0)
+                      _ProductPill(
+                        text: '${qty1L}x 1L Bottle',
+                        bgColor: Colors.green.withAlpha(30),
+                        textColor: Colors.green.shade800,
+                      ),
+                    if (qtyHalfL > 0)
+                      _ProductPill(
+                        text: '${qtyHalfL}x 500ml Bottle',
+                        bgColor: Colors.blue.withAlpha(30),
+                        textColor: Colors.blue.shade800,
+                      ),
+                    if (qtyPacket > 0)
+                      _ProductPill(
+                        text: '${qtyPacket}x 500ml Packet',
+                        bgColor: Colors.orange.withAlpha(30),
+                        textColor: Colors.orange.shade800,
+                      ),
+                  ],
+                ),
+              ],
             ),
-            title: Text(items.join(', '), style: const TextStyle(fontWeight: FontWeight.bold)),
-            trailing: Text(timeStr, style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey)),
           ),
-        );
-      },
+        ),
+      );
+    },
+  );
+  }
+}
+
+class _ProductPill extends StatelessWidget {
+  final String text;
+  final Color bgColor;
+  final Color textColor;
+
+  const _ProductPill({required this.text, required this.bgColor, required this.textColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: textColor,
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+        ),
+      ),
     );
   }
 }

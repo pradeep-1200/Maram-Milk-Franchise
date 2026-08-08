@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/network/api_client.dart';
@@ -6,12 +7,16 @@ import '../../inventory/providers/inventory_provider.dart';
 class ShopSaleState {
   final List<dynamic> salesHistory;
   final Map<String, int> currentQuantities;
+  final String? period;
+  final DateTimeRange? customDateRange;
   final bool isLoading;
   final String? error;
 
   ShopSaleState({
     this.salesHistory = const [],
     this.currentQuantities = const {},
+    this.period,
+    this.customDateRange,
     this.isLoading = false,
     this.error,
   });
@@ -19,12 +24,16 @@ class ShopSaleState {
   ShopSaleState copyWith({
     List<dynamic>? salesHistory,
     Map<String, int>? currentQuantities,
+    String? Function()? period,
+    DateTimeRange? Function()? customDateRange,
     bool? isLoading,
     String? error,
   }) {
     return ShopSaleState(
       salesHistory: salesHistory ?? this.salesHistory,
       currentQuantities: currentQuantities ?? this.currentQuantities,
+      period: period != null ? period() : this.period,
+      customDateRange: customDateRange != null ? customDateRange() : this.customDateRange,
       isLoading: isLoading ?? this.isLoading,
       error: error,
     );
@@ -36,21 +45,50 @@ class ShopSaleState {
 class ShopSaleNotifier extends Notifier<ShopSaleState> {
   @override
   ShopSaleState build() {
-    Future.microtask(() => loadHistory());
-    return ShopSaleState();
+    Future.microtask(() => loadHistory(period: 'today'));
+    return ShopSaleState(period: 'today');
   }
 
   String _getToday() => DateFormat('yyyy-MM-dd').format(DateTime.now());
 
-  Future<void> loadHistory() async {
-    state = state.copyWith(isLoading: true, error: null);
+  Future<void> loadHistory({String? period, DateTimeRange? customDateRange}) async {
+    final activePeriod = period ?? state.period ?? 'today';
+    final activeRange = customDateRange ?? state.customDateRange;
+    
+    state = state.copyWith(
+      isLoading: true, 
+      error: null,
+      period: () => activePeriod,
+      customDateRange: () => activeRange,
+    );
+    
     try {
       final dio = ref.read(apiClientProvider);
-      final response = await dio.get('/shop-sale', queryParameters: {'date': _getToday()});
+      
+      Map<String, dynamic> queryParams = {};
+      if (activePeriod != 'custom') {
+        queryParams['range'] = activePeriod;
+      } else if (activeRange != null) {
+        queryParams['range'] = 'custom';
+        queryParams['from'] = DateFormat('yyyy-MM-dd').format(activeRange.start);
+        queryParams['to'] = DateFormat('yyyy-MM-dd').format(activeRange.end);
+      } else {
+        queryParams['date'] = _getToday();
+      }
+
+      final response = await dio.get('/shop-sale', queryParameters: queryParams);
       state = state.copyWith(salesHistory: response.data as List, isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
+  }
+
+  Future<void> setPeriod(String period) async {
+    await loadHistory(period: period, customDateRange: null);
+  }
+
+  Future<void> setCustomDateRange(DateTimeRange range) async {
+    await loadHistory(period: 'custom', customDateRange: range);
   }
 
   void updateQuantity(String unit, int qty) {

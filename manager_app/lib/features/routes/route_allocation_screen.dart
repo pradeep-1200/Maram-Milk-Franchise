@@ -717,64 +717,8 @@ class _AssignDpSheet extends ConsumerWidget {
         else
           ...availableDps.map((dp) {
             final otherRoutes = allRoutes.where((r) => r.id != route.id && r.allocations.any((a) => a.dpId == dp.dpId)).toList();
-            return Dismissible(
-              key: ValueKey(dp.dpId),
-              direction: DismissDirection.endToStart,
-              background: Container(
-                alignment: Alignment.centerRight,
-                padding: const EdgeInsets.only(right: 20.0),
-                color: theme.colorScheme.primary,
-                child: const Icon(Icons.assignment_turned_in, color: Colors.white),
-              ),
-              confirmDismiss: (direction) async {
-                if (otherRoutes.isNotEmpty) {
-                  final bool? confirm = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: const Text('Double Booking'),
-                      content: Text('${dp.name} is already assigned to ${otherRoutes.map((r) => r.name).join(', ')}. Assign them to ${route.name} as well?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => ctx.pop(false),
-                          child: const Text('Cancel'),
-                        ),
-                        TextButton(
-                          onPressed: () => ctx.pop(true),
-                          child: const Text('Confirm', style: TextStyle(color: Colors.blue)),
-                        ),
-                      ],
-                    ),
-                  );
-                  if (confirm != true) return false;
-                }
-                
-                if (route.allocations.isNotEmpty) {
-                  final assignedNames = route.allocations.map((a) => a.dpName ?? 'Unknown').join(', ');
-                  final bool? confirm = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: const Text('Multiple DPs Assigned'),
-                      content: Text('${route.name} is already assigned to $assignedNames. Assign ${dp.name} as well?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => ctx.pop(false),
-                          child: const Text('Cancel'),
-                        ),
-                        TextButton(
-                          onPressed: () => ctx.pop(true),
-                          child: const Text('Confirm', style: TextStyle(color: Colors.blue)),
-                        ),
-                      ],
-                    ),
-                  );
-                  if (confirm != true) return false;
-                }
-                
-                return true;
-              },
-              onDismissed: (_) => _assign(context, ref, dp),
-              child: ListTile(
-                leading: DpAvatar(
+            return ListTile(
+              leading: DpAvatar(
                   photoUrl: dp.profilePictureUrl,
                   name: dp.name,
                 ),
@@ -822,7 +766,6 @@ class _AssignDpSheet extends ConsumerWidget {
                   ),
                   child: const Text('Assign'),
                 ),
-              ),
             );
           }),
         Padding(

@@ -10,11 +10,40 @@ import '../inventory/providers/inventory_provider.dart';
 import 'providers/shop_sale_provider.dart';
 import 'widgets/shop_sale_history_widget.dart';
 
-class ShopSaleScreen extends ConsumerWidget {
+class ShopSaleScreen extends ConsumerStatefulWidget {
   const ShopSaleScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ShopSaleScreen> createState() => _ShopSaleScreenState();
+}
+
+class _ShopSaleScreenState extends ConsumerState<ShopSaleScreen> {
+  Future<DateTimeRange?> _selectCustomDateRange(ShopSaleState state) async {
+    final now = DateTime.now();
+    return await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(now.year - 1),
+      lastDate: now,
+      initialDateRange: state.customDateRange ?? DateTimeRange(start: now.subtract(const Duration(days: 7)), end: now),
+    );
+  }
+
+  Future<DateTimeRange?> _selectCustomDate(ShopSaleState state) async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: state.customDateRange?.start ?? now,
+      firstDate: DateTime(now.year - 1),
+      lastDate: now,
+    );
+    if (picked != null) {
+      return DateTimeRange(start: picked, end: picked);
+    }
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final inventoryStateAsync = ref.watch(inventoryProvider);
     final saleState = ref.watch(shopSaleProvider);
@@ -22,6 +51,7 @@ class ShopSaleScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
+        centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
@@ -33,7 +63,6 @@ class ShopSaleScreen extends ConsumerWidget {
           },
         ),
         title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('Shop Sale', style: TextStyle(fontWeight: FontWeight.bold)),
             Text(
@@ -96,9 +125,32 @@ class ShopSaleScreen extends ConsumerWidget {
 
                 const SizedBox(height: 32),
                 
-                Text(
-                  'Today\'s Sales History',
-                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'History',
+                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    _DateFilterDropdown(
+                      state: saleState,
+                      onPeriodChanged: (period) async {
+                        if (period == 'custom_date') {
+                          final picked = await _selectCustomDate(saleState);
+                          if (picked != null) {
+                            saleNotifier.setCustomDateRange(picked);
+                          }
+                        } else if (period == 'custom_range') {
+                          final picked = await _selectCustomDateRange(saleState);
+                          if (picked != null) {
+                            saleNotifier.setCustomDateRange(picked);
+                          }
+                        } else {
+                          saleNotifier.setPeriod(period);
+                        }
+                      },
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16),
                 const ShopSaleHistoryWidget(),
@@ -162,6 +214,68 @@ class ShopSaleScreen extends ConsumerWidget {
   }
 }
 
+class _DateFilterDropdown extends StatelessWidget {
+  final ShopSaleState state;
+  final Function(String) onPeriodChanged;
+
+  const _DateFilterDropdown({
+    required this.state,
+    required this.onPeriodChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    // Determine the current dropdown value based on state
+    String currentValue = 'today';
+    if (state.period == 'yesterday') currentValue = 'yesterday';
+    if (state.period == 'week') currentValue = 'week';
+    if (state.period == 'month') currentValue = 'month';
+    if (state.period == 'custom') {
+      if (state.customDateRange != null && state.customDateRange!.start == state.customDateRange!.end) {
+        currentValue = 'custom_date';
+      } else {
+        currentValue = 'custom_range';
+      }
+    }
+
+    return Container(
+      height: 36,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withAlpha(100),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: theme.colorScheme.outlineVariant.withAlpha(100)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: currentValue,
+          icon: const Icon(Icons.arrow_drop_down, size: 20),
+          isDense: true,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.onSurface,
+          ),
+          items: const [
+            DropdownMenuItem(value: 'today', child: Text('Today')),
+            DropdownMenuItem(value: 'yesterday', child: Text('Yesterday')),
+            DropdownMenuItem(value: 'week', child: Text('This week')),
+            DropdownMenuItem(value: 'month', child: Text('This month')),
+            DropdownMenuItem(value: 'custom_date', child: Text('Custom date')),
+            DropdownMenuItem(value: 'custom_range', child: Text('Custom range')),
+          ],
+          onChanged: (val) {
+            if (val != null) {
+              onPeriodChanged(val);
+            }
+          },
+        ),
+      ),
+    );
+  }
+}
+
 class _SaleItemCard extends StatelessWidget {
   final String title;
   final int currentStock;
@@ -180,18 +294,41 @@ class _SaleItemCard extends StatelessWidget {
     final theme = Theme.of(context);
     final isError = quantity > currentStock;
 
+    IconData icon = Icons.local_drink;
+    Color iconColor = Colors.green;
+    Color bgColor = Colors.green.withAlpha(30);
+
+    if (title.contains('500ml Bottle')) {
+      iconColor = Colors.blue;
+      bgColor = Colors.blue.withAlpha(30);
+    } else if (title.contains('Packet')) {
+      icon = Icons.inventory_2;
+      iconColor = Colors.orange;
+      bgColor = Colors.orange.withAlpha(30);
+    }
+
     return Card(
       elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Row(
           children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: bgColor,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: iconColor),
+            ),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text('Available: $currentStock', 
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: currentStock == 0 ? Colors.red : theme.colorScheme.onSurfaceVariant
@@ -200,34 +337,97 @@ class _SaleItemCard extends StatelessWidget {
                 ],
               ),
             ),
-            Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.remove_circle_outline),
-                  color: quantity > 0 ? theme.colorScheme.primary : Colors.grey,
-                  onPressed: quantity > 0 ? () => onChanged(quantity - 1) : null,
-                ),
-                SizedBox(
-                  width: 40,
-                  child: Text(
-                    '$quantity', 
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: isError ? Colors.red : null,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.add_circle_outline),
-                  color: theme.colorScheme.primary,
-                  onPressed: () => onChanged(quantity + 1),
-                ),
-              ],
-            )
+            _EditableStepper(
+              value: quantity,
+              isError: isError,
+              onChanged: onChanged,
+            ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _EditableStepper extends StatefulWidget {
+  final int value;
+  final Function(int) onChanged;
+  final bool isError;
+
+  const _EditableStepper({required this.value, required this.onChanged, required this.isError});
+
+  @override
+  State<_EditableStepper> createState() => _EditableStepperState();
+}
+
+class _EditableStepperState extends State<_EditableStepper> {
+  late TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.value.toString());
+  }
+
+  @override
+  void didUpdateWidget(_EditableStepper oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.value.toString() != _controller.text) {
+      final currentVal = int.tryParse(_controller.text);
+      if (currentVal != widget.value) {
+        _controller.text = widget.value.toString();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.remove_circle_outline),
+          color: widget.value > 0 ? theme.colorScheme.primary : Colors.grey,
+          onPressed: widget.value > 0 ? () => widget.onChanged(widget.value - 1) : null,
+        ),
+        SizedBox(
+          width: 50,
+          child: TextFormField(
+            controller: _controller,
+            keyboardType: TextInputType.number,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: widget.isError ? Colors.red : null,
+            ),
+            decoration: InputDecoration(
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onChanged: (val) {
+              final numValue = int.tryParse(val);
+              if (numValue != null) {
+                widget.onChanged(numValue);
+              } else if (val.isEmpty) {
+                widget.onChanged(0);
+              }
+            },
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.add_circle_outline),
+          color: theme.colorScheme.primary,
+          onPressed: () => widget.onChanged(widget.value + 1),
+        ),
+      ],
     );
   }
 }

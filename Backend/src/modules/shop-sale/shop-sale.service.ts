@@ -1,9 +1,28 @@
 import { prisma } from '../../config/db';
+import { getReportDateRange } from '../reports/reports.service';
 
-export const getShopSalesForDate = async (date: string) => {
+export const getShopSalesForDate = async (date?: string, range?: 'today'|'yesterday'|'week'|'month'|'custom', from?: string, to?: string) => {
+  const where: any = {};
+  
+  if (range) {
+    const { startDate, endDate } = getReportDateRange(range, new Date(), from, to);
+    if (startDate && endDate) {
+      where.date = { gte: startDate, lte: endDate };
+    }
+  } else if (from || to) {
+    where.date = {};
+    if (from) where.date.gte = from;
+    if (to) where.date.lte = to;
+  } else if (date) {
+    where.date = date;
+  }
+
   return prisma.shopSale.findMany({
-    where: { date },
-    orderBy: { createdAt: 'desc' },
+    where,
+    orderBy: [
+      { date: 'desc' },
+      { createdAt: 'desc' },
+    ],
   });
 };
 

@@ -1,3 +1,4 @@
+import 'package:manager_app/core/utils/date_util.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/dispatch_summary.dart';
@@ -5,7 +6,7 @@ import '../../../core/network/api_client.dart';
 
 class DispatchNotifier extends AsyncNotifier<DispatchSummary> {
   String _getLocalToday() {
-    return DateFormat('yyyy-MM-dd').format(DateTime.now());
+    return DateFormat('yyyy-MM-dd').format(DateUtil.operatingDay);
   }
 
   @override

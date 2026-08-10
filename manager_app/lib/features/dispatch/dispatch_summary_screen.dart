@@ -1,3 +1,4 @@
+import 'package:manager_app/core/utils/date_util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -32,7 +33,7 @@ class _DispatchSummaryScreenState extends ConsumerState<DispatchSummaryScreen> {
     final dispatchStateAsync = ref.watch(dispatchProvider);
 
     // Date
-    final now = DateTime.now();
+    final now = DateUtil.operatingDay;
     final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     final todayDate = '${months[now.month - 1]} ${now.day}, ${now.year}';
 

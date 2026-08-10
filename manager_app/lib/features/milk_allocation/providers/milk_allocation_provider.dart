@@ -65,11 +65,9 @@ class MilkAllocationNotifier extends Notifier<MilkAllocationState> {
   }
 
   void initAllocation(String routeId, int initial1L, int initialHalfL, int initialHalfLPacket) {
-    if (!state.allocations.containsKey(routeId)) {
-      final newAllocations = Map<String, RouteMilkAllocation>.from(state.allocations);
-      newAllocations[routeId] = RouteMilkAllocation(qty1LBottle: initial1L, qtyHalfLBottle: initialHalfL, qtyHalfLPacket: initialHalfLPacket);
-      state = state.copyWith(allocations: newAllocations);
-    }
+    final newAllocations = Map<String, RouteMilkAllocation>.from(state.allocations);
+    newAllocations[routeId] = RouteMilkAllocation(qty1LBottle: initial1L, qtyHalfLBottle: initialHalfL, qtyHalfLPacket: initialHalfLPacket);
+    state = state.copyWith(allocations: newAllocations);
   }
 
   void update1LBottle(String routeId, int diff, {int? maxLimit}) {

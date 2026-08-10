@@ -1,3 +1,4 @@
+import 'package:manager_app/core/utils/date_util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -58,7 +59,7 @@ class _EveningCheckScreenState extends ConsumerState<EveningCheckScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final asyncState = ref.watch(eveningCheckProvider);
-    final nowStr = DateFormat('MMM dd, yyyy').format(DateTime.now());
+    final nowStr = DateFormat('MMM dd, yyyy').format(DateUtil.operatingDay);
 
     return Scaffold(
       appBar: AppBar(

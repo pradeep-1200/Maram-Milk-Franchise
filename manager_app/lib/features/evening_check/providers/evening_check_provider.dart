@@ -1,3 +1,4 @@
+import 'package:manager_app/core/utils/date_util.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/network/api_client.dart';
@@ -13,7 +14,7 @@ class EveningCheckNotifier extends AsyncNotifier<EveningCheckState> {
   @override
   Future<EveningCheckState> build() async {
     try {
-      return await _fetchStatus(DateTime.now());
+      return await _fetchStatus(DateUtil.operatingDay);
     } catch (e, st) {
       return Future.error(e, st);
     }
@@ -46,7 +47,7 @@ class EveningCheckNotifier extends AsyncNotifier<EveningCheckState> {
   }) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      final dateStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      final dateStr = DateFormat('yyyy-MM-dd').format(DateUtil.operatingDay);
       await ref.read(apiClientProvider).put(
         '/empty-bottles/$routeId?date=$dateStr',
         data: {
@@ -68,7 +69,7 @@ class EveningCheckNotifier extends AsyncNotifier<EveningCheckState> {
       // Invalidate routeProvider to update Routes Assigned status
       ref.invalidate(routeProvider);
       
-      return _fetchStatus(DateTime.now());
+      return _fetchStatus(DateUtil.operatingDay);
     });
   }
 }

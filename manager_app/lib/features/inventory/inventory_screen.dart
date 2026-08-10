@@ -1,3 +1,4 @@
+import 'package:manager_app/core/utils/date_util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -45,7 +46,7 @@ class InventoryScreen extends ConsumerWidget {
           children: [
             const Text('Inventory', style: TextStyle(fontWeight: FontWeight.bold)),
             Text(
-              DateFormat('MMM d, yyyy').format(DateTime.now()),
+              DateFormat('MMM d, yyyy').format(DateUtil.operatingDay),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),

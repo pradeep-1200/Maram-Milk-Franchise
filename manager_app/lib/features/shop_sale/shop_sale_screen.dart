@@ -1,3 +1,4 @@
+import 'package:manager_app/core/utils/date_util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -19,7 +20,7 @@ class ShopSaleScreen extends ConsumerStatefulWidget {
 
 class _ShopSaleScreenState extends ConsumerState<ShopSaleScreen> {
   Future<DateTimeRange?> _selectCustomDateRange(ShopSaleState state) async {
-    final now = DateTime.now();
+    final now = DateUtil.operatingDay;
     return await showDateRangePicker(
       context: context,
       firstDate: DateTime(now.year - 1),
@@ -29,7 +30,7 @@ class _ShopSaleScreenState extends ConsumerState<ShopSaleScreen> {
   }
 
   Future<DateTimeRange?> _selectCustomDate(ShopSaleState state) async {
-    final now = DateTime.now();
+    final now = DateUtil.operatingDay;
     final picked = await showDatePicker(
       context: context,
       initialDate: state.customDateRange?.start ?? now,
@@ -66,7 +67,7 @@ class _ShopSaleScreenState extends ConsumerState<ShopSaleScreen> {
           children: [
             const Text('Shop Sale', style: TextStyle(fontWeight: FontWeight.bold)),
             Text(
-              DateFormat('MMM d, yyyy').format(DateTime.now()),
+              DateFormat('MMM d, yyyy').format(DateUtil.operatingDay),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),

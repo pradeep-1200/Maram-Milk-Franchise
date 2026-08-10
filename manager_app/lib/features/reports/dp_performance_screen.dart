@@ -1,3 +1,4 @@
+import 'package:manager_app/core/utils/date_util.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:csv/csv.dart';
@@ -64,7 +65,7 @@ class _DpPerformanceScreenState extends ConsumerState<DpPerformanceScreen> {
 
   Future<DateTimeRange?> _selectCustomDateRange() async {
     final state = ref.read(dpPerformanceProvider).value;
-    final now = DateTime.now();
+    final now = DateUtil.operatingDay;
     return await showDateRangePicker(
       context: context,
       firstDate: DateTime(now.year - 1),
@@ -115,9 +116,9 @@ class _DpPerformanceScreenState extends ConsumerState<DpPerformanceScreen> {
         final end = DateFormat('yyyy-MM-dd').format(state.customDateRange!.end);
         periodLabel = 'Custom_${start}_to_$end';
       } else if (state.period == 'today') {
-        periodLabel = 'Today_${DateFormat('yyyy-MM-dd').format(DateTime.now())}';
+        periodLabel = 'Today_${DateFormat('yyyy-MM-dd').format(DateUtil.operatingDay)}';
       } else {
-        periodLabel = '${state.period}_${DateFormat('yyyyMMdd').format(DateTime.now())}';
+        periodLabel = '${state.period}_${DateFormat('yyyyMMdd').format(DateUtil.operatingDay)}';
       }
 
       final path = '${directory.path}/DP_Performance_Report_$periodLabel.csv';

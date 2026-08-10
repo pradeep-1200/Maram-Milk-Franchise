@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../../shared/app_card.dart';
+import '../../../shared/app_card.dart';
 import '../providers/shop_sale_provider.dart';
 
 class ShopSaleHistoryWidget extends ConsumerWidget {

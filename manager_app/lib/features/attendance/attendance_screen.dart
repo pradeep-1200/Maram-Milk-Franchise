@@ -1,3 +1,4 @@
+import 'package:manager_app/core/utils/date_util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -21,7 +22,7 @@ class AttendanceScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final attendanceStateAsync = ref.watch(attendanceProvider);
     final theme = Theme.of(context);
-    final todayStr = DateFormat('MMM d, yyyy').format(DateTime.now());
+    final todayStr = DateFormat('MMM d, yyyy').format(DateUtil.operatingDay);
 
     return Scaffold(
       appBar: AppBar(

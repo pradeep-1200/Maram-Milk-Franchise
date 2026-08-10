@@ -1,3 +1,4 @@
+import 'package:manager_app/core/utils/date_util.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/attendance_entry.dart';
@@ -45,7 +46,7 @@ class AttendanceState {
 
 class AttendanceNotifier extends AsyncNotifier<AttendanceState> {
   String _getLocalToday() {
-    return DateFormat('yyyy-MM-dd').format(DateTime.now());
+    return DateFormat('yyyy-MM-dd').format(DateUtil.operatingDay);
   }
 
   @override

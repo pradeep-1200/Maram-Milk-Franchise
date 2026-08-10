@@ -1,3 +1,4 @@
+import 'package:manager_app/core/utils/date_util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -95,7 +96,7 @@ class DashboardScreen extends ConsumerWidget {
                     // Greeting Banner Card
                     Builder(
                       builder: (context) {
-                        final hour = DateTime.now().hour;
+                        final hour = DateUtil.nowIST.hour;
                         final String greeting;
                         final IconData icon;
                         
@@ -139,7 +140,7 @@ class DashboardScreen extends ConsumerWidget {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                DateFormat('MMM d, yyyy • EEEE').format(DateTime.now()),
+                                DateFormat('MMM d, yyyy • EEEE').format(DateUtil.operatingDay),
                                 style: theme.textTheme.titleSmall?.copyWith(
                                   color: theme.colorScheme.onPrimary.withAlpha(220),
                                 ),

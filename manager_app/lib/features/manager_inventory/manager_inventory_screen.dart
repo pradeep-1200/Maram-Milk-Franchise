@@ -1,3 +1,4 @@
+import 'package:manager_app/core/utils/date_util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_constants.dart';
@@ -70,7 +71,7 @@ class _ManagerInventoryScreenState extends ConsumerState<ManagerInventoryScreen>
           children: [
             const Text('Manager Inventory', style: TextStyle(fontWeight: FontWeight.bold)),
             Text(
-              DateFormat('MMM d, yyyy').format(DateTime.now()),
+              DateFormat('MMM d, yyyy').format(DateUtil.operatingDay),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),

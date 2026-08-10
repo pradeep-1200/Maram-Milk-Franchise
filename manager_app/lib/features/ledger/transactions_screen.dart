@@ -1,3 +1,4 @@
+import 'package:manager_app/core/utils/date_util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -25,7 +26,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     super.dispose();
   }
   Future<DateTimeRange?> _selectCustomDateRange(LedgerState state) async {
-    final now = DateTime.now();
+    final now = DateUtil.operatingDay;
     return await showDateRangePicker(
       context: context,
       firstDate: DateTime(now.year - 1),
@@ -35,7 +36,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   }
 
   Future<DateTimeRange?> _selectCustomDate(LedgerState state) async {
-    final now = DateTime.now();
+    final now = DateUtil.operatingDay;
     final picked = await showDatePicker(
       context: context,
       initialDate: state.customDateRange?.start ?? now,

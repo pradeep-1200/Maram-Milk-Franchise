@@ -1,3 +1,4 @@
+import 'package:manager_app/core/utils/date_util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -34,7 +35,7 @@ class _RouteAllocationScreenState extends ConsumerState<RouteAllocationScreen> {
     final state = ref.watch(routeProvider);
     final notifier = ref.read(routeProvider.notifier);
     final theme = Theme.of(context);
-    final todayStr = DateFormat('MMM d, yyyy').format(DateTime.now());
+    final todayStr = DateFormat('MMM d, yyyy').format(DateUtil.operatingDay);
 
     if (widget.openRouteId != null && !_hasOpenedInitialRoute && (state.value?.routes.isNotEmpty ?? false)) {
       final routeToOpen = state.value!.routes.where((r) => r.id == widget.openRouteId).firstOrNull;
@@ -170,8 +171,6 @@ class _RouteAllocationScreenState extends ConsumerState<RouteAllocationScreen> {
   }
 
   void _showAssignSheet(BuildContext context, WidgetRef ref, DeliveryRoute route) {
-    ref.read(milkAllocationProvider.notifier).initAllocation(route.id, route.qty1LBottle, route.qtyHalfLBottle, route.qtyHalfLPacket);
-    
     showModalBottomSheet(
       context: context,
       useRootNavigator: true,
@@ -284,33 +283,37 @@ class _RouteCard extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  if (route.isPetrolAllowanceComplete || route.petrolAllowanceGiven != null) ...[
+                  if (route.allocations.any((a) => a.isPetrolAllowanceComplete || a.petrolAllowanceGiven != null)) ...[
                     const SizedBox(height: 4),
-                    Builder(
-                      builder: (context) {
-                        final expected = route.fixedPetrolAllowance;
-                        final given = route.petrolAllowanceGiven ?? 0;
-                        
-                        String statusText;
-                        Color statusColor;
-                        
-                        if (given < expected) {
-                          statusText = 'Shortage: ₹${(expected - given).toStringAsFixed(0)}';
-                          statusColor = Colors.orange;
-                        } else if (given > expected) {
-                          statusText = 'Extra: ₹${(given - expected).toStringAsFixed(0)}';
-                          statusColor = Colors.teal;
-                        } else {
-                          statusText = 'Fully Paid';
-                          statusColor = Colors.green;
-                        }
+                    ...route.allocations.where((a) => a.isPetrolAllowanceComplete || a.petrolAllowanceGiven != null).map((a) {
+                      final expected = route.fixedPetrolAllowance;
+                      final given = a.petrolAllowanceGiven ?? 0;
+                      
+                      String statusText;
+                      Color statusColor;
+                      
+                      if (given < expected) {
+                        statusText = 'Shortage: ₹${(expected - given).toStringAsFixed(0)}';
+                        statusColor = Colors.orange;
+                      } else if (given > expected) {
+                        statusText = 'Extra: ₹${(given - expected).toStringAsFixed(0)}';
+                        statusColor = Colors.teal;
+                      } else {
+                        statusText = 'Fully Paid';
+                        statusColor = Colors.green;
+                      }
 
-                        return Row(
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 2),
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              'Exp: ₹${expected.toStringAsFixed(0)} / Given: ₹${given.toStringAsFixed(0)} / ',
-                              style: theme.textTheme.bodySmall?.copyWith(fontSize: 10),
+                            Flexible(
+                              child: Text(
+                                '${a.dpName}: Exp ₹${expected.toStringAsFixed(0)} / Given ₹${given.toStringAsFixed(0)} / ',
+                                style: theme.textTheme.bodySmall?.copyWith(fontSize: 10),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
@@ -329,9 +332,9 @@ class _RouteCard extends ConsumerWidget {
                               ),
                             ),
                           ],
-                        );
-                      },
-                    ),
+                        ),
+                      );
+                    }),
                   ],
                   if (isAssigned) ...[
                     if (route.deliveryCompleted) ...[
@@ -493,6 +496,17 @@ class _AssignDpSheet extends ConsumerWidget {
 
   void _assign(BuildContext context, WidgetRef ref, AttendanceEntry dp) {
     context.pop(); // Close assign sheet
+    
+    // Check if DP is already assigned
+    final existingAllocation = route.allocations.where((a) => a.dpId == dp.dpId).firstOrNull;
+    
+    // Initialize milk allocation with existing DP values, or 0 for new DP
+    ref.read(milkAllocationProvider.notifier).initAllocation(
+      route.id, 
+      existingAllocation?.qty1LBottle ?? 0, 
+      existingAllocation?.qtyHalfLBottle ?? 0, 
+      existingAllocation?.qtyHalfLPacket ?? 0
+    );
     
     // Open Milk Allocation sheet
     showModalBottomSheet(

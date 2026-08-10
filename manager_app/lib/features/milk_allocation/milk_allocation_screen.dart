@@ -1,3 +1,4 @@
+import 'package:manager_app/core/utils/date_util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -59,7 +60,7 @@ class MilkAllocationScreen extends ConsumerWidget {
           children: [
             const Text('Milk Allocation', style: TextStyle(fontWeight: FontWeight.bold)),
             Text(
-              DateFormat('MMM dd, yyyy').format(DateTime.now()),
+              DateFormat('MMM dd, yyyy').format(DateUtil.operatingDay),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),

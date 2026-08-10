@@ -1,3 +1,4 @@
+import 'package:manager_app/core/utils/date_util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -49,7 +50,7 @@ class ShopSaleNotifier extends Notifier<ShopSaleState> {
     return ShopSaleState(period: 'today');
   }
 
-  String _getToday() => DateFormat('yyyy-MM-dd').format(DateTime.now());
+  String _getToday() => DateFormat('yyyy-MM-dd').format(DateUtil.operatingDay);
 
   Future<void> loadHistory({String? period, DateTimeRange? customDateRange}) async {
     final activePeriod = period ?? state.period ?? 'today';

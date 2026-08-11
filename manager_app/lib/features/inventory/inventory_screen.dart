@@ -1,4 +1,9 @@
 import 'package:manager_app/core/utils/date_util.dart';
+import 'dart:convert';
+import 'dart:io';
+import 'package:csv/csv.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,12 +12,90 @@ import '../../core/constants/app_constants.dart';
 import '../../shared/app_button.dart';
 import '../../shared/async_value_widget.dart';
 import 'providers/inventory_provider.dart';
+import '../manager_inventory/providers/manager_inventory_provider.dart';
 import '../shell/providers/tab_history_provider.dart';
 
 class InventoryScreen extends ConsumerWidget {
   final bool isDispatchContext;
   
   const InventoryScreen({super.key, this.isDispatchContext = false});
+
+  Future<void> _exportReport(BuildContext context, WidgetRef ref, InventoryState state) async {
+    if (state.items.isEmpty) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No data available to export.')),
+        );
+      }
+      return;
+    }
+
+    try {
+      final managerInventoryState = ref.read(managerInventoryProvider);
+      final managerCounts = managerInventoryState.counts;
+
+      List<List<dynamic>> rows = [];
+      
+      // Header row
+      List<dynamic> header = ['Metric'];
+      for (var item in state.items) {
+        header.add(item.name);
+      }
+      rows.add(header);
+
+      // Rows
+      List<dynamic> todaysStockRow = ['Today\'s Stock'];
+      List<dynamic> carriedOverRow = ['Carried Over Stocks'];
+      List<dynamic> totalStocksRow = ['Total Stocks'];
+      List<dynamic> appsRemainingRow = ['App\'s Total Remaining'];
+      List<dynamic> managersRemainingRow = ['Manager\'s Remaining'];
+
+      for (var item in state.items) {
+        final todaysStock = item.newStockAdded.toInt();
+        final carriedOver = item.carryOverQty.toInt();
+        final totalStocks = todaysStock + carriedOver;
+        final appsRemaining = item.expectedQty.toInt();
+        final managersRemaining = managerCounts[item.name] ?? 0;
+
+        todaysStockRow.add(todaysStock);
+        carriedOverRow.add(carriedOver);
+        totalStocksRow.add(totalStocks);
+        appsRemainingRow.add(appsRemaining);
+        managersRemainingRow.add(managersRemaining);
+      }
+
+      rows.add(todaysStockRow);
+      rows.add(carriedOverRow);
+      rows.add(totalStocksRow);
+      rows.add(appsRemainingRow);
+      rows.add(managersRemainingRow);
+
+      String csvData = const ListToCsvConverter().convert(rows);
+
+      final directory = await getTemporaryDirectory();
+      final dateLabel = DateFormat('yyyy-MM-dd').format(DateUtil.operatingDay);
+      final path = '${directory.path}/Inventory_Report_$dateLabel.csv';
+      final file = File(path);
+      
+      final List<int> bom = [0xEF, 0xBB, 0xBF];
+      final List<int> bytes = utf8.encode(csvData);
+      
+      await file.writeAsBytes([...bom, ...bytes]);
+
+      final xfile = XFile(path, mimeType: 'text/csv; charset=utf-8');
+      if (context.mounted) {
+        // ignore: deprecated_member_use
+        await Share.shareXFiles([xfile], text: 'Inventory Report');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to export: $e')),
+        );
+      }
+    }
+  }
+
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -94,30 +177,9 @@ class InventoryScreen extends ConsumerWidget {
               ]
             : [
                 IconButton(
-                  icon: const Icon(Icons.save),
-                  tooltip: 'Save Inventory',
-                  onPressed: () async {
-                    if (canSave) {
-                      try {
-                        await notifier.saveInventory();
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Inventory saved')),
-                          );
-                        }
-                      } catch (e) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Save failed: $e'), backgroundColor: Colors.red),
-                          );
-                        }
-                      }
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please provide reasons for shortages')),
-                      );
-                    }
-                  },
+                  icon: const Icon(Icons.download),
+                  tooltip: 'Download Report',
+                  onPressed: () => _exportReport(context, ref, state),
                 ),
                 const SizedBox(width: 8),
               ],

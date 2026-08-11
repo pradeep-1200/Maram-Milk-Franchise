@@ -55,7 +55,10 @@ class InventoryScreen extends ConsumerWidget {
         final carriedOver = item.carryOverQty.toInt();
         final totalStocks = todaysStock + carriedOver;
         final appsRemaining = item.expectedQty.toInt();
-        final managersRemaining = managerCounts[item.name] ?? 0;
+        
+        String legacyName = item.name;
+        if (legacyName == 'Half Litre Bottle') legacyName = '500ml Bottle';
+        final managersRemaining = managerCounts[item.id] ?? managerCounts[legacyName] ?? 0;
 
         todaysStockRow.add(todaysStock);
         carriedOverRow.add(carriedOver);

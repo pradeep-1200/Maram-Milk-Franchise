@@ -91,9 +91,32 @@ export const getInventoryForDate = async (date: string) => {
  * Only marks the inventory step as completed.
  */
 export const bulkUpdateInventory = async (date: string, records: { inventoryItemId: string; currentStock?: number; newStockAdded?: number }[]) => {
-  // We no longer update currentStock or expectedStock here since there is no UI for it 
-  // on the save action, avoiding silent overwriting of drifted values.
+  const items = await getInventoryForDate(date);
   
+  for (const rec of records) {
+    if (rec.newStockAdded !== undefined) {
+      const currentRecord = items.find(i => i.inventoryItemId === rec.inventoryItemId);
+      if (currentRecord) {
+        const deltaNewStock = rec.newStockAdded - (currentRecord.newStockAdded ?? 0);
+        if (deltaNewStock !== 0) {
+          const newExpected = currentRecord.expectedStock + deltaNewStock;
+          const newCurrent = currentRecord.currentStock + deltaNewStock;
+
+          await prisma.inventoryDailyRecord.update({
+            where: {
+              inventoryItemId_date: { inventoryItemId: rec.inventoryItemId, date },
+            },
+            data: {
+              expectedStock: newExpected,
+              currentStock: newCurrent,
+              newStockAdded: rec.newStockAdded,
+            },
+          });
+        }
+      }
+    }
+  }
+
   await checkAndUpdateInventoryCompletion(date);
   return []; // Return empty or a success signal
 };

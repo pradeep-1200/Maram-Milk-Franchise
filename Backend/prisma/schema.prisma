@@ -7,6 +7,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 enum Role {
@@ -262,3 +263,5 @@ model ShopSale {
   qtyHalfLPacket  Int      @default(0)
   createdAt       DateTime @default(now())
 }
+
+

@@ -5,6 +5,7 @@ export const dateQuerySchema = z.object({
 });
 
 export const updateEmptyBottleSchema = z.object({
+  dpId: z.string().uuid(),
   deliveryCompleted: z.boolean(),
   oneLBottlesCollected: z.number().min(0),
   halfLBottlesCollected: z.number().min(0),

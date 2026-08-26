@@ -32,6 +32,7 @@ class EveningCheckNotifier extends AsyncNotifier<EveningCheckState> {
 
   Future<void> updateStatus(
       String routeId, {
+      required String dpId,
       required bool deliveryCompleted,
       required int oneLBottlesCollected,
       required int halfLBottlesCollected,
@@ -51,6 +52,7 @@ class EveningCheckNotifier extends AsyncNotifier<EveningCheckState> {
       await ref.read(apiClientProvider).put(
         '/empty-bottles/$routeId?date=$dateStr',
         data: {
+          'dpId': dpId,
           'deliveryCompleted': deliveryCompleted,
           'oneLBottlesCollected': oneLBottlesCollected,
           'halfLBottlesCollected': halfLBottlesCollected,

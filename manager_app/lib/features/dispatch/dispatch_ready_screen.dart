@@ -7,7 +7,6 @@ import '../../shared/app_card.dart';
 import 'providers/dispatch_provider.dart';
 import '../attendance/providers/attendance_provider.dart';
 import '../attendance/models/delivery_person.dart' show AttendanceStatus;
-import '../inventory/providers/inventory_provider.dart';
 import '../routes/providers/route_provider.dart';
 
 class DispatchReadyScreen extends ConsumerWidget {
@@ -17,7 +16,6 @@ class DispatchReadyScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final attAsync = ref.watch(attendanceProvider);
-    final invAsync = ref.watch(inventoryProvider);
     final routeAsync = ref.watch(routeProvider);
     final dispatchAsync = ref.watch(dispatchProvider);
 

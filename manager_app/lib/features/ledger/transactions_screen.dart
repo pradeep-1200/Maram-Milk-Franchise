@@ -323,7 +323,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
                                           Text(
-                                            '₹${tx.amount.toStringAsFixed(0)}',
+                                            '${isShortage ? '-' : (tx.type == 'EXTRA_PAID' ? '+' : '')}₹${tx.amount.toStringAsFixed(0)}',
                                             style: theme.textTheme.titleMedium?.copyWith(
                                               color: statusColor,
                                               fontWeight: FontWeight.bold,

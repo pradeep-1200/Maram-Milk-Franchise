@@ -20,8 +20,9 @@ export const updateEmptyBottle = async (req: Request, res: Response, next: NextF
     const { date } = dateQuerySchema.parse(req.query);
     const data = updateEmptyBottleSchema.parse(req.body);
     const routeId = req.params.routeId as string;
+    const dpId = data.dpId;
 
-    const result = await emptyBottleService.updateEmptyBottleLog(routeId, date, data);
+    const result = await emptyBottleService.updateEmptyBottleLog(routeId, dpId, date, data);
     res.json(result);
   } catch (error: any) {
     if (error.name === 'ZodError') {

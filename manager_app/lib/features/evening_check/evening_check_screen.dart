@@ -466,6 +466,7 @@ class _EveningCheckSheetState extends ConsumerState<_EveningCheckSheet> {
 
     ref.read(eveningCheckProvider.notifier).updateStatus(
       widget.route.routeId,
+      dpId: widget.route.dpId ?? '',
       deliveryCompleted: _didCompleteDelivery!,
       oneLBottlesCollected: _bottles1L,
       halfLBottlesCollected: _bottlesHalfL,

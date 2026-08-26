@@ -85,7 +85,7 @@ class _RouteAllocationScreenState extends ConsumerState<RouteAllocationScreen> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
-                    'Step 3 of 3',
+                    'Step 2 of 2',
                     style: TextStyle(
                       color: theme.colorScheme.onPrimaryContainer,
                       fontWeight: FontWeight.bold,
@@ -297,7 +297,7 @@ class _RouteCard extends ConsumerWidget {
                         statusColor = Colors.orange;
                       } else if (given > expected) {
                         statusText = 'Extra: ₹${(given - expected).toStringAsFixed(0)}';
-                        statusColor = Colors.teal;
+                        statusColor = Colors.blue;
                       } else {
                         statusText = 'Fully Paid';
                         statusColor = Colors.green;

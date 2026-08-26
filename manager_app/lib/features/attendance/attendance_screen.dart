@@ -62,7 +62,7 @@ class AttendanceScreen extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
-                    'Step 1 of 3',
+                    'Step 1 of 2',
                     style: TextStyle(
                       color: theme.colorScheme.onPrimaryContainer,
                       fontWeight: FontWeight.bold,
@@ -72,9 +72,9 @@ class AttendanceScreen extends ConsumerWidget {
                 ),
                 IconButton(
                   icon: const Icon(Icons.arrow_forward),
-                  tooltip: 'Next: Inventory',
+                  tooltip: 'Next: Route Allocation',
                   onPressed: () {
-                    context.push('/dispatch/inventory');
+                    context.push('/dispatch/routes');
                   },
                 ),
                 const SizedBox(width: 8),

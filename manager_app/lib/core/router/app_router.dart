@@ -101,11 +101,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           parentNavigatorKey: _rootNavigatorKey,
           builder: (context, state) => const AttendanceScreen(isDispatchContext: true),
         ),
-        GoRoute(
-          path: 'inventory',
-          parentNavigatorKey: _rootNavigatorKey,
-          builder: (context, state) => const InventoryScreen(isDispatchContext: true),
-        ),
+
         GoRoute(
           path: 'routes',
           parentNavigatorKey: _rootNavigatorKey,

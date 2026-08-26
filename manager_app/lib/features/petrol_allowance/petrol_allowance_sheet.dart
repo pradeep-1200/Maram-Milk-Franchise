@@ -88,15 +88,15 @@ class _PetrolAllowanceSheetState extends ConsumerState<PetrolAllowanceSheet> {
     if (diff > 0) {
       statusTitle = 'Extra Paid';
       statusAmountText = '+₹$diff';
-      statusColor = Colors.orange;
+      statusColor = Colors.blue;
     } else if (diff < 0) {
       statusTitle = 'Short Paid';
       statusAmountText = '-₹${diff.abs()}';
-      statusColor = Colors.red;
+      statusColor = Colors.orange;
     } else {
       statusTitle = 'Fully Paid';
       statusAmountText = '₹0';
-      statusColor = theme.colorScheme.onSurfaceVariant;
+      statusColor = Colors.green;
     }
 
     return Container(

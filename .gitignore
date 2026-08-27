@@ -1,2 +1,12 @@
 .agents/
 project_context
+
+Backend/db_output.txt
+Backend/scratch.ts
+Backend/scratch2.ts
+Backend/scripts/wipe_prod_pg.ts
+Backend/src/scripts/migrate-bottle-balances.ts
+Backend/src/scripts/wipe.ts
+Backend/test-balances.js
+Backend/test-db.js
+manager_app/database_dump.sql

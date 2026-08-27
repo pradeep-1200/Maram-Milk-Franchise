@@ -28,7 +28,7 @@ async function main() {
 
   // 3. Save Return Check with collected = 3, broken = 2
   console.log('\n--- Return Check: collected = 3, broken = 2 ---');
-  await updateEmptyBottleLog(testRouteId, date, {
+  await updateEmptyBottleLog(testRouteId, testDpId, date, {
     deliveryCompleted: true,
     oneLBottlesCollected: 3,
     halfLBottlesCollected: 0,
@@ -51,7 +51,7 @@ async function main() {
 
   // 4. Edit to collected = 3, broken = 5
   console.log('\n--- Return Check Edit: collected = 3, broken = 5 ---');
-  await updateEmptyBottleLog(testRouteId, date, {
+  await updateEmptyBottleLog(testRouteId, testDpId, date, {
     deliveryCompleted: true,
     oneLBottlesCollected: 3,
     halfLBottlesCollected: 0,
@@ -69,7 +69,7 @@ async function main() {
 
   // 5. Edit to collected = 3, broken = 1
   console.log('\n--- Return Check Edit: collected = 3, broken = 1 ---');
-  await updateEmptyBottleLog(testRouteId, date, {
+  await updateEmptyBottleLog(testRouteId, testDpId, date, {
     deliveryCompleted: true,
     oneLBottlesCollected: 3,
     halfLBottlesCollected: 0,
@@ -96,7 +96,7 @@ async function main() {
   
   console.log('New Initial Balance (1L): 5');
   
-  await updateEmptyBottleLog(testRouteId, date, {
+  await updateEmptyBottleLog(testRouteId, testDpId, date, {
     deliveryCompleted: true,
     oneLBottlesCollected: 4,
     halfLBottlesCollected: 0,
@@ -116,7 +116,7 @@ async function main() {
   console.log('UI Expected (1L) (should be 5):', myStatus2?.expected1LBottles);
   // Wait, expected on reopen should be: live_balance(-2) + collected(4) + broken(3) = 5. UI expected doesn't go below 0 unless expected itself goes below 0. 
 
-  await updateEmptyBottleLog(testRouteId, date, {
+  await updateEmptyBottleLog(testRouteId, testDpId, date, {
     deliveryCompleted: true,
     oneLBottlesCollected: 2,
     halfLBottlesCollected: 0,

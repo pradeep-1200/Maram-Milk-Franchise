@@ -12,9 +12,7 @@ abstract class RouteAllocation with _$RouteAllocation {
     String? dpPhotoUrl,
     @Default(0.0) double dpPetrolBalance,
     @Default(0.0) double litresAllocated,
-    @Default(0) int qty1LBottle,
-    @Default(0) int qtyHalfLBottle,
-    @Default(0) int qtyHalfLPacket,
+    @Default({}) Map<String, int> items,
     int? petrolAllowanceGiven,
     @Default(false) bool isPetrolAllowanceComplete,
     @Default('ASSIGNED') String status,
@@ -57,7 +55,5 @@ extension DeliveryRouteX on DeliveryRoute {
   double get assignedDpPetrolBalance => allocations.isNotEmpty ? allocations.first.dpPetrolBalance : 0.0;
   bool get isPetrolAllowanceComplete => allocations.isNotEmpty && allocations.every((a) => a.isPetrolAllowanceComplete);
   int? get petrolAllowanceGiven => allocations.isNotEmpty ? allocations.first.petrolAllowanceGiven : null;
-  int get qty1LBottle => allocations.fold(0, (sum, a) => sum + a.qty1LBottle);
-  int get qtyHalfLBottle => allocations.fold(0, (sum, a) => sum + a.qtyHalfLBottle);
-  int get qtyHalfLPacket => allocations.fold(0, (sum, a) => sum + a.qtyHalfLPacket);
+  int itemQuantity(String itemId) => allocations.fold(0, (sum, a) => sum + (a.items[itemId] ?? 0));
 }

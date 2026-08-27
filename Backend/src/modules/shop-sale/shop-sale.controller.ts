@@ -17,9 +17,14 @@ export const getShopSales = async (req: Request, res: Response, next: NextFuncti
 
 export const createShopSale = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { date, qty1LBottle, qtyHalfLBottle, qtyHalfLPacket } = createShopSaleSchema.parse(req.body);
-    const sale = await shopSaleService.createShopSale(date, qty1LBottle, qtyHalfLBottle, qtyHalfLPacket);
-    res.json(sale);
+    const { date, items } = createShopSaleSchema.parse(req.body);
+
+    const sale = await shopSaleService.createShopSale(
+      date,
+      items
+    );
+
+    res.status(201).json(sale);
   } catch (error: any) {
     if (error.name === 'ZodError') {
       return res.status(400).json({ error: { message: 'Validation failed', code: 'VALIDATION_ERROR', details: error.errors } });

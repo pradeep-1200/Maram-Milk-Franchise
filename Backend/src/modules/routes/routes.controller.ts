@@ -18,14 +18,15 @@ export const getRoutes = async (req: Request, res: Response, next: NextFunction)
 export const updateAllocation = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { date } = routeQuerySchema.parse(req.query);
-    const { dpId, litresAllocated, status, qty1LBottle, qtyHalfLBottle, qtyHalfLPacket, petrolAllowanceGiven } = updateAllocationSchema.parse(req.body);
+    const { dpId, litresAllocated, status, items, petrolAllowanceGiven } = updateAllocationSchema.parse(req.body);
     const routeId = req.params.routeId as string;
 
     if (status === 'ASSIGNED' && litresAllocated <= 0) {
       return res.status(400).json({ error: { message: 'Allocated litres must be greater than 0 to assign a route.', code: 'INVALID_LITRES' } });
     }
 
-    const allocation = await routesService.updateRouteAllocation(routeId, date, dpId, litresAllocated, status, qty1LBottle, qtyHalfLBottle, qtyHalfLPacket, petrolAllowanceGiven);
+    const itemArray = Object.entries(items).map(([id, quantity]) => ({ inventoryItemId: id, quantity }));
+    const allocation = await routesService.updateRouteAllocation(routeId, date, dpId, litresAllocated, status, itemArray, petrolAllowanceGiven);
     res.json(allocation);
   } catch (error: any) {
     if (error.name === 'ZodError') {

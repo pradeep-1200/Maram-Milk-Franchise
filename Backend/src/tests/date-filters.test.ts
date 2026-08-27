@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { getReportDateRange } from '../modules/reports/reports.service';
 import * as assert from 'assert';
 

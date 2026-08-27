@@ -11,11 +11,10 @@ export const getShopSalesSchema = z.object({
 
 export const createShopSaleSchema = z.object({
   date: z.string().regex(dateRegex, 'Date must be YYYY-MM-DD'),
-  qty1LBottle: z.number().int().min(0).default(0),
-  qtyHalfLBottle: z.number().int().min(0).default(0),
-  qtyHalfLPacket: z.number().int().min(0).default(0),
-}).refine(data => {
-  return data.qty1LBottle > 0 || data.qtyHalfLBottle > 0 || data.qtyHalfLPacket > 0;
-}, {
-  message: "At least one quantity must be greater than 0",
+  items: z.array(
+    z.object({
+      inventoryItemId: z.string().uuid(),
+      quantity: z.number().int().nonnegative(),
+    })
+  ).default([]),
 });

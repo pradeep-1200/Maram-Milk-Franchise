@@ -71,10 +71,7 @@ class _ManagerInventoryScreenState extends ConsumerState<ManagerInventoryScreen>
             if (!_controllers.containsKey(item.id)) {
               _controllers[item.id] = TextEditingController();
             }
-            
-            String legacyName = item.name;
-            if (legacyName == 'Half Litre Bottle') legacyName = '500ml Bottle';
-            final val = (state.counts[item.id] ?? state.counts[legacyName])?.toString() ?? '';
+            final val = (state.counts[item.id] ?? state.counts[item.name])?.toString() ?? '';
             
             if (_controllers[item.id]!.text.isEmpty && val.isNotEmpty) {
               _controllers[item.id]!.text = val;

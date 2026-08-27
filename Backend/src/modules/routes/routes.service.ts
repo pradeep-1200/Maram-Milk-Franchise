@@ -1,6 +1,7 @@
 import { prisma } from '../../config/db';
 import { RouteAllocationStatus } from '@prisma/client';
 import { checkAndUpdateRoutesCompletion } from '../dispatch/dispatch.service';
+import { getInventoryForDate } from '../inventory/inventory.service';
 
 export const getRoutesWithAllocation = async (date: string) => {
   const routes = await prisma.route.findMany({
@@ -9,16 +10,38 @@ export const getRoutesWithAllocation = async (date: string) => {
 
   const allocations = await prisma.routeAllocation.findMany({
     where: { date },
-    include: { dp: true },
+    include: { 
+      dp: true,
+      items: {
+        include: { inventoryItem: true }
+      }
+    },
   });
 
-  const routeBalances = await prisma.routeEmptyBottleBalance.findMany();
-  const balanceMap = new Map();
-  for (const b of routeBalances) {
-    if (!balanceMap.has(b.routeId)) {
-      balanceMap.set(b.routeId, { '1L': 0, 'HalfL': 0 });
+  // Calculate expectedEmptyBottles per DP from previous EmptyBottleLog
+  const dpIds = [...new Set(allocations.map(a => a.dpId))];
+  const dpCarryOver = new Map<string, number>();
+
+  for (const dpId of dpIds) {
+    const previousLog = await prisma.emptyBottleLog.findFirst({
+      where: { dpId, date: { lt: date } },
+      orderBy: { date: 'desc' },
+      include: {
+        items: {
+          include: { inventoryItem: true }
+        }
+      }
+    });
+
+    let carriedOver = 0;
+    if (previousLog) {
+      for (const item of previousLog.items) {
+        if (item.inventoryItem.section === 'Milk' && item.inventoryItem.material === 'Bottle') {
+          carriedOver += item.outstanding || 0;
+        }
+      }
     }
-    balanceMap.get(b.routeId)[b.bottleType] = b.balance;
+    dpCarryOver.set(dpId, carriedOver);
   }
 
   const allocationMap = new Map<string, typeof allocations>();
@@ -32,8 +55,18 @@ export const getRoutesWithAllocation = async (date: string) => {
   return routes.map(route => {
     const routeAllocations = allocationMap.get(route.id) || [];
     
-    const balances = balanceMap.get(route.id) || { '1L': 0, 'HalfL': 0 };
-    const expectedEmptyBottles = Math.max(0, balances['1L']) + Math.max(0, balances['HalfL']);
+    let expectedEmptyBottles = 0;
+    for (const alloc of routeAllocations) {
+      // Add DP carry over
+      expectedEmptyBottles += dpCarryOver.get(alloc.dpId) || 0;
+      
+      // Add today's allocations for this DP
+      for (const item of alloc.items) {
+        if (item.inventoryItem.section === 'Milk' && item.inventoryItem.material === 'Bottle') {
+          expectedEmptyBottles += item.quantity;
+        }
+      }
+    }
 
     return {
       routeId: route.id,
@@ -45,25 +78,27 @@ export const getRoutesWithAllocation = async (date: string) => {
       expectedEmptyBottles,
       allocations: routeAllocations
         .filter(allocation => allocation.status === 'ASSIGNED' || allocation.status === 'COMPLETED')
-        .map(allocation => ({
-          allocationId: allocation.id,
-          dpId: allocation.dpId,
-          dpName: allocation.dp?.name,
-          dpPhotoUrl: allocation.dp?.photoUrl,
-          dpPetrolBalance: allocation.dp?.petrolBalance || 0,
-          litresAllocated: allocation.litresAllocated,
-          qty1LBottle: allocation.qty1LBottle,
-          qtyHalfLBottle: allocation.qtyHalfLBottle,
-          qtyHalfLPacket: allocation.qtyHalfLPacket,
-          petrolAllowanceGiven: allocation.petrolAllowanceGiven,
-          isPetrolAllowanceComplete: allocation.petrolAllowanceGiven !== null,
-          status: allocation.status,
-        })),
+        .map(allocation => {
+          const itemMap: Record<string, number> = {};
+          for (const item of allocation.items) {
+            itemMap[item.inventoryItemId] = item.quantity;
+          }
+          return {
+            allocationId: allocation.id,
+            dpId: allocation.dpId,
+            dpName: allocation.dp?.name,
+            dpPhotoUrl: allocation.dp?.photoUrl,
+            dpPetrolBalance: allocation.dp?.petrolBalance || 0,
+            litresAllocated: allocation.litresAllocated,
+            items: itemMap,
+            petrolAllowanceGiven: allocation.petrolAllowanceGiven,
+            isPetrolAllowanceComplete: allocation.petrolAllowanceGiven !== null,
+            status: allocation.status,
+          };
+        }),
     };
   });
 };
-
-import { getInventoryForDate } from '../inventory/inventory.service';
 
 export const updateRouteAllocation = async (
   routeId: string, 
@@ -71,68 +106,57 @@ export const updateRouteAllocation = async (
   dpId: string, 
   litresAllocated: number, 
   status: RouteAllocationStatus,
-  qty1LBottle?: number,
-  qtyHalfLBottle?: number,
-  qtyHalfLPacket?: number,
+  items: { inventoryItemId: string; quantity: number }[],
   petrolAllowanceGiven?: number
 ) => {
   const result = await prisma.$transaction(async (tx) => {
     // 1. Get previous allocation to compute delta
     const previous = await tx.routeAllocation.findUnique({
-      where: { routeId_dpId_date: { routeId, dpId, date } }
+      where: { routeId_dpId_date: { routeId, dpId, date } },
+      include: { items: true }
     });
 
-    const old1L = previous?.qty1LBottle ?? 0;
-    const oldHalfL = previous?.qtyHalfLBottle ?? 0;
-    const oldHalfLPacket = previous?.qtyHalfLPacket ?? 0;
-    
-    const new1L = qty1LBottle ?? old1L;
-    const newHalfL = qtyHalfLBottle ?? oldHalfL;
-    const newHalfLPacket = qtyHalfLPacket ?? oldHalfLPacket;
+    const oldItemMap = new Map<string, number>();
+    if (previous) {
+      for (const oldItem of previous.items) {
+        oldItemMap.set(oldItem.inventoryItemId, oldItem.quantity);
+      }
+    }
 
-    const delta1L = new1L - old1L;
-    const deltaHalfL = newHalfL - oldHalfL;
-    const deltaHalfLPacket = newHalfLPacket - oldHalfLPacket;
+    const itemDeltas = new Map<string, number>();
+    for (const item of items) {
+      const oldQty = oldItemMap.get(item.inventoryItemId) || 0;
+      const delta = item.quantity - oldQty;
+      if (delta !== 0) itemDeltas.set(item.inventoryItemId, delta);
+    }
+    for (const [oldId, oldQty] of oldItemMap.entries()) {
+      if (!items.find(i => i.inventoryItemId === oldId)) {
+        itemDeltas.set(oldId, -oldQty);
+      }
+    }
 
     // 2. Pre-check Inventory and throw error if insufficient stock
-    let item1L = null;
-    let itemHalfL = null;
-    let itemHalfLPacket = null;
-
-    if (delta1L !== 0 || deltaHalfL !== 0 || deltaHalfLPacket !== 0) {
-      // getInventoryForDate equivalent logic using the tx client
-      // Since getInventoryForDate reads from the DB, we can just inline the check here 
-      // or fetch the daily records.
+    if (itemDeltas.size > 0) {
       const inventoryItems = await tx.inventoryItem.findMany();
       const dailyRecords = await tx.inventoryDailyRecord.findMany({ where: { date } });
       
-      const inventory = inventoryItems.map(item => {
-        const record = dailyRecords.find(r => r.inventoryItemId === item.id);
-        return {
-          ...item,
-          recordId: record?.id,
-          currentStock: record?.currentStock ?? 0,
-        };
-      });
-
-      item1L = inventory.find(i => i.unit === '1L' && i.material === 'Bottle');
-      itemHalfL = inventory.find(i => i.unit === '500ml' && i.material === 'Bottle');
-      itemHalfLPacket = inventory.find(i => i.unit === '500ml' && i.material === 'Packet');
-
-      if (item1L && delta1L > 0 && item1L.currentStock < delta1L) {
-        throw { statusCode: 400, code: 'INSUFFICIENT_STOCK', message: `Only ${item1L.currentStock} × 1L bottles available — reduce the amount.` };
-      }
-      if (itemHalfL && deltaHalfL > 0 && itemHalfL.currentStock < deltaHalfL) {
-        throw { statusCode: 400, code: 'INSUFFICIENT_STOCK', message: `Only ${itemHalfL.currentStock} × 500ml bottles available — reduce the amount.` };
-      }
-      if (itemHalfLPacket && deltaHalfLPacket > 0 && itemHalfLPacket.currentStock < deltaHalfLPacket) {
-        throw { statusCode: 400, code: 'INSUFFICIENT_STOCK', message: `Only ${itemHalfLPacket.currentStock} × 500ml packets available — reduce the amount.` };
+      for (const [itemId, delta] of itemDeltas.entries()) {
+        if (delta > 0) {
+          const invItem = inventoryItems.find(i => i.id === itemId);
+          const record = dailyRecords.find(r => r.inventoryItemId === itemId);
+          const currentStock = record?.currentStock ?? 0;
+          if (currentStock < delta) {
+            throw { 
+              statusCode: 400, 
+              code: 'INSUFFICIENT_STOCK', 
+              message: `Only ${currentStock} × ${invItem?.name} available — reduce the amount.` 
+            };
+          }
+        }
       }
     }
 
     // Determine the PA to save in the allocation
-    // If undefined is passed, it means "no intent to change". We fallback to previous PA.
-    // If status is UNASSIGNED, PA must be null.
     const newPA = status === 'UNASSIGNED' ? null : (petrolAllowanceGiven !== undefined ? petrolAllowanceGiven : (previous?.petrolAllowanceGiven ?? null));
 
     // 3. Update Allocation
@@ -144,9 +168,6 @@ export const updateRouteAllocation = async (
         dpId,
         litresAllocated,
         status,
-        qty1LBottle: new1L,
-        qtyHalfLBottle: newHalfL,
-        qtyHalfLPacket: newHalfLPacket,
         petrolAllowanceGiven: newPA,
       },
       create: {
@@ -155,79 +176,42 @@ export const updateRouteAllocation = async (
         dpId,
         litresAllocated,
         status,
-        qty1LBottle: new1L,
-        qtyHalfLBottle: newHalfL,
-        qtyHalfLPacket: newHalfLPacket,
         petrolAllowanceGiven: newPA,
       },
     });
 
-    // 4. Update RouteEmptyBottleBalance based on allocated deltas
-    if (delta1L !== 0 || deltaHalfL !== 0) {
-      if (delta1L !== 0) {
-        // Fetch current to use max(0)
-        const current1L = await tx.routeEmptyBottleBalance.findUnique({
-          where: { routeId_bottleType: { routeId, bottleType: '1L' } }
-        });
-        const currentBalance1L = current1L?.balance ?? 0;
-        await tx.routeEmptyBottleBalance.upsert({
-          where: { routeId_bottleType: { routeId, bottleType: '1L' } },
-          update: { balance: currentBalance1L + delta1L },
-          create: { routeId, bottleType: '1L', balance: delta1L }
-        });
-      }
-      
-      if (deltaHalfL !== 0) {
-        const currentHalfL = await tx.routeEmptyBottleBalance.findUnique({
-          where: { routeId_bottleType: { routeId, bottleType: 'HalfL' } }
-        });
-        const currentBalanceHalfL = currentHalfL?.balance ?? 0;
-        await tx.routeEmptyBottleBalance.upsert({
-          where: { routeId_bottleType: { routeId, bottleType: 'HalfL' } },
-          update: { balance: currentBalanceHalfL + deltaHalfL },
-          create: { routeId, bottleType: 'HalfL', balance: deltaHalfL }
-        });
-      }
+    // Delete old items and insert new ones
+    await tx.routeAllocationItem.deleteMany({
+      where: { routeAllocationId: allocation.id }
+    });
+    
+    if (items.length > 0) {
+      await tx.routeAllocationItem.createMany({
+        data: items.map(i => ({
+          routeAllocationId: allocation.id,
+          inventoryItemId: i.inventoryItemId,
+          quantity: i.quantity
+        }))
+      });
     }
 
     // 4. Process Inventory decrements
-    if (delta1L !== 0 || deltaHalfL !== 0 || deltaHalfLPacket !== 0) {
-      if (item1L?.recordId && delta1L !== 0) {
+    for (const [itemId, delta] of itemDeltas.entries()) {
+      const record = await tx.inventoryDailyRecord.findUnique({
+        where: { inventoryItemId_date: { inventoryItemId: itemId, date } }
+      });
+      if (record) {
         await tx.inventoryDailyRecord.update({
-          where: { id: item1L.recordId },
+          where: { id: record.id },
           data: { 
-            currentStock: { decrement: delta1L },
-            expectedStock: { decrement: delta1L }
-          }
-        });
-      }
-
-      if (itemHalfL?.recordId && deltaHalfL !== 0) {
-        await tx.inventoryDailyRecord.update({
-          where: { id: itemHalfL.recordId },
-          data: { 
-            currentStock: { decrement: deltaHalfL },
-            expectedStock: { decrement: deltaHalfL }
-          }
-        });
-      }
-      
-      if (itemHalfLPacket?.recordId && deltaHalfLPacket !== 0) {
-        await tx.inventoryDailyRecord.update({
-          where: { id: itemHalfLPacket.recordId },
-          data: { 
-            currentStock: { decrement: deltaHalfLPacket },
-            expectedStock: { decrement: deltaHalfLPacket }
+            currentStock: { decrement: delta },
+            expectedStock: { decrement: delta }
           }
         });
       }
     }
 
     // 5. Process Petrol Allowance Ledger entries and DP Balance
-    // If petrolAllowanceGiven is strictly undefined, it means the frontend is intentionally omitting it
-    // (e.g. from assignRoute or updateRouteAllocationLitres) because it is a partial update and the user 
-    // does not intend to touch the PA ledger. We must skip all ledger clearing/creation UNLESS the route 
-    // is being UNASSIGNED (in which case we must clear everything).
     const skipLedgerUpdate = petrolAllowanceGiven === undefined && status !== 'UNASSIGNED';
 
     if (!skipLedgerUpdate) {
@@ -235,21 +219,18 @@ export const updateRouteAllocation = async (
       if (route) {
         const defaultAllowance = route.defaultPetrolAllowance;
 
-        // First, clear out old ledger entries & reverse old balance impact
         if (previous && (previous.status === 'ASSIGNED' || previous.status === 'COMPLETED')) {
           const oldDpId = previous.dpId;
           const oldPA = previous.petrolAllowanceGiven;
 
           if (oldPA !== null && oldPA !== undefined) {
             const oldDelta = oldPA - defaultAllowance;
-            // Reverse balance
             await tx.deliveryPerson.update({
               where: { id: oldDpId },
               data: { petrolBalance: { decrement: oldDelta } }
             });
           }
 
-          // Delete old ledger entries for the OLD DP on this route and date
           await tx.ledgerTransaction.deleteMany({
             where: {
               dpId: oldDpId,
@@ -260,12 +241,10 @@ export const updateRouteAllocation = async (
           });
         }
 
-        // Now apply new ledger entries & new balance impact (if not UNASSIGNED)
         if (status === 'ASSIGNED' || status === 'COMPLETED') {
           if (newPA !== null && newPA !== undefined) {
             const newDelta = newPA - defaultAllowance;
 
-            // Apply new balance
             await tx.deliveryPerson.update({
               where: { id: dpId },
               data: { petrolBalance: { increment: newDelta } }
@@ -304,4 +283,3 @@ export const updateRouteAllocation = async (
 
   return result;
 };
-

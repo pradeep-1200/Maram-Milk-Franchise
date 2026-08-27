@@ -7,15 +7,13 @@ export const dateQuerySchema = z.object({
 export const updateEmptyBottleSchema = z.object({
   dpId: z.string().uuid(),
   deliveryCompleted: z.boolean(),
-  oneLBottlesCollected: z.number().min(0),
-  halfLBottlesCollected: z.number().min(0),
-  halfLPacketCollected: z.number().min(0),
-  actualDelivered1L: z.number().min(0),
-  actualDeliveredHalfL: z.number().min(0),
-  actualDeliveredPacket: z.number().min(0),
   flagIssue: z.boolean(),
   reason: z.string().nullable().optional(),
-  brokenBottleCount1L: z.number().min(0).nullable().optional(),
-  brokenBottleCountHalfL: z.number().min(0).nullable().optional(),
   notes: z.string().nullable().optional(),
+  items: z.array(z.object({
+    inventoryItemId: z.string().uuid(),
+    actualDelivered: z.number().min(0),
+    collected: z.number().min(0).default(0),
+    broken: z.number().min(0).default(0),
+  })).optional().default([]),
 });

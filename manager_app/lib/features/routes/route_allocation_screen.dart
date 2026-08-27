@@ -500,12 +500,10 @@ class _AssignDpSheet extends ConsumerWidget {
     // Check if DP is already assigned
     final existingAllocation = route.allocations.where((a) => a.dpId == dp.dpId).firstOrNull;
     
-    // Initialize milk allocation with existing DP values, or 0 for new DP
+    // Initialize milk allocation with existing DP values, or empty map for new DP
     ref.read(milkAllocationProvider.notifier).initAllocation(
       route.id, 
-      existingAllocation?.qty1LBottle ?? 0, 
-      existingAllocation?.qtyHalfLBottle ?? 0, 
-      existingAllocation?.qtyHalfLPacket ?? 0
+      existingAllocation?.items ?? {}
     );
     
     // Open Milk Allocation sheet

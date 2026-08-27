@@ -4,6 +4,26 @@ part 'empty_bottle_status.freezed.dart';
 part 'empty_bottle_status.g.dart';
 
 @freezed
+abstract class EmptyBottleStatusItem with _$EmptyBottleStatusItem {
+  const factory EmptyBottleStatusItem({
+    required String inventoryItemId,
+    required String name,
+    required String unit,
+    String? section,
+    String? material,
+    @Default(0) int carriedOver,
+    @Default(0) int allocated,
+    @Default(0) int expected,
+    @Default(0) int actualDelivered,
+    @Default(0) int collected,
+    @Default(0) int broken,
+    @Default(0) int outstanding,
+  }) = _EmptyBottleStatusItem;
+
+  factory EmptyBottleStatusItem.fromJson(Map<String, dynamic> json) => _$EmptyBottleStatusItemFromJson(json);
+}
+
+@freezed
 abstract class EmptyBottleStatus with _$EmptyBottleStatus {
   const factory EmptyBottleStatus({
     required String routeId,
@@ -11,22 +31,12 @@ abstract class EmptyBottleStatus with _$EmptyBottleStatus {
     String? dpId,
     String? dpName,
     required bool deliveryCompleted,
-    @Default(0) int oneLBottlesCollected,
-    @Default(0) int halfLBottlesCollected,
-    @Default(0) int halfLPacketCollected,
-    @Default(0) int expected1LBottles,
-    @Default(0) int expectedHalfLBottles,
-    @Default(0) int expectedHalfLPacket,
-    @Default(0) int actualDelivered1L,
-    @Default(0) int actualDeliveredHalfL,
-    @Default(0) int actualDeliveredPacket,
+    @Default(0) int expectedEmptyBottles,
     @Default(false) bool flagIssue,
     String? reason,
-    int? brokenBottleCount1L,
-    int? brokenBottleCountHalfL,
     String? notes,
-    @Default(0) int expectedEmptyBottles,
     required String status,
+    @Default([]) List<EmptyBottleStatusItem> items,
   }) = _EmptyBottleStatus;
 
   factory EmptyBottleStatus.fromJson(Map<String, dynamic> json) => _$EmptyBottleStatusFromJson(json);

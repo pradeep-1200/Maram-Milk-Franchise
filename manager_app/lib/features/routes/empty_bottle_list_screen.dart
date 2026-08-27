@@ -106,10 +106,10 @@ class EmptyBottleListScreen extends ConsumerWidget {
                                 ),
                               ],
                               const SizedBox(height: 4),
-                              Builder(
+                                  Builder(
                                 builder: (context) {
-                                  final totalCollected = status.oneLBottlesCollected + status.halfLBottlesCollected;
-                                  final totalExpected = status.expected1LBottles + status.expectedHalfLBottles;
+                                  final totalCollected = status.items.fold(0, (sum, item) => sum + item.collected);
+                                  final totalExpected = status.items.fold(0, (sum, item) => sum + item.expected);
 
                                   String tagText;
                                   Color tagColor;

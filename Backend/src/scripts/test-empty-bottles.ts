@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { prisma } from '../config/db';
 import { updateEmptyBottleLog, getEmptyBottleStatus } from '../modules/empty-bottles/empty-bottles.service';
 

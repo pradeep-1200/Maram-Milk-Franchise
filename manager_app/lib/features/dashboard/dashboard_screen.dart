@@ -442,8 +442,7 @@ class DashboardScreen extends ConsumerWidget {
                         builder: (context) {
                           final statuses = ref.watch(eveningCheckProvider).value?.statuses ?? [];
                           
-                          int total1L = 0;
-                          int total500ml = 0;
+                          int totalCollected = 0;
                           int checkedRoutes = 0;
                           int flaggedRoutes = 0;
                           
@@ -453,8 +452,10 @@ class DashboardScreen extends ConsumerWidget {
                           for (final route in assignedRoutes) {
                             if (route.deliveryCompleted == true) {
                               checkedRoutes++;
-                              total1L += route.oneLBottlesCollected;
-                              total500ml += route.halfLBottlesCollected;
+                              final glassItems = route.items.where((i) => i.material == 'Glass');
+                              for (final item in glassItems) {
+                                totalCollected += item.collected;
+                              }
                               if (route.flagIssue == true) {
                                 flaggedRoutes++;
                               }
@@ -495,37 +496,10 @@ class DashboardScreen extends ConsumerWidget {
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
                                               Text(
-                                                '$total1L',
+                                                '$totalCollected',
                                                 style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                                               ),
-                                              Text('1L Bottles', style: theme.textTheme.bodySmall, overflow: TextOverflow.ellipsis),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(8),
-                                          decoration: BoxDecoration(
-                                            color: theme.colorScheme.tertiaryContainer,
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Icon(Icons.local_drink, color: theme.colorScheme.onTertiaryContainer, size: 20),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                '$total500ml',
-                                                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                                              ),
-                                              Text('500ml Bottles', style: theme.textTheme.bodySmall, overflow: TextOverflow.ellipsis),
+                                              Text('Total Glass Bottles', style: theme.textTheme.bodySmall, overflow: TextOverflow.ellipsis),
                                             ],
                                           ),
                                         ),

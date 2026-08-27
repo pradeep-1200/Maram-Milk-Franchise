@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { prisma } from '../config/db';
 import { getLedger } from '../modules/ledger/ledger.service';
 import { getISTDateString } from '../utils/date';

@@ -83,10 +83,6 @@ class _ShopSaleScreenState extends ConsumerState<ShopSaleScreen> {
             return const Center(child: Text('No inventory items found'));
           }
 
-          final item1L = loadedState.items.cast<InventoryItemState?>().firstWhere((i) => i?.subtitle == 'Bottle - 1L', orElse: () => null);
-          final itemHalfL = loadedState.items.cast<InventoryItemState?>().firstWhere((i) => i?.subtitle == 'Bottle - 500ml', orElse: () => null);
-          final itemPacket = loadedState.items.cast<InventoryItemState?>().firstWhere((i) => i?.subtitle == 'Packet - 500ml', orElse: () => null);
-
           return SingleChildScrollView(
             padding: const EdgeInsets.all(AppConstants.spacing16),
             child: Column(
@@ -98,31 +94,18 @@ class _ShopSaleScreenState extends ConsumerState<ShopSaleScreen> {
                 ),
                 const SizedBox(height: 16),
                 
-                if (item1L != null)
-                  _SaleItemCard(
-                    title: '1L Bottle',
-                    currentStock: item1L.currentStock.toInt(),
-                    quantity: saleState.currentQuantities['1L'] ?? 0,
-                    onChanged: (val) => saleNotifier.updateQuantity('1L', val),
-                  ),
-                const SizedBox(height: 12),
-                
-                if (itemHalfL != null)
-                  _SaleItemCard(
-                    title: '500ml Bottle',
-                    currentStock: itemHalfL.currentStock.toInt(),
-                    quantity: saleState.currentQuantities['500ml'] ?? 0,
-                    onChanged: (val) => saleNotifier.updateQuantity('500ml', val),
-                  ),
-                const SizedBox(height: 12),
-
-                if (itemPacket != null)
-                  _SaleItemCard(
-                    title: '500ml Packet',
-                    currentStock: itemPacket.currentStock.toInt(),
-                    quantity: saleState.currentQuantities['500ml_Packet'] ?? 0,
-                    onChanged: (val) => saleNotifier.updateQuantity('500ml_Packet', val),
-                  ),
+                ...loadedState.items.map((item) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12.0),
+                    child: _SaleItemCard(
+                      title: item.name,
+                      subtitle: item.subtitle,
+                      currentStock: item.currentStock.toInt(),
+                      quantity: saleState.currentQuantities[item.id] ?? 0,
+                      onChanged: (val) => saleNotifier.updateQuantity(item.id, val),
+                    ),
+                  );
+                }),
 
                 const SizedBox(height: 32),
                 
@@ -279,12 +262,14 @@ class _DateFilterDropdown extends StatelessWidget {
 
 class _SaleItemCard extends StatelessWidget {
   final String title;
+  final String subtitle;
   final int currentStock;
   final int quantity;
   final Function(int) onChanged;
 
   const _SaleItemCard({
     required this.title,
+    required this.subtitle,
     required this.currentStock,
     required this.quantity,
     required this.onChanged,
@@ -299,13 +284,21 @@ class _SaleItemCard extends StatelessWidget {
     Color iconColor = Colors.green;
     Color bgColor = Colors.green.withAlpha(30);
 
-    if (title.contains('500ml Bottle')) {
+    if (subtitle.contains('Bottle') && subtitle.contains('500ml')) {
       iconColor = Colors.blue;
       bgColor = Colors.blue.withAlpha(30);
-    } else if (title.contains('Packet')) {
+    } else if (subtitle.contains('Packet')) {
       icon = Icons.inventory_2;
       iconColor = Colors.orange;
       bgColor = Colors.orange.withAlpha(30);
+    } else if (title.contains('Oil')) {
+      icon = Icons.oil_barrel;
+      iconColor = Colors.amber;
+      bgColor = Colors.amber.withAlpha(30);
+    } else if (title.contains('Ghee')) {
+      icon = Icons.cookie;
+      iconColor = Colors.brown;
+      bgColor = Colors.brown.withAlpha(30);
     }
 
     return Card(
@@ -329,6 +322,7 @@ class _SaleItemCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                  Text(subtitle, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                   const SizedBox(height: 2),
                   Text('Available: $currentStock', 
                     style: theme.textTheme.bodySmall?.copyWith(

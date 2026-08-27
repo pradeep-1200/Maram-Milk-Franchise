@@ -56,9 +56,7 @@ class InventoryScreen extends ConsumerWidget {
         final totalStocks = todaysStock + carriedOver;
         final appsRemaining = item.expectedQty.toInt();
         
-        String legacyName = item.name;
-        if (legacyName == 'Half Litre Bottle') legacyName = '500ml Bottle';
-        final managersRemaining = managerCounts[item.id] ?? managerCounts[legacyName] ?? 0;
+        final managersRemaining = managerCounts[item.id] ?? managerCounts[item.name] ?? 0;
 
         todaysStockRow.add(todaysStock);
         carriedOverRow.add(carriedOver);
@@ -196,29 +194,62 @@ class InventoryScreen extends ConsumerWidget {
             );
           }
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Products List
-              Expanded(
-                child: ListView.separated(
-                  padding: const EdgeInsets.only(
-                    left: AppConstants.spacing16,
-                    right: AppConstants.spacing16,
-                    top: AppConstants.spacing8,
-                    bottom: AppConstants.spacing16,
+          // Group items by section
+          final Map<String, List<InventoryItemState>> groupedItems = {};
+          final List<String> sectionKeys = [];
+          for (var item in loadedState.items) {
+            final section = item.section ?? 'Other';
+            if (!groupedItems.containsKey(section)) {
+              groupedItems[section] = [];
+              sectionKeys.add(section);
+            }
+            groupedItems[section]!.add(item);
+          }
+
+          IconData getSectionIcon(String section) {
+            switch (section) {
+              case 'Milk': return Icons.local_drink;
+              case 'Dairy': return Icons.cookie;
+              case 'Oils': return Icons.opacity;
+              case 'Sweeteners': return Icons.spa;
+              case 'Snacks / Grocery': return Icons.shopping_bag;
+              default: return Icons.inventory_2;
+            }
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.only(
+              bottom: AppConstants.spacing16,
+            ),
+            itemCount: sectionKeys.length,
+            itemBuilder: (context, index) {
+              final section = sectionKeys[index];
+              final items = groupedItems[section]!;
+              
+              return Theme(
+                data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                child: ExpansionTile(
+                  initiallyExpanded: true,
+                  leading: Icon(getSectionIcon(section), color: theme.colorScheme.primary),
+                  title: Text(
+                    section,
+                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                   ),
-                  itemCount: loadedState.items.length,
-                  separatorBuilder: (_, __) => const Divider(height: AppConstants.spacing16),
-                  itemBuilder: (context, index) {
-                    final item = loadedState.items[index];
-                    return _InventoryRow(
-                      item: item,
-                    );
-                  },
+                  children: [
+                    ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: AppConstants.spacing16, vertical: 8),
+                      itemCount: items.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: AppConstants.spacing16),
+                      itemBuilder: (context, itemIndex) {
+                        return _InventoryRow(item: items[itemIndex]);
+                      },
+                    ),
+                  ],
                 ),
-              ),
-            ],
+              );
+            },
           );
         },
       ),
@@ -238,108 +269,101 @@ class _InventoryRow extends StatelessWidget {
     final theme = Theme.of(context);
 
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              margin: const EdgeInsets.only(top: 4),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(8),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(10),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.inventory_2, color: theme.colorScheme.onPrimaryContainer),
               ),
-              child: Icon(Icons.inventory_2, color: theme.colorScheme.onPrimaryContainer),
-            ),
-            const SizedBox(width: AppConstants.spacing16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Row 1: Name & Badge (Wraps gracefully)
-                  Wrap(
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    spacing: 8,
-                    runSpacing: 4,
-                    children: [
+              const SizedBox(width: AppConstants.spacing16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Row 1: Name
+                    Text(
+                      item.name,
+                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 2),
+                    // Row 2: Subtitle
+                    Text(
+                      'Material: ${item.subtitle}',
+                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppConstants.spacing16),
+          // Row 3: Expected figures integrated into the same card
+          const Divider(height: 1),
+          const SizedBox(height: AppConstants.spacing16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Expected',
+                      style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    ),
+                    if (item.carryOverQty > 0 || item.newStockAdded > 0)
                       Text(
-                        item.name,
-                        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                        '(${item.carryOverQty} carried over + ${item.newStockAdded} new)',
+                        style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  // Row 2: Subtitle
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
                   Text(
-                    'Material: ${item.subtitle}',
-                    style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                  ),
-                  const SizedBox(height: AppConstants.spacing8),
-                  
-                  // Row 3: Expected and Current Stock widgets stacked
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest.withAlpha(100),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: theme.colorScheme.outlineVariant.withAlpha(100)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Expected Widget
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Expected',
-                                    style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                                  ),
-                                  if (item.carryOverQty > 0 || item.newStockAdded > 0)
-                                    Text(
-                                      '(${item.carryOverQty} carried over + ${item.newStockAdded} new)',
-                                      style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                                    ),
-                                ],
-                              ),
-                            ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  '${item.expectedQty.toInt()}',
-                                  style: theme.textTheme.titleSmall?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                if (item.litresPerUnit > 0)
-                                  Text(
-                                    '${(item.expectedQty * item.litresPerUnit).toStringAsFixed(1)} L total',
-                                    style: theme.textTheme.labelSmall?.copyWith(
-                                      color: theme.colorScheme.onSurfaceVariant.withAlpha(150),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
+                    '${item.expectedQty.toInt()}',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-
+                  if (item.litresPerUnit > 0)
+                    Text(
+                      '${(item.expectedQty * item.litresPerUnit).toStringAsFixed(1)} L total',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant.withAlpha(150),
+                      ),
+                    ),
                 ],
               ),
-            ),
-          ],
-        ),
-      ],
+            ],
+          ),
+        ],
+      ),
     );
   }
 

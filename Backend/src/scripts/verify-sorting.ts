@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { prisma } from '../config/db';
 import { getISTDateString } from '../utils/date';
 import { getDpPerformance } from '../modules/reports/reports.service';

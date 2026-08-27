@@ -14,9 +14,11 @@ _RouteAllocation _$RouteAllocationFromJson(Map<String, dynamic> json) =>
       dpPhotoUrl: json['dpPhotoUrl'] as String?,
       dpPetrolBalance: (json['dpPetrolBalance'] as num?)?.toDouble() ?? 0.0,
       litresAllocated: (json['litresAllocated'] as num?)?.toDouble() ?? 0.0,
-      qty1LBottle: (json['qty1LBottle'] as num?)?.toInt() ?? 0,
-      qtyHalfLBottle: (json['qtyHalfLBottle'] as num?)?.toInt() ?? 0,
-      qtyHalfLPacket: (json['qtyHalfLPacket'] as num?)?.toInt() ?? 0,
+      items:
+          (json['items'] as Map<String, dynamic>?)?.map(
+            (k, e) => MapEntry(k, (e as num).toInt()),
+          ) ??
+          const {},
       petrolAllowanceGiven: (json['petrolAllowanceGiven'] as num?)?.toInt(),
       isPetrolAllowanceComplete:
           json['isPetrolAllowanceComplete'] as bool? ?? false,
@@ -36,9 +38,7 @@ Map<String, dynamic> _$RouteAllocationToJson(_RouteAllocation instance) =>
       'dpPhotoUrl': instance.dpPhotoUrl,
       'dpPetrolBalance': instance.dpPetrolBalance,
       'litresAllocated': instance.litresAllocated,
-      'qty1LBottle': instance.qty1LBottle,
-      'qtyHalfLBottle': instance.qtyHalfLBottle,
-      'qtyHalfLPacket': instance.qtyHalfLPacket,
+      'items': instance.items,
       'petrolAllowanceGiven': instance.petrolAllowanceGiven,
       'isPetrolAllowanceComplete': instance.isPetrolAllowanceComplete,
       'status': instance.status,

@@ -383,24 +383,19 @@ class _EveningCheckSheet extends ConsumerStatefulWidget {
 
 class _EveningCheckSheetState extends ConsumerState<_EveningCheckSheet> {
   bool? _didCompleteDelivery;
-  late int _bottles1L;
-  late int _bottlesHalfL;
-  late bool _flagNoReturn;
-
+  bool _flagNoReturn = false;
   String? _reason;
-  late int _brokenBottleCount1L;
-  late int _brokenBottleCountHalfL;
-  late int _actualDelivered1L;
-  late int _actualDeliveredHalfL;
-  late int _actualDeliveredPacket;
-  late final TextEditingController _ctrl1L;
-  late final TextEditingController _ctrlHalfL;
-  late final TextEditingController _ctrlBroken1L;
-  late final TextEditingController _ctrlBrokenHalfL;
-  late final TextEditingController _ctrlActual1L;
-  late final TextEditingController _ctrlActualHalfL;
-  late final TextEditingController _ctrlActualPacket;
   late final TextEditingController _ctrlNotes;
+
+  // We maintain a map of text controllers for each dynamic item field
+  final Map<String, TextEditingController> _ctrlCollected = {};
+  final Map<String, TextEditingController> _ctrlBroken = {};
+  final Map<String, TextEditingController> _ctrlActual = {};
+
+  // We also keep the actual values in memory
+  final Map<String, int> _valCollected = {};
+  final Map<String, int> _valBroken = {};
+  final Map<String, int> _valActual = {};
 
   @override
   void initState() {
@@ -408,37 +403,27 @@ class _EveningCheckSheetState extends ConsumerState<_EveningCheckSheet> {
     if (widget.route.status == 'Delivered') {
       _didCompleteDelivery = widget.route.deliveryCompleted;
     }
-    _bottles1L = widget.route.oneLBottlesCollected;
-    _bottlesHalfL = widget.route.halfLBottlesCollected;
     _flagNoReturn = widget.route.flagIssue;
-    
     _reason = widget.route.reason;
-    _brokenBottleCount1L = widget.route.brokenBottleCount1L ?? 0;
-    _brokenBottleCountHalfL = widget.route.brokenBottleCountHalfL ?? 0;
-    _actualDelivered1L = widget.route.actualDelivered1L;
-    _actualDeliveredHalfL = widget.route.actualDeliveredHalfL;
-    _actualDeliveredPacket = widget.route.actualDeliveredPacket;
-    
-    _ctrl1L = TextEditingController(text: _bottles1L.toString());
-    _ctrlHalfL = TextEditingController(text: _bottlesHalfL.toString());
-    _ctrlBroken1L = TextEditingController(text: _brokenBottleCount1L.toString());
-    _ctrlBrokenHalfL = TextEditingController(text: _brokenBottleCountHalfL.toString());
-    _ctrlActual1L = TextEditingController(text: _actualDelivered1L.toString());
-    _ctrlActualHalfL = TextEditingController(text: _actualDeliveredHalfL.toString());
-    _ctrlActualPacket = TextEditingController(text: _actualDeliveredPacket.toString());
     _ctrlNotes = TextEditingController(text: widget.route.notes ?? '');
+
+    for (final item in widget.route.items) {
+      _valCollected[item.inventoryItemId] = item.collected;
+      _valBroken[item.inventoryItemId] = item.broken;
+      _valActual[item.inventoryItemId] = item.actualDelivered;
+
+      _ctrlCollected[item.inventoryItemId] = TextEditingController(text: item.collected.toString());
+      _ctrlBroken[item.inventoryItemId] = TextEditingController(text: item.broken.toString());
+      _ctrlActual[item.inventoryItemId] = TextEditingController(text: item.actualDelivered.toString());
+    }
   }
 
   @override
   void dispose() {
-    _ctrl1L.dispose();
-    _ctrlHalfL.dispose();
-    _ctrlBroken1L.dispose();
-    _ctrlBrokenHalfL.dispose();
-    _ctrlActual1L.dispose();
-    _ctrlActualHalfL.dispose();
-    _ctrlActualPacket.dispose();
     _ctrlNotes.dispose();
+    for (final c in _ctrlCollected.values) { c.dispose(); }
+    for (final c in _ctrlBroken.values) { c.dispose(); }
+    for (final c in _ctrlActual.values) { c.dispose(); }
     super.dispose();
   }
 
@@ -464,21 +449,25 @@ class _EveningCheckSheetState extends ConsumerState<_EveningCheckSheet> {
       return;
     }
 
+    final itemsPayload = widget.route.items.map((item) {
+      return {
+        'inventoryItemId': item.inventoryItemId,
+        'actualDelivered': _valActual[item.inventoryItemId] ?? 0,
+        'collected': _valCollected[item.inventoryItemId] ?? 0,
+        'broken': ((_didCompleteDelivery == false && _reason == 'Bottles broken') || (_didCompleteDelivery == true && _flagNoReturn)) 
+            ? (_valBroken[item.inventoryItemId] ?? 0) 
+            : 0,
+      };
+    }).toList();
+
     ref.read(eveningCheckProvider.notifier).updateStatus(
       widget.route.routeId,
       dpId: widget.route.dpId ?? '',
       deliveryCompleted: _didCompleteDelivery!,
-      oneLBottlesCollected: _bottles1L,
-      halfLBottlesCollected: _bottlesHalfL,
-      halfLPacketCollected: widget.route.halfLPacketCollected,
-      actualDelivered1L: _actualDelivered1L,
-      actualDeliveredHalfL: _actualDeliveredHalfL,
-      actualDeliveredPacket: _actualDeliveredPacket,
       flagIssue: _flagNoReturn,
       reason: _didCompleteDelivery == false ? _reason : null,
-      brokenBottleCount1L: ((_didCompleteDelivery == false && _reason == 'Bottles broken') || (_didCompleteDelivery == true && _flagNoReturn)) ? _brokenBottleCount1L : null,
-      brokenBottleCountHalfL: ((_didCompleteDelivery == false && _reason == 'Bottles broken') || (_didCompleteDelivery == true && _flagNoReturn)) ? _brokenBottleCountHalfL : null,
       notes: ((_didCompleteDelivery == false && ['Bottles broken', 'Other'].contains(_reason)) || (_didCompleteDelivery == true && _flagNoReturn)) ? _ctrlNotes.text.trim() : null,
+      items: itemsPayload,
     );
 
     context.pop();
@@ -515,7 +504,6 @@ class _EveningCheckSheetState extends ConsumerState<_EveningCheckSheet> {
               icon: const Icon(Icons.remove_circle_outline),
               color: theme.colorScheme.primary,
             ),
-            // Editable text field replaces the static Container+Text display
             SizedBox(
               width: 64,
               child: TextField(
@@ -550,7 +538,6 @@ class _EveningCheckSheetState extends ConsumerState<_EveningCheckSheet> {
                 onEditingComplete: () {
                   final parsed = int.tryParse(ctrl.text);
                   if (parsed == null || parsed < 0) {
-                    // Reset to last valid value
                     ctrl.text = value.toString();
                   } else {
                     ctrl.text = value.toString();
@@ -584,6 +571,7 @@ class _EveningCheckSheetState extends ConsumerState<_EveningCheckSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final glassItems = widget.route.items.where((i) => i.material == 'Glass').toList();
 
     return SafeArea(
       child: Column(
@@ -684,7 +672,7 @@ class _EveningCheckSheetState extends ConsumerState<_EveningCheckSheet> {
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          'Total Expected: ${widget.route.expected1LBottles + widget.route.expectedHalfLBottles} | Remaining: ${(widget.route.expected1LBottles - _bottles1L - _brokenBottleCount1L) + (widget.route.expectedHalfLBottles - _bottlesHalfL - _brokenBottleCountHalfL)}',
+                          'Expected Bottles: ${widget.route.expectedEmptyBottles}',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
@@ -696,88 +684,58 @@ class _EveningCheckSheetState extends ConsumerState<_EveningCheckSheet> {
                   ),
                   const SizedBox(height: AppConstants.spacing16),
                   
-                  // 1L Bottles Section
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: theme.colorScheme.outlineVariant),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  // Iterate over glass items
+                  ...glassItems.map((item) {
+                    final expected = item.expected;
+                    final collected = _valCollected[item.inventoryItemId] ?? 0;
+                    final broken = _valBroken[item.inventoryItemId] ?? 0;
+                    final remaining = expected - collected - broken;
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: AppConstants.spacing16),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: theme.colorScheme.outlineVariant),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              '1L Bottles',
-                              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    '${item.name} (${item.unit})',
+                                    style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                                Text(
+                                  'Expected: $expected | Rem: $remaining',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: remaining > 0 ? Colors.orange[800] : Colors.green[800],
+                                  ),
+                                ),
+                              ],
                             ),
-                            Text(
-                              'Expected: ${widget.route.expected1LBottles} | Rem: ${widget.route.expected1LBottles - _bottles1L - _brokenBottleCount1L}',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: (widget.route.expected1LBottles - _bottles1L - _brokenBottleCount1L) > 0 ? Colors.orange[800] : Colors.green[800],
-                              ),
+                            const SizedBox(height: 8),
+                            _buildCounter(
+                              'Collected',
+                              collected,
+                              _ctrlCollected[item.inventoryItemId]!,
+                              (v) => setState(() => _valCollected[item.inventoryItemId] = v),
+                              theme,
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
-                        _buildCounter(
-                          'Collected',
-                          _bottles1L,
-                          _ctrl1L,
-                          (v) => setState(() => _bottles1L = v),
-                          theme,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: AppConstants.spacing16),
-                  
-                  // Half L Bottles Section
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: theme.colorScheme.outlineVariant),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Half L Bottles',
-                              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                            Text(
-                              'Expected: ${widget.route.expectedHalfLBottles} | Rem: ${widget.route.expectedHalfLBottles - _bottlesHalfL - _brokenBottleCountHalfL}',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: (widget.route.expectedHalfLBottles - _bottlesHalfL - _brokenBottleCountHalfL) > 0 ? Colors.orange[800] : Colors.green[800],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        _buildCounter(
-                          'Collected',
-                          _bottlesHalfL,
-                          _ctrlHalfL,
-                          (v) => setState(() => _bottlesHalfL = v),
-                          theme,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: AppConstants.spacing16),
+                      ),
+                    );
+                  }),
 
-
-                  const SizedBox(height: AppConstants.spacing24),
+                  const SizedBox(height: AppConstants.spacing8),
                   SwitchListTile(
                     title: const Text('Flag issue with returns'),
                     subtitle: const Text('Check if bottles are missing or damaged'),
@@ -793,147 +751,139 @@ class _EveningCheckSheetState extends ConsumerState<_EveningCheckSheet> {
                   
                   if (_flagNoReturn) ...[
                     const SizedBox(height: AppConstants.spacing16),
-                    _buildCounter(
-                      'Broken 1L Bottles',
-                      _brokenBottleCount1L,
-                      _ctrlBroken1L,
-                      (v) => setState(() => _brokenBottleCount1L = v),
-                      theme,
-                    ),
+                    ...glassItems.map((item) {
+                      final broken = _valBroken[item.inventoryItemId] ?? 0;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: AppConstants.spacing12),
+                        child: _buildCounter(
+                          'Broken ${item.name}',
+                          broken,
+                          _ctrlBroken[item.inventoryItemId]!,
+                          (v) => setState(() => _valBroken[item.inventoryItemId] = v),
+                          theme,
+                        ),
+                      );
+                    }),
                     const SizedBox(height: AppConstants.spacing8),
-                    _buildCounter(
-                      'Broken Half L Bottles',
-                      _brokenBottleCountHalfL,
-                      _ctrlBrokenHalfL,
-                      (v) => setState(() => _brokenBottleCountHalfL = v),
-                      theme,
-                    ),
-                    const SizedBox(height: AppConstants.spacing16),
                     TextField(
                       controller: _ctrlNotes,
-                      maxLines: 2,
                       decoration: InputDecoration(
-                        labelText: 'Notes (optional)',
-                        hintText: 'Enter details about missing/broken bottles...',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                        labelText: 'Notes / Reason for shortage',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+                        ),
                       ),
+                      maxLines: 2,
                     ),
                   ],
                 ],
-                
+
                 if (_didCompleteDelivery == false) ...[
                   const SizedBox(height: AppConstants.spacing24),
                   const Divider(),
                   const SizedBox(height: AppConstants.spacing16),
-                  
                   Text(
-                    'Reason for non-delivery',
+                    'Reason for Non-Delivery',
                     style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: AppConstants.spacing8),
-                  
                   DropdownButtonFormField<String>(
                     value: _reason,
                     decoration: InputDecoration(
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+                      ),
                     ),
                     items: const [
-                      DropdownMenuItem(value: 'Bottles broken', child: Text('Bottles broken')),
-                      DropdownMenuItem(value: 'Full delivery not completed', child: Text('Full delivery not completed')),
+                      DropdownMenuItem(value: 'Vehicle breakdown', child: Text('Vehicle breakdown')),
+                      DropdownMenuItem(value: 'DP sick / emergency', child: Text('DP sick / emergency')),
+                      DropdownMenuItem(value: 'Severe weather', child: Text('Severe weather')),
+                      DropdownMenuItem(value: 'Bottles broken', child: Text('Bottles broken in transit')),
                       DropdownMenuItem(value: 'Partial delivery completed', child: Text('Partial delivery completed')),
-                      DropdownMenuItem(value: 'Other', child: Text('Other')),
+                      DropdownMenuItem(value: 'Other', child: Text('Other (specify in notes)')),
                     ],
-                    onChanged: (val) {
-                      setState(() {
-                        _reason = val;
-                      });
-                    },
+                    onChanged: (value) => setState(() => _reason = value),
                   ),
                   
                   if (_reason == 'Bottles broken') ...[
                     const SizedBox(height: AppConstants.spacing16),
-                    _buildCounter(
-                      'Broken 1L Bottles',
-                      _brokenBottleCount1L,
-                      _ctrlBroken1L,
-                      (v) => setState(() => _brokenBottleCount1L = v),
-                      theme,
-                    ),
-                    const SizedBox(height: AppConstants.spacing8),
-                    _buildCounter(
-                      'Broken Half L Bottles',
-                      _brokenBottleCountHalfL,
-                      _ctrlBrokenHalfL,
-                      (v) => setState(() => _brokenBottleCountHalfL = v),
-                      theme,
-                    ),
+                    ...glassItems.map((item) {
+                      final broken = _valBroken[item.inventoryItemId] ?? 0;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: AppConstants.spacing12),
+                        child: _buildCounter(
+                          'Broken ${item.name}',
+                          broken,
+                          _ctrlBroken[item.inventoryItemId]!,
+                          (v) => setState(() => _valBroken[item.inventoryItemId] = v),
+                          theme,
+                        ),
+                      );
+                    }),
                   ],
-                  
+
                   if (_reason == 'Partial delivery completed') ...[
                     const SizedBox(height: AppConstants.spacing16),
                     Text(
-                      'Actually Delivered',
-                      style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                      'Actual Delivered Quantities',
+                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: AppConstants.spacing8),
-                    _buildCounter(
-                      '1L Bottles Delivered',
-                      _actualDelivered1L,
-                      _ctrlActual1L,
-                      (v) => setState(() => _actualDelivered1L = v),
-                      theme,
-                    ),
-                    const SizedBox(height: AppConstants.spacing16),
-                    _buildCounter(
-                      'Half L Bottles Delivered',
-                      _actualDeliveredHalfL,
-                      _ctrlActualHalfL,
-                      (v) => setState(() => _actualDeliveredHalfL = v),
-                      theme,
-                    ),
-                    const SizedBox(height: AppConstants.spacing16),
-                    _buildCounter(
-                      'Half L Packets Delivered',
-                      _actualDeliveredPacket,
-                      _ctrlActualPacket,
-                      (v) => setState(() => _actualDeliveredPacket = v),
-                      theme,
-                    ),
+                    ...widget.route.items.map((item) {
+                      final actual = _valActual[item.inventoryItemId] ?? 0;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: AppConstants.spacing12),
+                        child: _buildCounter(
+                          item.name,
+                          actual,
+                          _ctrlActual[item.inventoryItemId]!,
+                          (v) => setState(() => _valActual[item.inventoryItemId] = v),
+                          theme,
+                        ),
+                      );
+                    }),
                   ],
                   
-                  if (['Bottles broken', 'Other'].contains(_reason)) ...[
-                    const SizedBox(height: AppConstants.spacing16),
-                    TextField(
-                      controller: _ctrlNotes,
-                      maxLines: 3,
-                      decoration: InputDecoration(
-                        labelText: 'Notes',
-                        hintText: 'Enter details here...',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  const SizedBox(height: AppConstants.spacing16),
+                  TextField(
+                    controller: _ctrlNotes,
+                    decoration: InputDecoration(
+                      labelText: 'Notes',
+                      hintText: _reason == 'Other' ? 'Required for "Other" reason' : 'Optional details',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppConstants.cardRadius),
                       ),
                     ),
-                  ],
+                    maxLines: 2,
+                  ),
                 ],
-                
-                const SizedBox(height: AppConstants.spacing32),
               ],
             ),
           ),
           
-          Padding(
+          Container(
             padding: const EdgeInsets.all(AppConstants.spacing16),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, -5),
+                ),
+              ],
+            ),
             child: SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primary,
-                  foregroundColor: theme.colorScheme.onPrimary,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.cardRadius)),
-                ),
+              child: FilledButton(
                 onPressed: _handleSave,
-                child: const Text('Save Report', style: TextStyle(fontWeight: FontWeight.bold)),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+                  ),
+                ),
+                child: const Text('Save & Check Next', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ),
           ),

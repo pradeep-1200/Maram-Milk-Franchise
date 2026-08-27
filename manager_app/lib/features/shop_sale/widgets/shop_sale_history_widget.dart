@@ -31,9 +31,7 @@ class ShopSaleHistoryWidget extends ConsumerWidget {
       itemCount: state.salesHistory.length,
       itemBuilder: (context, index) {
         final sale = state.salesHistory[index];
-        final qty1L = sale['qty1LBottle'] as int? ?? 0;
-        final qtyHalfL = sale['qtyHalfLBottle'] as int? ?? 0;
-        final qtyPacket = sale['qtyHalfLPacket'] as int? ?? 0;
+        final items = sale['items'] as List? ?? [];
         
         final createdAt = DateTime.parse(sale['createdAt']).toLocal();
         final timeStr = DateFormat('h:mm a').format(createdAt);
@@ -79,26 +77,40 @@ class ShopSaleHistoryWidget extends ConsumerWidget {
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: [
-                    if (qty1L > 0)
-                      _ProductPill(
-                        text: '${qty1L}x 1L Bottle',
-                        bgColor: Colors.green.withAlpha(30),
-                        textColor: Colors.green.shade800,
-                      ),
-                    if (qtyHalfL > 0)
-                      _ProductPill(
-                        text: '${qtyHalfL}x 500ml Bottle',
-                        bgColor: Colors.blue.withAlpha(30),
-                        textColor: Colors.blue.shade800,
-                      ),
-                    if (qtyPacket > 0)
-                      _ProductPill(
-                        text: '${qtyPacket}x 500ml Packet',
-                        bgColor: Colors.orange.withAlpha(30),
-                        textColor: Colors.orange.shade800,
-                      ),
-                  ],
+                  children: items.map<Widget>((itemObj) {
+                    final item = itemObj['inventoryItem'];
+                    final qty = itemObj['quantity'] as int? ?? 0;
+                    if (qty <= 0) return const SizedBox.shrink();
+
+                    final title = item['name'] ?? '';
+                    final subtitle = '${item['material'] ?? ''} - ${item['unit'] ?? ''}';
+                    
+                    Color bgColor = theme.colorScheme.primaryContainer;
+                    Color textColor = theme.colorScheme.onPrimaryContainer;
+                    
+                    if (subtitle.contains('Bottle') && subtitle.contains('500ml')) {
+                      bgColor = Colors.blue.withAlpha(30);
+                      textColor = Colors.blue.shade800;
+                    } else if (subtitle.contains('Packet')) {
+                      bgColor = Colors.orange.withAlpha(30);
+                      textColor = Colors.orange.shade800;
+                    } else if (title.contains('Oil')) {
+                      bgColor = Colors.amber.withAlpha(30);
+                      textColor = Colors.amber.shade800;
+                    } else if (title.contains('Ghee')) {
+                      bgColor = Colors.brown.withAlpha(30);
+                      textColor = Colors.brown.shade800;
+                    } else if (subtitle.contains('Bottle') && subtitle.contains('1L')) {
+                      bgColor = Colors.green.withAlpha(30);
+                      textColor = Colors.green.shade800;
+                    }
+
+                    return _ProductPill(
+                      text: '${qty}x $title ($subtitle)',
+                      bgColor: bgColor,
+                      textColor: textColor,
+                    );
+                  }).toList(),
                 ),
               ],
             ),

@@ -1,32 +1,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class RouteMilkAllocation {
-  final int qty1LBottle;
-  final int qtyHalfLBottle;
-  final int qtyHalfLPacket;
+  final Map<String, int> items;
 
   const RouteMilkAllocation({
-    this.qty1LBottle = 0,
-    this.qtyHalfLBottle = 0,
-    this.qtyHalfLPacket = 0,
+    this.items = const {},
   });
 
   RouteMilkAllocation copyWith({
-    int? qty1LBottle,
-    int? qtyHalfLBottle,
-    int? qtyHalfLPacket,
+    Map<String, int>? items,
   }) {
     return RouteMilkAllocation(
-      qty1LBottle: qty1LBottle ?? this.qty1LBottle,
-      qtyHalfLBottle: qtyHalfLBottle ?? this.qtyHalfLBottle,
-      qtyHalfLPacket: qtyHalfLPacket ?? this.qtyHalfLPacket,
+      items: items ?? this.items,
     );
-  }
-
-  double get totalVolume {
-    return (qty1LBottle * 1.0) + 
-        (qtyHalfLBottle * 0.5) +
-        (qtyHalfLPacket * 0.5);
   }
 }
 
@@ -64,59 +50,32 @@ class MilkAllocationNotifier extends Notifier<MilkAllocationState> {
     state = state.copyWith(allocations: newAllocations);
   }
 
-  void initAllocation(String routeId, int initial1L, int initialHalfL, int initialHalfLPacket) {
+  void initAllocation(String routeId, Map<String, int> initialItems) {
     final newAllocations = Map<String, RouteMilkAllocation>.from(state.allocations);
-    newAllocations[routeId] = RouteMilkAllocation(qty1LBottle: initial1L, qtyHalfLBottle: initialHalfL, qtyHalfLPacket: initialHalfLPacket);
+    newAllocations[routeId] = RouteMilkAllocation(items: Map.from(initialItems));
     state = state.copyWith(allocations: newAllocations);
   }
 
-  void update1LBottle(String routeId, int diff, {int? maxLimit}) {
+  void updateItem(String routeId, String itemId, int diff, {int? maxLimit}) {
     _updateAllocation(routeId, (a) {
-      final newQty = a.qty1LBottle + diff;
+      final currentQty = a.items[itemId] ?? 0;
+      final newQty = currentQty + diff;
       if (newQty < 0) return a;
       if (maxLimit != null && newQty > maxLimit) return a;
-      return a.copyWith(qty1LBottle: newQty);
+      
+      final newItems = Map<String, int>.from(a.items);
+      newItems[itemId] = newQty;
+      return a.copyWith(items: newItems);
     });
   }
 
-  void set1LBottle(String routeId, int value, {int? maxLimit}) {
+  void setItem(String routeId, String itemId, int value, {int? maxLimit}) {
     _updateAllocation(routeId, (a) {
       final clamped = value < 0 ? 0 : (maxLimit != null && value > maxLimit ? maxLimit : value);
-      return a.copyWith(qty1LBottle: clamped);
-    });
-  }
-
-  void updateHalfLBottle(String routeId, int diff, {int? maxLimit}) {
-    final allocations = Map<String, RouteMilkAllocation>.from(state.allocations);
-    allocations.update(routeId, (a) {
-      final newQty = a.qtyHalfLBottle + diff;
-      if (newQty < 0 || (maxLimit != null && newQty > maxLimit)) return a;
-      return a.copyWith(qtyHalfLBottle: newQty);
-    }, ifAbsent: () => RouteMilkAllocation(qtyHalfLBottle: diff));
-    state = state.copyWith(allocations: allocations);
-  }
-
-  void setHalfLBottle(String routeId, int value, {int? maxLimit}) {
-    _updateAllocation(routeId, (a) {
-      final clamped = value < 0 ? 0 : (maxLimit != null && value > maxLimit ? maxLimit : value);
-      return a.copyWith(qtyHalfLBottle: clamped);
-    });
-  }
-
-  void updateHalfLPacket(String routeId, int diff, {int? maxLimit}) {
-    final allocations = Map<String, RouteMilkAllocation>.from(state.allocations);
-    allocations.update(routeId, (a) {
-      final newQty = a.qtyHalfLPacket + diff;
-      if (newQty < 0 || (maxLimit != null && newQty > maxLimit)) return a;
-      return a.copyWith(qtyHalfLPacket: newQty);
-    }, ifAbsent: () => RouteMilkAllocation(qtyHalfLPacket: diff));
-    state = state.copyWith(allocations: allocations);
-  }
-
-  void setHalfLPacket(String routeId, int value, {int? maxLimit}) {
-    _updateAllocation(routeId, (a) {
-      final clamped = value < 0 ? 0 : (maxLimit != null && value > maxLimit ? maxLimit : value);
-      return a.copyWith(qtyHalfLPacket: clamped);
+      
+      final newItems = Map<String, int>.from(a.items);
+      newItems[itemId] = clamped;
+      return a.copyWith(items: newItems);
     });
   }
 }

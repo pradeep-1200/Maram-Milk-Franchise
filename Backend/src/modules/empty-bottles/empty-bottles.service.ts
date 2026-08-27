@@ -6,6 +6,7 @@ const getPreviousEmptyBottleLog = async (dpId: string, date: string) => {
       dpId,
       date: { lt: date },
     },
+    include: { items: true },
     orderBy: { date: 'desc' },
   });
 };
@@ -17,21 +18,13 @@ export const getEmptyBottleStatus = async (date: string) => {
 
   const allocations = await prisma.routeAllocation.findMany({
     where: { date, status: { in: ['ASSIGNED', 'COMPLETED'] } },
-    include: { dp: true },
+    include: { dp: true, items: { include: { inventoryItem: true } } },
   });
 
   const emptyBottleLogs = await prisma.emptyBottleLog.findMany({
     where: { date },
+    include: { items: { include: { inventoryItem: true } } }
   });
-
-  const routeBalances = await prisma.routeEmptyBottleBalance.findMany();
-  const balanceMap = new Map();
-  for (const b of routeBalances) {
-    if (!balanceMap.has(b.routeId)) {
-      balanceMap.set(b.routeId, { '1L': 0, 'HalfL': 0 });
-    }
-    balanceMap.get(b.routeId)[b.bottleType] = b.balance;
-  }
 
   const logMap = new Map(emptyBottleLogs.map(l => [`${l.routeId}_${l.dpId}`, l]));
   const routeMap = new Map(routes.map(r => [r.id, r]));
@@ -51,15 +44,41 @@ export const getEmptyBottleStatus = async (date: string) => {
     if (!log) {
       previousLog = await getPreviousEmptyBottleLog(allocation.dpId, date);
     }
-    const carriedOver1L = log?.carriedOver1L ?? (previousLog?.outstanding1L ?? 0);
-    const carriedOverHalfL = log?.carriedOverHalfL ?? (previousLog?.outstandingHalfL ?? 0);
-    const carriedOverPacket = log?.carriedOverPacket ?? (previousLog?.outstandingPacket ?? 0);
 
-    const expected1L = carriedOver1L + (allocation.qty1LBottle || 0);
-    const expectedHalfL = carriedOverHalfL + (allocation.qtyHalfLBottle || 0);
-    const expectedPacket = carriedOverPacket + (allocation.qtyHalfLPacket || 0);
+    const itemsStatus = [];
+    let expectedEmptyBottles = 0;
 
-    const expectedEmptyBottles = expected1L + expectedHalfL;
+    for (const allocItem of allocation.items) {
+      const inventoryItem = allocItem.inventoryItem;
+      const logItem = log?.items.find(i => i.inventoryItemId === inventoryItem.id);
+      const prevLogItem = previousLog?.items.find(i => i.inventoryItemId === inventoryItem.id);
+
+      const carriedOver = logItem?.carriedOver ?? (prevLogItem?.outstanding ?? 0);
+      const expected = carriedOver + (allocItem.quantity || 0);
+
+      // Only milk bottles are expected to be returned empty. 
+      // The frontend uses "expectedEmptyBottles" for total UI count.
+      if (inventoryItem.section === 'Milk' && inventoryItem.material === 'Glass') {
+        expectedEmptyBottles += expected;
+      }
+
+      itemsStatus.push({
+        inventoryItemId: inventoryItem.id,
+        name: inventoryItem.name,
+        unit: inventoryItem.unit,
+        section: inventoryItem.section,
+        material: inventoryItem.material,
+        
+        carriedOver,
+        allocated: allocItem.quantity,
+        expected,
+        
+        actualDelivered: logItem?.actualDelivered ?? allocItem.quantity,
+        collected: logItem?.collected ?? 0,
+        broken: logItem?.broken ?? 0,
+        outstanding: logItem?.outstanding ?? 0
+      });
+    }
 
     statuses.push({
       routeId: route.id,
@@ -68,37 +87,20 @@ export const getEmptyBottleStatus = async (date: string) => {
       dpName: allocation.dp.name,
       deliveryCompleted: log?.deliveryCompleted || false,
       
-      oneLBottlesCollected: log?.oneLBottlesCollected || 0,
-      halfLBottlesCollected: log?.halfLBottlesCollected || 0,
-      halfLPacketCollected: log?.halfLPacketCollected || 0,
-      
-      expected1LBottles: expected1L,
-      expectedHalfLBottles: expectedHalfL,
-      expectedHalfLPacket: expectedPacket,
       expectedEmptyBottles,
-      
-      actualDelivered1L: log?.actualDelivered1L ?? (allocation.qty1LBottle || 0),
-      actualDeliveredHalfL: log?.actualDeliveredHalfL ?? (allocation.qtyHalfLBottle || 0),
-      actualDeliveredPacket: log?.actualDeliveredPacket ?? (allocation.qtyHalfLPacket || 0),
       
       flagIssue: log?.flagIssue || false,
       reason: log?.reason || null,
-      brokenBottleCount: log?.brokenBottleCount || null,
-      brokenBottleCount1L: log?.brokenBottleCount1L || null,
-      brokenBottleCountHalfL: log?.brokenBottleCountHalfL || null,
       notes: log?.notes || null,
       status: log?.deliveryCompleted ? 'Delivered' : 'Pending',
+
+      items: itemsStatus
     });
   }
 
   // Add unassigned routes
   for (const route of routes) {
     if (!processedRouteIds.has(route.id)) {
-      const balances = balanceMap.get(route.id) || { '1L': 0, 'HalfL': 0 };
-      const currentBalance1L = balances['1L'];
-      const currentBalanceHalfL = balances['HalfL'];
-      const expectedEmptyBottles = currentBalance1L + currentBalanceHalfL;
-
       statuses.push({
         routeId: route.id,
         routeName: route.name,
@@ -106,26 +108,13 @@ export const getEmptyBottleStatus = async (date: string) => {
         dpName: null,
         deliveryCompleted: false,
         
-        oneLBottlesCollected: 0,
-        halfLBottlesCollected: 0,
-        halfLPacketCollected: 0,
-        
-        expected1LBottles: currentBalance1L,
-        expectedHalfLBottles: currentBalanceHalfL,
-        expectedHalfLPacket: 0,
-        expectedEmptyBottles,
-        
-        actualDelivered1L: 0,
-        actualDeliveredHalfL: 0,
-        actualDeliveredPacket: 0,
+        expectedEmptyBottles: 0,
         
         flagIssue: false,
         reason: null,
-        brokenBottleCount: null,
-        brokenBottleCount1L: null,
-        brokenBottleCountHalfL: null,
         notes: null,
         status: 'Unassigned',
+        items: []
       });
     }
   }
@@ -145,23 +134,21 @@ export const updateEmptyBottleLog = async (
   date: string,
   data: { 
     deliveryCompleted: boolean; 
-    oneLBottlesCollected: number; 
-    halfLBottlesCollected: number; 
-    halfLPacketCollected: number;
-    actualDelivered1L: number;
-    actualDeliveredHalfL: number;
-    actualDeliveredPacket: number;
     flagIssue: boolean;
     reason?: string | null;
-    brokenBottleCount?: number | null;
-    brokenBottleCount1L?: number | null;
-    brokenBottleCountHalfL?: number | null;
     notes?: string | null;
+    items: {
+      inventoryItemId: string;
+      actualDelivered: number;
+      collected: number;
+      broken: number;
+    }[]
   }
 ) => {
   return await prisma.$transaction(async (tx) => {
     const allocation = await tx.routeAllocation.findUnique({
-      where: { routeId_dpId_date: { routeId, dpId, date } }
+      where: { routeId_dpId_date: { routeId, dpId, date } },
+      include: { items: true }
     });
 
     if (!allocation) {
@@ -169,138 +156,91 @@ export const updateEmptyBottleLog = async (
     }
 
     const existingLog = await tx.emptyBottleLog.findUnique({
-      where: { routeId_dpId_date: { routeId, dpId, date } }
+      where: { routeId_dpId_date: { routeId, dpId, date } },
+      include: { items: true }
     });
 
-    // Handle actual delivered logic for "Not Delivered" scenarios
-    let finalActualDelivered1L = data.actualDelivered1L;
-    let finalActualDeliveredHalfL = data.actualDeliveredHalfL;
-    let finalActualDeliveredPacket = data.actualDeliveredPacket;
-
-    if (!data.deliveryCompleted && data.reason !== 'Partial delivery completed') {
-      finalActualDelivered1L = 0;
-      finalActualDeliveredHalfL = 0;
-      finalActualDeliveredPacket = 0;
-    }
-
-    // Determine carried over from previous day
-    let carriedOver1L = 0;
-    let carriedOverHalfL = 0;
-    let carriedOverPacket = 0;
-
-    if (existingLog) {
-      carriedOver1L = existingLog.carriedOver1L ?? 0;
-      carriedOverHalfL = existingLog.carriedOverHalfL ?? 0;
-      carriedOverPacket = existingLog.carriedOverPacket ?? 0;
-    } else {
-      const previousLog = await tx.emptyBottleLog.findFirst({
+    let previousLog = null;
+    if (!existingLog) {
+      previousLog = await tx.emptyBottleLog.findFirst({
         where: { dpId, date: { lt: date } },
         orderBy: { date: 'desc' },
+        include: { items: true }
       });
-      carriedOver1L = previousLog?.outstanding1L ?? 0;
-      carriedOverHalfL = previousLog?.outstandingHalfL ?? 0;
-      carriedOverPacket = previousLog?.outstandingPacket ?? 0;
     }
 
-    const expected1L = carriedOver1L + finalActualDelivered1L;
-    const expectedHalfL = carriedOverHalfL + finalActualDeliveredHalfL;
-    const expectedPacket = carriedOverPacket + finalActualDeliveredPacket;
-
-    const outstanding1L = Math.max(0, expected1L - data.oneLBottlesCollected - (data.brokenBottleCount1L || 0));
-    const outstandingHalfL = Math.max(0, expectedHalfL - data.halfLBottlesCollected - (data.brokenBottleCountHalfL || 0));
-    const outstandingPacket = Math.max(0, expectedPacket - data.halfLPacketCollected);
-
-    // Calculate deltas for RouteEmptyBottleBalance update (to keep legacy aggregate up to date)
-    const oldCollected1L = existingLog?.oneLBottlesCollected || 0;
-    const oldBroken1L = existingLog?.brokenBottleCount1L || 0;
-    const newCollected1L = data.oneLBottlesCollected;
-    const newBroken1L = data.brokenBottleCount1L || 0;
-    const delta1L = (newCollected1L + newBroken1L) - (oldCollected1L + oldBroken1L);
-
-    const oldCollectedHalfL = existingLog?.halfLBottlesCollected || 0;
-    const oldBrokenHalfL = existingLog?.brokenBottleCountHalfL || 0;
-    const newCollectedHalfL = data.halfLBottlesCollected;
-    const newBrokenHalfL = data.brokenBottleCountHalfL || 0;
-    const deltaHalfL = (newCollectedHalfL + newBrokenHalfL) - (oldCollectedHalfL + oldBrokenHalfL);
-
-    if (delta1L !== 0) {
-      const current1L = await tx.routeEmptyBottleBalance.findUnique({
-        where: { routeId_bottleType: { routeId, bottleType: '1L' } }
-      });
-      if (current1L) {
-        await tx.routeEmptyBottleBalance.update({
-          where: { id: current1L.id },
-          data: { balance: current1L.balance - delta1L }
-        });
-      }
-    }
-
-    if (deltaHalfL !== 0) {
-      const currentHalfL = await tx.routeEmptyBottleBalance.findUnique({
-        where: { routeId_bottleType: { routeId, bottleType: 'HalfL' } }
-      });
-      if (currentHalfL) {
-        await tx.routeEmptyBottleBalance.update({
-          where: { id: currentHalfL.id },
-          data: { balance: currentHalfL.balance - deltaHalfL }
-        });
-      }
-    }
+    let logId = existingLog?.id;
 
     if (existingLog) {
       await tx.emptyBottleLog.update({
         where: { id: existingLog.id },
         data: {
           deliveryCompleted: data.deliveryCompleted,
-          oneLBottlesCollected: data.oneLBottlesCollected,
-          halfLBottlesCollected: data.halfLBottlesCollected,
-          halfLPacketCollected: data.halfLPacketCollected,
           flagIssue: data.flagIssue,
           reason: data.reason,
-          brokenBottleCount: data.brokenBottleCount,
-          brokenBottleCount1L: data.brokenBottleCount1L,
-          brokenBottleCountHalfL: data.brokenBottleCountHalfL,
           notes: data.notes,
-          actualDelivered1L: finalActualDelivered1L,
-          actualDeliveredHalfL: finalActualDeliveredHalfL,
-          actualDeliveredPacket: finalActualDeliveredPacket,
-          expected1L,
-          expectedHalfL,
-          expectedPacket,
-          outstanding1L,
-          outstandingHalfL,
-          outstandingPacket,
         },
       });
     } else {
-      await tx.emptyBottleLog.create({
+      const newLog = await tx.emptyBottleLog.create({
         data: {
           routeId,
           dpId,
           date,
           deliveryCompleted: data.deliveryCompleted,
-          oneLBottlesCollected: data.oneLBottlesCollected,
-          halfLBottlesCollected: data.halfLBottlesCollected,
-          halfLPacketCollected: data.halfLPacketCollected,
           flagIssue: data.flagIssue,
           reason: data.reason,
-          brokenBottleCount: data.brokenBottleCount,
-          brokenBottleCount1L: data.brokenBottleCount1L,
-          brokenBottleCountHalfL: data.brokenBottleCountHalfL,
           notes: data.notes,
-          actualDelivered1L: finalActualDelivered1L,
-          actualDeliveredHalfL: finalActualDeliveredHalfL,
-          actualDeliveredPacket: finalActualDeliveredPacket,
-          carriedOver1L,
-          carriedOverHalfL,
-          carriedOverPacket,
-          expected1L,
-          expectedHalfL,
-          expectedPacket,
-          outstanding1L,
-          outstandingHalfL,
-          outstandingPacket,
         },
+      });
+      logId = newLog.id;
+    }
+
+    for (const inputItem of data.items) {
+      const allocItem = allocation.items.find(i => i.inventoryItemId === inputItem.inventoryItemId);
+      if (!allocItem) continue;
+
+      let carriedOver = 0;
+      if (existingLog) {
+        const currentLogItem = existingLog.items.find(i => i.inventoryItemId === inputItem.inventoryItemId);
+        carriedOver = currentLogItem?.carriedOver ?? 0;
+      } else if (previousLog) {
+        const prevLogItem = previousLog.items.find(i => i.inventoryItemId === inputItem.inventoryItemId);
+        carriedOver = prevLogItem?.outstanding ?? 0;
+      }
+
+      let finalActualDelivered = inputItem.actualDelivered;
+      if (!data.deliveryCompleted && data.reason !== 'Partial delivery completed') {
+        finalActualDelivered = 0;
+      }
+
+      const expected = carriedOver + finalActualDelivered;
+      const outstanding = Math.max(0, expected - inputItem.collected - inputItem.broken);
+
+      await tx.emptyBottleLogItem.upsert({
+        where: {
+          emptyBottleLogId_inventoryItemId: {
+            emptyBottleLogId: logId!,
+            inventoryItemId: inputItem.inventoryItemId
+          }
+        },
+        update: {
+          actualDelivered: finalActualDelivered,
+          expected,
+          outstanding,
+          collected: inputItem.collected,
+          broken: inputItem.broken
+        },
+        create: {
+          emptyBottleLogId: logId!,
+          inventoryItemId: inputItem.inventoryItemId,
+          actualDelivered: finalActualDelivered,
+          carriedOver,
+          expected,
+          outstanding,
+          collected: inputItem.collected,
+          broken: inputItem.broken
+        }
       });
     }
 

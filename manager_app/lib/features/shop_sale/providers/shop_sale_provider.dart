@@ -92,18 +92,22 @@ class ShopSaleNotifier extends Notifier<ShopSaleState> {
     await loadHistory(period: 'custom', customDateRange: range);
   }
 
-  void updateQuantity(String unit, int qty) {
+  void updateQuantity(String inventoryItemId, int qty) {
     final newQuantities = Map<String, int>.from(state.currentQuantities);
-    newQuantities[unit] = qty;
+    newQuantities[inventoryItemId] = qty;
     state = state.copyWith(currentQuantities: newQuantities);
   }
 
   Future<void> submitSale() async {
-    final qty1L = state.currentQuantities['1L'] ?? 0;
-    final qtyHalfL = state.currentQuantities['500ml'] ?? 0;
-    final qtyHalfLPacket = state.currentQuantities['500ml_Packet'] ?? 0;
+    final items = state.currentQuantities.entries
+        .where((e) => e.value > 0)
+        .map((e) => {
+              'inventoryItemId': e.key,
+              'quantity': e.value,
+            })
+        .toList();
 
-    if (qty1L == 0 && qtyHalfL == 0 && qtyHalfLPacket == 0) return;
+    if (items.isEmpty) return;
 
     state = state.copyWith(isLoading: true, error: null);
     try {
@@ -112,9 +116,7 @@ class ShopSaleNotifier extends Notifier<ShopSaleState> {
         '/shop-sale',
         data: {
           'date': _getToday(),
-          'qty1LBottle': qty1L,
-          'qtyHalfLBottle': qtyHalfL,
-          'qtyHalfLPacket': qtyHalfLPacket,
+          'items': items,
         },
       );
       

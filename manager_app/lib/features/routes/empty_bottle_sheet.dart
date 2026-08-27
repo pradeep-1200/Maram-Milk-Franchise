@@ -20,17 +20,7 @@ class EmptyBottleSheet extends ConsumerWidget {
       orElse: () => throw Exception('Route not found'),
     );
     
-    // 1. The per-bottle-size Expected numbers (reused directly)
-    final expected1L = status.expected1LBottles;
-    final expectedHalfL = status.expectedHalfLBottles;
-
-    // 2. The saved collected counts from EmptyBottleLog
-    final collected1L = status.oneLBottlesCollected;
-    final collectedHalfL = status.halfLBottlesCollected;
-
-    // 3. Remaining = Expected - Collected
-    final remaining1L = expected1L - collected1L;
-    final remainingHalfL = expectedHalfL - collectedHalfL;
+    final glassItems = status.items.where((i) => i.material == 'Glass').toList();
 
     return Padding(
       padding: const EdgeInsets.only(
@@ -88,18 +78,20 @@ class EmptyBottleSheet extends ConsumerWidget {
           Text('Return Summary', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(height: AppConstants.spacing16),
           
-          _BottleSummaryCard(
-            title: '1L Bottles',
-            expected: expected1L,
-            collected: collected1L,
-            remaining: remaining1L,
-          ),
-          const SizedBox(height: AppConstants.spacing12),
-          _BottleSummaryCard(
-            title: 'Half L Bottles',
-            expected: expectedHalfL,
-            collected: collectedHalfL,
-            remaining: remainingHalfL,
+          Expanded(
+            child: ListView.separated(
+              itemCount: glassItems.length,
+              separatorBuilder: (context, index) => const SizedBox(height: AppConstants.spacing12),
+              itemBuilder: (context, index) {
+                final item = glassItems[index];
+                return _BottleSummaryCard(
+                  title: '${item.name} (${item.unit})',
+                  expected: item.expected,
+                  collected: item.collected,
+                  remaining: item.expected - item.collected,
+                );
+              },
+            ),
           ),
         ],
       ),

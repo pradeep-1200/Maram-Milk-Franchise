@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$RouteAllocation {
 
- String? get allocationId; String get dpId; String? get dpName; String? get dpPhotoUrl; double get dpPetrolBalance; double get litresAllocated; int get qty1LBottle; int get qtyHalfLBottle; int get qtyHalfLPacket; int? get petrolAllowanceGiven; bool get isPetrolAllowanceComplete; String get status; bool? get deliveryCompleted; int? get emptyBottles1L; int? get emptyBottlesHalfL; bool get hasBottleReturnFlag; String? get bottleReturnNote;
+ String? get allocationId; String get dpId; String? get dpName; String? get dpPhotoUrl; double get dpPetrolBalance; double get litresAllocated; Map<String, int> get items; int? get petrolAllowanceGiven; bool get isPetrolAllowanceComplete; String get status; bool? get deliveryCompleted; int? get emptyBottles1L; int? get emptyBottlesHalfL; bool get hasBottleReturnFlag; String? get bottleReturnNote;
 /// Create a copy of RouteAllocation
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $RouteAllocationCopyWith<RouteAllocation> get copyWith => _$RouteAllocationCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RouteAllocation&&(identical(other.allocationId, allocationId) || other.allocationId == allocationId)&&(identical(other.dpId, dpId) || other.dpId == dpId)&&(identical(other.dpName, dpName) || other.dpName == dpName)&&(identical(other.dpPhotoUrl, dpPhotoUrl) || other.dpPhotoUrl == dpPhotoUrl)&&(identical(other.dpPetrolBalance, dpPetrolBalance) || other.dpPetrolBalance == dpPetrolBalance)&&(identical(other.litresAllocated, litresAllocated) || other.litresAllocated == litresAllocated)&&(identical(other.qty1LBottle, qty1LBottle) || other.qty1LBottle == qty1LBottle)&&(identical(other.qtyHalfLBottle, qtyHalfLBottle) || other.qtyHalfLBottle == qtyHalfLBottle)&&(identical(other.qtyHalfLPacket, qtyHalfLPacket) || other.qtyHalfLPacket == qtyHalfLPacket)&&(identical(other.petrolAllowanceGiven, petrolAllowanceGiven) || other.petrolAllowanceGiven == petrolAllowanceGiven)&&(identical(other.isPetrolAllowanceComplete, isPetrolAllowanceComplete) || other.isPetrolAllowanceComplete == isPetrolAllowanceComplete)&&(identical(other.status, status) || other.status == status)&&(identical(other.deliveryCompleted, deliveryCompleted) || other.deliveryCompleted == deliveryCompleted)&&(identical(other.emptyBottles1L, emptyBottles1L) || other.emptyBottles1L == emptyBottles1L)&&(identical(other.emptyBottlesHalfL, emptyBottlesHalfL) || other.emptyBottlesHalfL == emptyBottlesHalfL)&&(identical(other.hasBottleReturnFlag, hasBottleReturnFlag) || other.hasBottleReturnFlag == hasBottleReturnFlag)&&(identical(other.bottleReturnNote, bottleReturnNote) || other.bottleReturnNote == bottleReturnNote));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RouteAllocation&&(identical(other.allocationId, allocationId) || other.allocationId == allocationId)&&(identical(other.dpId, dpId) || other.dpId == dpId)&&(identical(other.dpName, dpName) || other.dpName == dpName)&&(identical(other.dpPhotoUrl, dpPhotoUrl) || other.dpPhotoUrl == dpPhotoUrl)&&(identical(other.dpPetrolBalance, dpPetrolBalance) || other.dpPetrolBalance == dpPetrolBalance)&&(identical(other.litresAllocated, litresAllocated) || other.litresAllocated == litresAllocated)&&const DeepCollectionEquality().equals(other.items, items)&&(identical(other.petrolAllowanceGiven, petrolAllowanceGiven) || other.petrolAllowanceGiven == petrolAllowanceGiven)&&(identical(other.isPetrolAllowanceComplete, isPetrolAllowanceComplete) || other.isPetrolAllowanceComplete == isPetrolAllowanceComplete)&&(identical(other.status, status) || other.status == status)&&(identical(other.deliveryCompleted, deliveryCompleted) || other.deliveryCompleted == deliveryCompleted)&&(identical(other.emptyBottles1L, emptyBottles1L) || other.emptyBottles1L == emptyBottles1L)&&(identical(other.emptyBottlesHalfL, emptyBottlesHalfL) || other.emptyBottlesHalfL == emptyBottlesHalfL)&&(identical(other.hasBottleReturnFlag, hasBottleReturnFlag) || other.hasBottleReturnFlag == hasBottleReturnFlag)&&(identical(other.bottleReturnNote, bottleReturnNote) || other.bottleReturnNote == bottleReturnNote));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,allocationId,dpId,dpName,dpPhotoUrl,dpPetrolBalance,litresAllocated,qty1LBottle,qtyHalfLBottle,qtyHalfLPacket,petrolAllowanceGiven,isPetrolAllowanceComplete,status,deliveryCompleted,emptyBottles1L,emptyBottlesHalfL,hasBottleReturnFlag,bottleReturnNote);
+int get hashCode => Object.hash(runtimeType,allocationId,dpId,dpName,dpPhotoUrl,dpPetrolBalance,litresAllocated,const DeepCollectionEquality().hash(items),petrolAllowanceGiven,isPetrolAllowanceComplete,status,deliveryCompleted,emptyBottles1L,emptyBottlesHalfL,hasBottleReturnFlag,bottleReturnNote);
 
 @override
 String toString() {
-  return 'RouteAllocation(allocationId: $allocationId, dpId: $dpId, dpName: $dpName, dpPhotoUrl: $dpPhotoUrl, dpPetrolBalance: $dpPetrolBalance, litresAllocated: $litresAllocated, qty1LBottle: $qty1LBottle, qtyHalfLBottle: $qtyHalfLBottle, qtyHalfLPacket: $qtyHalfLPacket, petrolAllowanceGiven: $petrolAllowanceGiven, isPetrolAllowanceComplete: $isPetrolAllowanceComplete, status: $status, deliveryCompleted: $deliveryCompleted, emptyBottles1L: $emptyBottles1L, emptyBottlesHalfL: $emptyBottlesHalfL, hasBottleReturnFlag: $hasBottleReturnFlag, bottleReturnNote: $bottleReturnNote)';
+  return 'RouteAllocation(allocationId: $allocationId, dpId: $dpId, dpName: $dpName, dpPhotoUrl: $dpPhotoUrl, dpPetrolBalance: $dpPetrolBalance, litresAllocated: $litresAllocated, items: $items, petrolAllowanceGiven: $petrolAllowanceGiven, isPetrolAllowanceComplete: $isPetrolAllowanceComplete, status: $status, deliveryCompleted: $deliveryCompleted, emptyBottles1L: $emptyBottles1L, emptyBottlesHalfL: $emptyBottlesHalfL, hasBottleReturnFlag: $hasBottleReturnFlag, bottleReturnNote: $bottleReturnNote)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $RouteAllocationCopyWith<$Res>  {
   factory $RouteAllocationCopyWith(RouteAllocation value, $Res Function(RouteAllocation) _then) = _$RouteAllocationCopyWithImpl;
 @useResult
 $Res call({
- String? allocationId, String dpId, String? dpName, String? dpPhotoUrl, double dpPetrolBalance, double litresAllocated, int qty1LBottle, int qtyHalfLBottle, int qtyHalfLPacket, int? petrolAllowanceGiven, bool isPetrolAllowanceComplete, String status, bool? deliveryCompleted, int? emptyBottles1L, int? emptyBottlesHalfL, bool hasBottleReturnFlag, String? bottleReturnNote
+ String? allocationId, String dpId, String? dpName, String? dpPhotoUrl, double dpPetrolBalance, double litresAllocated, Map<String, int> items, int? petrolAllowanceGiven, bool isPetrolAllowanceComplete, String status, bool? deliveryCompleted, int? emptyBottles1L, int? emptyBottlesHalfL, bool hasBottleReturnFlag, String? bottleReturnNote
 });
 
 
@@ -65,7 +65,7 @@ class _$RouteAllocationCopyWithImpl<$Res>
 
 /// Create a copy of RouteAllocation
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? allocationId = freezed,Object? dpId = null,Object? dpName = freezed,Object? dpPhotoUrl = freezed,Object? dpPetrolBalance = null,Object? litresAllocated = null,Object? qty1LBottle = null,Object? qtyHalfLBottle = null,Object? qtyHalfLPacket = null,Object? petrolAllowanceGiven = freezed,Object? isPetrolAllowanceComplete = null,Object? status = null,Object? deliveryCompleted = freezed,Object? emptyBottles1L = freezed,Object? emptyBottlesHalfL = freezed,Object? hasBottleReturnFlag = null,Object? bottleReturnNote = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? allocationId = freezed,Object? dpId = null,Object? dpName = freezed,Object? dpPhotoUrl = freezed,Object? dpPetrolBalance = null,Object? litresAllocated = null,Object? items = null,Object? petrolAllowanceGiven = freezed,Object? isPetrolAllowanceComplete = null,Object? status = null,Object? deliveryCompleted = freezed,Object? emptyBottles1L = freezed,Object? emptyBottlesHalfL = freezed,Object? hasBottleReturnFlag = null,Object? bottleReturnNote = freezed,}) {
   return _then(_self.copyWith(
 allocationId: freezed == allocationId ? _self.allocationId : allocationId // ignore: cast_nullable_to_non_nullable
 as String?,dpId: null == dpId ? _self.dpId : dpId // ignore: cast_nullable_to_non_nullable
@@ -73,10 +73,8 @@ as String,dpName: freezed == dpName ? _self.dpName : dpName // ignore: cast_null
 as String?,dpPhotoUrl: freezed == dpPhotoUrl ? _self.dpPhotoUrl : dpPhotoUrl // ignore: cast_nullable_to_non_nullable
 as String?,dpPetrolBalance: null == dpPetrolBalance ? _self.dpPetrolBalance : dpPetrolBalance // ignore: cast_nullable_to_non_nullable
 as double,litresAllocated: null == litresAllocated ? _self.litresAllocated : litresAllocated // ignore: cast_nullable_to_non_nullable
-as double,qty1LBottle: null == qty1LBottle ? _self.qty1LBottle : qty1LBottle // ignore: cast_nullable_to_non_nullable
-as int,qtyHalfLBottle: null == qtyHalfLBottle ? _self.qtyHalfLBottle : qtyHalfLBottle // ignore: cast_nullable_to_non_nullable
-as int,qtyHalfLPacket: null == qtyHalfLPacket ? _self.qtyHalfLPacket : qtyHalfLPacket // ignore: cast_nullable_to_non_nullable
-as int,petrolAllowanceGiven: freezed == petrolAllowanceGiven ? _self.petrolAllowanceGiven : petrolAllowanceGiven // ignore: cast_nullable_to_non_nullable
+as double,items: null == items ? _self.items : items // ignore: cast_nullable_to_non_nullable
+as Map<String, int>,petrolAllowanceGiven: freezed == petrolAllowanceGiven ? _self.petrolAllowanceGiven : petrolAllowanceGiven // ignore: cast_nullable_to_non_nullable
 as int?,isPetrolAllowanceComplete: null == isPetrolAllowanceComplete ? _self.isPetrolAllowanceComplete : isPetrolAllowanceComplete // ignore: cast_nullable_to_non_nullable
 as bool,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as String,deliveryCompleted: freezed == deliveryCompleted ? _self.deliveryCompleted : deliveryCompleted // ignore: cast_nullable_to_non_nullable
@@ -169,10 +167,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? allocationId,  String dpId,  String? dpName,  String? dpPhotoUrl,  double dpPetrolBalance,  double litresAllocated,  int qty1LBottle,  int qtyHalfLBottle,  int qtyHalfLPacket,  int? petrolAllowanceGiven,  bool isPetrolAllowanceComplete,  String status,  bool? deliveryCompleted,  int? emptyBottles1L,  int? emptyBottlesHalfL,  bool hasBottleReturnFlag,  String? bottleReturnNote)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? allocationId,  String dpId,  String? dpName,  String? dpPhotoUrl,  double dpPetrolBalance,  double litresAllocated,  Map<String, int> items,  int? petrolAllowanceGiven,  bool isPetrolAllowanceComplete,  String status,  bool? deliveryCompleted,  int? emptyBottles1L,  int? emptyBottlesHalfL,  bool hasBottleReturnFlag,  String? bottleReturnNote)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _RouteAllocation() when $default != null:
-return $default(_that.allocationId,_that.dpId,_that.dpName,_that.dpPhotoUrl,_that.dpPetrolBalance,_that.litresAllocated,_that.qty1LBottle,_that.qtyHalfLBottle,_that.qtyHalfLPacket,_that.petrolAllowanceGiven,_that.isPetrolAllowanceComplete,_that.status,_that.deliveryCompleted,_that.emptyBottles1L,_that.emptyBottlesHalfL,_that.hasBottleReturnFlag,_that.bottleReturnNote);case _:
+return $default(_that.allocationId,_that.dpId,_that.dpName,_that.dpPhotoUrl,_that.dpPetrolBalance,_that.litresAllocated,_that.items,_that.petrolAllowanceGiven,_that.isPetrolAllowanceComplete,_that.status,_that.deliveryCompleted,_that.emptyBottles1L,_that.emptyBottlesHalfL,_that.hasBottleReturnFlag,_that.bottleReturnNote);case _:
   return orElse();
 
 }
@@ -190,10 +188,10 @@ return $default(_that.allocationId,_that.dpId,_that.dpName,_that.dpPhotoUrl,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? allocationId,  String dpId,  String? dpName,  String? dpPhotoUrl,  double dpPetrolBalance,  double litresAllocated,  int qty1LBottle,  int qtyHalfLBottle,  int qtyHalfLPacket,  int? petrolAllowanceGiven,  bool isPetrolAllowanceComplete,  String status,  bool? deliveryCompleted,  int? emptyBottles1L,  int? emptyBottlesHalfL,  bool hasBottleReturnFlag,  String? bottleReturnNote)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? allocationId,  String dpId,  String? dpName,  String? dpPhotoUrl,  double dpPetrolBalance,  double litresAllocated,  Map<String, int> items,  int? petrolAllowanceGiven,  bool isPetrolAllowanceComplete,  String status,  bool? deliveryCompleted,  int? emptyBottles1L,  int? emptyBottlesHalfL,  bool hasBottleReturnFlag,  String? bottleReturnNote)  $default,) {final _that = this;
 switch (_that) {
 case _RouteAllocation():
-return $default(_that.allocationId,_that.dpId,_that.dpName,_that.dpPhotoUrl,_that.dpPetrolBalance,_that.litresAllocated,_that.qty1LBottle,_that.qtyHalfLBottle,_that.qtyHalfLPacket,_that.petrolAllowanceGiven,_that.isPetrolAllowanceComplete,_that.status,_that.deliveryCompleted,_that.emptyBottles1L,_that.emptyBottlesHalfL,_that.hasBottleReturnFlag,_that.bottleReturnNote);case _:
+return $default(_that.allocationId,_that.dpId,_that.dpName,_that.dpPhotoUrl,_that.dpPetrolBalance,_that.litresAllocated,_that.items,_that.petrolAllowanceGiven,_that.isPetrolAllowanceComplete,_that.status,_that.deliveryCompleted,_that.emptyBottles1L,_that.emptyBottlesHalfL,_that.hasBottleReturnFlag,_that.bottleReturnNote);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -210,10 +208,10 @@ return $default(_that.allocationId,_that.dpId,_that.dpName,_that.dpPhotoUrl,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? allocationId,  String dpId,  String? dpName,  String? dpPhotoUrl,  double dpPetrolBalance,  double litresAllocated,  int qty1LBottle,  int qtyHalfLBottle,  int qtyHalfLPacket,  int? petrolAllowanceGiven,  bool isPetrolAllowanceComplete,  String status,  bool? deliveryCompleted,  int? emptyBottles1L,  int? emptyBottlesHalfL,  bool hasBottleReturnFlag,  String? bottleReturnNote)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? allocationId,  String dpId,  String? dpName,  String? dpPhotoUrl,  double dpPetrolBalance,  double litresAllocated,  Map<String, int> items,  int? petrolAllowanceGiven,  bool isPetrolAllowanceComplete,  String status,  bool? deliveryCompleted,  int? emptyBottles1L,  int? emptyBottlesHalfL,  bool hasBottleReturnFlag,  String? bottleReturnNote)?  $default,) {final _that = this;
 switch (_that) {
 case _RouteAllocation() when $default != null:
-return $default(_that.allocationId,_that.dpId,_that.dpName,_that.dpPhotoUrl,_that.dpPetrolBalance,_that.litresAllocated,_that.qty1LBottle,_that.qtyHalfLBottle,_that.qtyHalfLPacket,_that.petrolAllowanceGiven,_that.isPetrolAllowanceComplete,_that.status,_that.deliveryCompleted,_that.emptyBottles1L,_that.emptyBottlesHalfL,_that.hasBottleReturnFlag,_that.bottleReturnNote);case _:
+return $default(_that.allocationId,_that.dpId,_that.dpName,_that.dpPhotoUrl,_that.dpPetrolBalance,_that.litresAllocated,_that.items,_that.petrolAllowanceGiven,_that.isPetrolAllowanceComplete,_that.status,_that.deliveryCompleted,_that.emptyBottles1L,_that.emptyBottlesHalfL,_that.hasBottleReturnFlag,_that.bottleReturnNote);case _:
   return null;
 
 }
@@ -225,7 +223,7 @@ return $default(_that.allocationId,_that.dpId,_that.dpName,_that.dpPhotoUrl,_tha
 @JsonSerializable()
 
 class _RouteAllocation implements RouteAllocation {
-  const _RouteAllocation({this.allocationId, required this.dpId, this.dpName, this.dpPhotoUrl, this.dpPetrolBalance = 0.0, this.litresAllocated = 0.0, this.qty1LBottle = 0, this.qtyHalfLBottle = 0, this.qtyHalfLPacket = 0, this.petrolAllowanceGiven, this.isPetrolAllowanceComplete = false, this.status = 'ASSIGNED', this.deliveryCompleted, this.emptyBottles1L, this.emptyBottlesHalfL, this.hasBottleReturnFlag = false, this.bottleReturnNote});
+  const _RouteAllocation({this.allocationId, required this.dpId, this.dpName, this.dpPhotoUrl, this.dpPetrolBalance = 0.0, this.litresAllocated = 0.0, final  Map<String, int> items = const {}, this.petrolAllowanceGiven, this.isPetrolAllowanceComplete = false, this.status = 'ASSIGNED', this.deliveryCompleted, this.emptyBottles1L, this.emptyBottlesHalfL, this.hasBottleReturnFlag = false, this.bottleReturnNote}): _items = items;
   factory _RouteAllocation.fromJson(Map<String, dynamic> json) => _$RouteAllocationFromJson(json);
 
 @override final  String? allocationId;
@@ -234,9 +232,13 @@ class _RouteAllocation implements RouteAllocation {
 @override final  String? dpPhotoUrl;
 @override@JsonKey() final  double dpPetrolBalance;
 @override@JsonKey() final  double litresAllocated;
-@override@JsonKey() final  int qty1LBottle;
-@override@JsonKey() final  int qtyHalfLBottle;
-@override@JsonKey() final  int qtyHalfLPacket;
+ final  Map<String, int> _items;
+@override@JsonKey() Map<String, int> get items {
+  if (_items is EqualUnmodifiableMapView) return _items;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableMapView(_items);
+}
+
 @override final  int? petrolAllowanceGiven;
 @override@JsonKey() final  bool isPetrolAllowanceComplete;
 @override@JsonKey() final  String status;
@@ -259,16 +261,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RouteAllocation&&(identical(other.allocationId, allocationId) || other.allocationId == allocationId)&&(identical(other.dpId, dpId) || other.dpId == dpId)&&(identical(other.dpName, dpName) || other.dpName == dpName)&&(identical(other.dpPhotoUrl, dpPhotoUrl) || other.dpPhotoUrl == dpPhotoUrl)&&(identical(other.dpPetrolBalance, dpPetrolBalance) || other.dpPetrolBalance == dpPetrolBalance)&&(identical(other.litresAllocated, litresAllocated) || other.litresAllocated == litresAllocated)&&(identical(other.qty1LBottle, qty1LBottle) || other.qty1LBottle == qty1LBottle)&&(identical(other.qtyHalfLBottle, qtyHalfLBottle) || other.qtyHalfLBottle == qtyHalfLBottle)&&(identical(other.qtyHalfLPacket, qtyHalfLPacket) || other.qtyHalfLPacket == qtyHalfLPacket)&&(identical(other.petrolAllowanceGiven, petrolAllowanceGiven) || other.petrolAllowanceGiven == petrolAllowanceGiven)&&(identical(other.isPetrolAllowanceComplete, isPetrolAllowanceComplete) || other.isPetrolAllowanceComplete == isPetrolAllowanceComplete)&&(identical(other.status, status) || other.status == status)&&(identical(other.deliveryCompleted, deliveryCompleted) || other.deliveryCompleted == deliveryCompleted)&&(identical(other.emptyBottles1L, emptyBottles1L) || other.emptyBottles1L == emptyBottles1L)&&(identical(other.emptyBottlesHalfL, emptyBottlesHalfL) || other.emptyBottlesHalfL == emptyBottlesHalfL)&&(identical(other.hasBottleReturnFlag, hasBottleReturnFlag) || other.hasBottleReturnFlag == hasBottleReturnFlag)&&(identical(other.bottleReturnNote, bottleReturnNote) || other.bottleReturnNote == bottleReturnNote));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RouteAllocation&&(identical(other.allocationId, allocationId) || other.allocationId == allocationId)&&(identical(other.dpId, dpId) || other.dpId == dpId)&&(identical(other.dpName, dpName) || other.dpName == dpName)&&(identical(other.dpPhotoUrl, dpPhotoUrl) || other.dpPhotoUrl == dpPhotoUrl)&&(identical(other.dpPetrolBalance, dpPetrolBalance) || other.dpPetrolBalance == dpPetrolBalance)&&(identical(other.litresAllocated, litresAllocated) || other.litresAllocated == litresAllocated)&&const DeepCollectionEquality().equals(other._items, _items)&&(identical(other.petrolAllowanceGiven, petrolAllowanceGiven) || other.petrolAllowanceGiven == petrolAllowanceGiven)&&(identical(other.isPetrolAllowanceComplete, isPetrolAllowanceComplete) || other.isPetrolAllowanceComplete == isPetrolAllowanceComplete)&&(identical(other.status, status) || other.status == status)&&(identical(other.deliveryCompleted, deliveryCompleted) || other.deliveryCompleted == deliveryCompleted)&&(identical(other.emptyBottles1L, emptyBottles1L) || other.emptyBottles1L == emptyBottles1L)&&(identical(other.emptyBottlesHalfL, emptyBottlesHalfL) || other.emptyBottlesHalfL == emptyBottlesHalfL)&&(identical(other.hasBottleReturnFlag, hasBottleReturnFlag) || other.hasBottleReturnFlag == hasBottleReturnFlag)&&(identical(other.bottleReturnNote, bottleReturnNote) || other.bottleReturnNote == bottleReturnNote));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,allocationId,dpId,dpName,dpPhotoUrl,dpPetrolBalance,litresAllocated,qty1LBottle,qtyHalfLBottle,qtyHalfLPacket,petrolAllowanceGiven,isPetrolAllowanceComplete,status,deliveryCompleted,emptyBottles1L,emptyBottlesHalfL,hasBottleReturnFlag,bottleReturnNote);
+int get hashCode => Object.hash(runtimeType,allocationId,dpId,dpName,dpPhotoUrl,dpPetrolBalance,litresAllocated,const DeepCollectionEquality().hash(_items),petrolAllowanceGiven,isPetrolAllowanceComplete,status,deliveryCompleted,emptyBottles1L,emptyBottlesHalfL,hasBottleReturnFlag,bottleReturnNote);
 
 @override
 String toString() {
-  return 'RouteAllocation(allocationId: $allocationId, dpId: $dpId, dpName: $dpName, dpPhotoUrl: $dpPhotoUrl, dpPetrolBalance: $dpPetrolBalance, litresAllocated: $litresAllocated, qty1LBottle: $qty1LBottle, qtyHalfLBottle: $qtyHalfLBottle, qtyHalfLPacket: $qtyHalfLPacket, petrolAllowanceGiven: $petrolAllowanceGiven, isPetrolAllowanceComplete: $isPetrolAllowanceComplete, status: $status, deliveryCompleted: $deliveryCompleted, emptyBottles1L: $emptyBottles1L, emptyBottlesHalfL: $emptyBottlesHalfL, hasBottleReturnFlag: $hasBottleReturnFlag, bottleReturnNote: $bottleReturnNote)';
+  return 'RouteAllocation(allocationId: $allocationId, dpId: $dpId, dpName: $dpName, dpPhotoUrl: $dpPhotoUrl, dpPetrolBalance: $dpPetrolBalance, litresAllocated: $litresAllocated, items: $items, petrolAllowanceGiven: $petrolAllowanceGiven, isPetrolAllowanceComplete: $isPetrolAllowanceComplete, status: $status, deliveryCompleted: $deliveryCompleted, emptyBottles1L: $emptyBottles1L, emptyBottlesHalfL: $emptyBottlesHalfL, hasBottleReturnFlag: $hasBottleReturnFlag, bottleReturnNote: $bottleReturnNote)';
 }
 
 
@@ -279,7 +281,7 @@ abstract mixin class _$RouteAllocationCopyWith<$Res> implements $RouteAllocation
   factory _$RouteAllocationCopyWith(_RouteAllocation value, $Res Function(_RouteAllocation) _then) = __$RouteAllocationCopyWithImpl;
 @override @useResult
 $Res call({
- String? allocationId, String dpId, String? dpName, String? dpPhotoUrl, double dpPetrolBalance, double litresAllocated, int qty1LBottle, int qtyHalfLBottle, int qtyHalfLPacket, int? petrolAllowanceGiven, bool isPetrolAllowanceComplete, String status, bool? deliveryCompleted, int? emptyBottles1L, int? emptyBottlesHalfL, bool hasBottleReturnFlag, String? bottleReturnNote
+ String? allocationId, String dpId, String? dpName, String? dpPhotoUrl, double dpPetrolBalance, double litresAllocated, Map<String, int> items, int? petrolAllowanceGiven, bool isPetrolAllowanceComplete, String status, bool? deliveryCompleted, int? emptyBottles1L, int? emptyBottlesHalfL, bool hasBottleReturnFlag, String? bottleReturnNote
 });
 
 
@@ -296,7 +298,7 @@ class __$RouteAllocationCopyWithImpl<$Res>
 
 /// Create a copy of RouteAllocation
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? allocationId = freezed,Object? dpId = null,Object? dpName = freezed,Object? dpPhotoUrl = freezed,Object? dpPetrolBalance = null,Object? litresAllocated = null,Object? qty1LBottle = null,Object? qtyHalfLBottle = null,Object? qtyHalfLPacket = null,Object? petrolAllowanceGiven = freezed,Object? isPetrolAllowanceComplete = null,Object? status = null,Object? deliveryCompleted = freezed,Object? emptyBottles1L = freezed,Object? emptyBottlesHalfL = freezed,Object? hasBottleReturnFlag = null,Object? bottleReturnNote = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? allocationId = freezed,Object? dpId = null,Object? dpName = freezed,Object? dpPhotoUrl = freezed,Object? dpPetrolBalance = null,Object? litresAllocated = null,Object? items = null,Object? petrolAllowanceGiven = freezed,Object? isPetrolAllowanceComplete = null,Object? status = null,Object? deliveryCompleted = freezed,Object? emptyBottles1L = freezed,Object? emptyBottlesHalfL = freezed,Object? hasBottleReturnFlag = null,Object? bottleReturnNote = freezed,}) {
   return _then(_RouteAllocation(
 allocationId: freezed == allocationId ? _self.allocationId : allocationId // ignore: cast_nullable_to_non_nullable
 as String?,dpId: null == dpId ? _self.dpId : dpId // ignore: cast_nullable_to_non_nullable
@@ -304,10 +306,8 @@ as String,dpName: freezed == dpName ? _self.dpName : dpName // ignore: cast_null
 as String?,dpPhotoUrl: freezed == dpPhotoUrl ? _self.dpPhotoUrl : dpPhotoUrl // ignore: cast_nullable_to_non_nullable
 as String?,dpPetrolBalance: null == dpPetrolBalance ? _self.dpPetrolBalance : dpPetrolBalance // ignore: cast_nullable_to_non_nullable
 as double,litresAllocated: null == litresAllocated ? _self.litresAllocated : litresAllocated // ignore: cast_nullable_to_non_nullable
-as double,qty1LBottle: null == qty1LBottle ? _self.qty1LBottle : qty1LBottle // ignore: cast_nullable_to_non_nullable
-as int,qtyHalfLBottle: null == qtyHalfLBottle ? _self.qtyHalfLBottle : qtyHalfLBottle // ignore: cast_nullable_to_non_nullable
-as int,qtyHalfLPacket: null == qtyHalfLPacket ? _self.qtyHalfLPacket : qtyHalfLPacket // ignore: cast_nullable_to_non_nullable
-as int,petrolAllowanceGiven: freezed == petrolAllowanceGiven ? _self.petrolAllowanceGiven : petrolAllowanceGiven // ignore: cast_nullable_to_non_nullable
+as double,items: null == items ? _self._items : items // ignore: cast_nullable_to_non_nullable
+as Map<String, int>,petrolAllowanceGiven: freezed == petrolAllowanceGiven ? _self.petrolAllowanceGiven : petrolAllowanceGiven // ignore: cast_nullable_to_non_nullable
 as int?,isPetrolAllowanceComplete: null == isPetrolAllowanceComplete ? _self.isPetrolAllowanceComplete : isPetrolAllowanceComplete // ignore: cast_nullable_to_non_nullable
 as bool,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as String,deliveryCompleted: freezed == deliveryCompleted ? _self.deliveryCompleted : deliveryCompleted // ignore: cast_nullable_to_non_nullable

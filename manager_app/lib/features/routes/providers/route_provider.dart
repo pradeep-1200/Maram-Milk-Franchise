@@ -87,7 +87,7 @@ class RouteNotifier extends AsyncNotifier<RouteState> {
     }
   }
 
-  Future<void> assignRoute(String routeId, String dpId, String dpName, double litresAllocated, {int? qty1LBottle, int? qtyHalfLBottle, int? qtyHalfLPacket, int? petrolAllowanceGiven}) async {
+  Future<void> assignRoute(String routeId, String dpId, String dpName, double litresAllocated, {Map<String, int>? items, int? petrolAllowanceGiven}) async {
     final dio = ref.read(apiClientProvider);
     final date = _getLocalToday();
 
@@ -104,9 +104,7 @@ class RouteNotifier extends AsyncNotifier<RouteState> {
           'dpId': dpId,
           'litresAllocated': litresAllocated,
           'status': 'ASSIGNED',
-          if (qty1LBottle != null) 'qty1LBottle': qty1LBottle,
-          if (qtyHalfLBottle != null) 'qtyHalfLBottle': qtyHalfLBottle,
-          if (qtyHalfLPacket != null) 'qtyHalfLPacket': qtyHalfLPacket,
+          'items': items ?? {},
           if (petrolAllowanceGiven != null) 'petrolAllowanceGiven': petrolAllowanceGiven,
         },
       );
@@ -124,7 +122,7 @@ class RouteNotifier extends AsyncNotifier<RouteState> {
     }
   }
 
-  Future<void> updateRouteAllocationLitres(String routeId, String dpId, double litresAllocated, {int? qty1LBottle, int? qtyHalfLBottle, int? qtyHalfLPacket, int? petrolAllowanceGiven}) async {
+  Future<void> updateRouteAllocationLitres(String routeId, String dpId, double litresAllocated, {Map<String, int>? items, int? petrolAllowanceGiven}) async {
     final dio = ref.read(apiClientProvider);
     final date = _getLocalToday();
 
@@ -136,9 +134,7 @@ class RouteNotifier extends AsyncNotifier<RouteState> {
             if (a.dpId == dpId) {
               return a.copyWith(
                 litresAllocated: litresAllocated,
-                qty1LBottle: qty1LBottle ?? a.qty1LBottle,
-                qtyHalfLBottle: qtyHalfLBottle ?? a.qtyHalfLBottle,
-                qtyHalfLPacket: qtyHalfLPacket ?? a.qtyHalfLPacket,
+                items: items ?? a.items,
               );
             }
             return a;
@@ -159,9 +155,7 @@ class RouteNotifier extends AsyncNotifier<RouteState> {
           'dpId': dpId,
           'litresAllocated': litresAllocated,
           'status': 'ASSIGNED',
-          if (qty1LBottle != null) 'qty1LBottle': qty1LBottle,
-          if (qtyHalfLBottle != null) 'qtyHalfLBottle': qtyHalfLBottle,
-          if (qtyHalfLPacket != null) 'qtyHalfLPacket': qtyHalfLPacket,
+          if (items != null) 'items': items,
           if (petrolAllowanceGiven != null) 'petrolAllowanceGiven': petrolAllowanceGiven,
         },
       );

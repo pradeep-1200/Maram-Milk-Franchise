@@ -34,17 +34,10 @@ class EveningCheckNotifier extends AsyncNotifier<EveningCheckState> {
       String routeId, {
       required String dpId,
       required bool deliveryCompleted,
-      required int oneLBottlesCollected,
-      required int halfLBottlesCollected,
-      required int halfLPacketCollected,
-      required int actualDelivered1L,
-      required int? actualDeliveredHalfL,
-      int? actualDeliveredPacket,
       bool flagIssue = false,
       String? reason,
-      int? brokenBottleCount1L,
-      int? brokenBottleCountHalfL,
       String? notes,
+      required List<Map<String, dynamic>> items,
   }) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
@@ -54,17 +47,10 @@ class EveningCheckNotifier extends AsyncNotifier<EveningCheckState> {
         data: {
           'dpId': dpId,
           'deliveryCompleted': deliveryCompleted,
-          'oneLBottlesCollected': oneLBottlesCollected,
-          'halfLBottlesCollected': halfLBottlesCollected,
-          'halfLPacketCollected': halfLPacketCollected,
-          'actualDelivered1L': actualDelivered1L,
-          if (actualDeliveredHalfL != null) 'actualDeliveredHalfL': actualDeliveredHalfL,
-          if (actualDeliveredPacket != null) 'actualDeliveredPacket': actualDeliveredPacket,
           'flagIssue': flagIssue,
           if (reason != null) 'reason': reason,
-          if (brokenBottleCount1L != null) 'brokenBottleCount1L': brokenBottleCount1L,
-          if (brokenBottleCountHalfL != null) 'brokenBottleCountHalfL': brokenBottleCountHalfL,
           if (notes != null) 'notes': notes,
+          'items': items,
         },
       );
       

@@ -10,9 +10,7 @@ export const routeQuerySchema = z.object({
 export const updateAllocationSchema = z.object({
   dpId: z.string().uuid(),
   litresAllocated: z.number().min(0),
-  qty1LBottle: z.number().min(0).optional(),
-  qtyHalfLBottle: z.number().int().optional(),
-  qtyHalfLPacket: z.number().int().optional(),
+  items: z.record(z.string().uuid(), z.number().int().min(0)).optional().default({}),
   petrolAllowanceGiven: z.number().int().optional(),
   status: z.nativeEnum(RouteAllocationStatus),
 });

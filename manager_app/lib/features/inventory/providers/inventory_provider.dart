@@ -9,6 +9,7 @@ class InventoryItemState {
   final String recordId;
   final String name;
   final String subtitle;
+  final String? section;
   final double expectedQty;
   final double carryOverQty;
   final double newStockAdded;
@@ -21,6 +22,7 @@ class InventoryItemState {
     required this.recordId,
     required this.name,
     required this.subtitle,
+    this.section,
     this.expectedQty = 0.0,
     this.carryOverQty = 0.0,
     this.newStockAdded = 0.0,
@@ -42,6 +44,7 @@ class InventoryItemState {
       recordId: recordId,
       name: name,
       subtitle: subtitle,
+      section: section,
       expectedQty: expectedQty ?? this.expectedQty,
       carryOverQty: carryOverQty,
       newStockAdded: newStockAdded ?? this.newStockAdded,
@@ -57,6 +60,7 @@ class InventoryItemState {
       recordId: json['recordId'] ?? '',
       name: json['name'] ?? '',
       subtitle: '${json['material'] ?? ''} - ${json['unit'] ?? ''}',
+      section: json['section'],
       expectedQty: (json['expectedStock'] as num?)?.toDouble() ?? 0.0,
       carryOverQty: (json['carriedOverStock'] as num?)?.toDouble() ?? 0.0,
       newStockAdded: (json['newStockAdded'] as num?)?.toDouble() ?? 0.0,

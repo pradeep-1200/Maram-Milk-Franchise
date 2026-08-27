@@ -107,8 +107,6 @@ class InventoryScreen extends ConsumerWidget {
     final notifier = ref.read(inventoryProvider.notifier);
     final theme = Theme.of(context);
 
-    // Save condition: must have items.
-    final bool canSave = state.items.isNotEmpty;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -158,22 +156,9 @@ class InventoryScreen extends ConsumerWidget {
                 ),
                 IconButton(
                   icon: const Icon(Icons.arrow_forward),
-                  tooltip: 'Save & Next: Routes Assigned',
-                  onPressed: () async {
-                    if (canSave) {
-                      try {
-                        await notifier.saveInventory();
-                        if (context.mounted) {
-                          context.push('/dispatch/routes');
-                        }
-                      } catch (e) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Save failed: $e'), backgroundColor: Colors.red),
-                          );
-                        }
-                      }
-                    }
+                  tooltip: 'Next: Routes Assigned',
+                  onPressed: () {
+                    context.push('/dispatch/routes');
                   },
                 ),
                 const SizedBox(width: 8),
@@ -221,7 +206,7 @@ class InventoryScreen extends ConsumerWidget {
                     left: AppConstants.spacing16,
                     right: AppConstants.spacing16,
                     top: AppConstants.spacing8,
-                    bottom: 100, // Padding for bottom bar / FAB
+                    bottom: AppConstants.spacing16,
                   ),
                   itemCount: loadedState.items.length,
                   separatorBuilder: (_, __) => const Divider(height: AppConstants.spacing16),
@@ -229,8 +214,6 @@ class InventoryScreen extends ConsumerWidget {
                     final item = loadedState.items[index];
                     return _InventoryRow(
                       item: item,
-                      onUpdate: (delta) => notifier.updateAdjustment(item.id, delta),
-                      onReasonChanged: (reason) => notifier.updateReason(item.id, reason),
                     );
                   },
                 ),
@@ -239,69 +222,15 @@ class InventoryScreen extends ConsumerWidget {
           );
         },
       ),
-      // Sticky Bottom Bar
-      bottomNavigationBar: state.isDirty ? SafeArea(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: AppConstants.spacing16, vertical: AppConstants.spacing8),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(10),
-                blurRadius: 10,
-                offset: const Offset(0, -5),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-
-              SizedBox(
-                width: double.infinity,
-                child: AppButton(
-                  text: 'Save Inventory',
-                  onPressed: () async {
-                    if (canSave) {
-                      try {
-                        await notifier.saveInventory();
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Inventory saved successfully!')),
-                          );
-                        }
-                      } catch (e) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Save failed: $e'), backgroundColor: Colors.red),
-                          );
-                        }
-                      }
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please provide reasons for shortages')),
-                      );
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ) : null,
     );
   }
 }
 
 class _InventoryRow extends StatelessWidget {
   final InventoryItemState item;
-  final Function(double) onUpdate;
-  final Function(String?) onReasonChanged;
 
   const _InventoryRow({
     required this.item,
-    required this.onUpdate,
-    required this.onReasonChanged,
   });
 
   @override
@@ -398,67 +327,6 @@ class _InventoryRow extends StatelessWidget {
                                     ),
                                   ),
                               ],
-                            ),
-                          ],
-                        ),
-                        // TEMPORARY_MANUAL_STOCK_ENTRY
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 8.0),
-                          child: Divider(height: 1),
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'New Stock (Manual)',
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: theme.colorScheme.primary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Text(
-                                  'Temp admin override',
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    color: theme.colorScheme.primary.withAlpha(200),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(
-                              width: 80,
-                              child: Consumer(
-                                builder: (context, ref, child) {
-                                  return Focus(
-                                    onFocusChange: (hasFocus) {
-                                      if (!hasFocus) {
-                                        // The action happens inside the TextField's onSubmitted or onEditingComplete typically,
-                                        // but we can also rely on a check button. 
-                                        // However, providing a dedicated IconButton is better.
-                                      }
-                                    },
-                                    child: TextFormField(
-                                      initialValue: item.newStockAdded.toInt().toString(),
-                                      keyboardType: TextInputType.number,
-                                      decoration: const InputDecoration(
-                                        isDense: true,
-                                        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                                        border: OutlineInputBorder(),
-                                      ),
-                                      onChanged: (val) {
-                                        final numValue = double.tryParse(val);
-                                        if (numValue != null) {
-                                          ref.read(inventoryProvider.notifier).updateNewStockLocally(item.id, numValue);
-                                        } else if (val.isEmpty) {
-                                          ref.read(inventoryProvider.notifier).updateNewStockLocally(item.id, 0);
-                                        }
-                                      },
-                                    ),
-                                  );
-                                },
-                              ),
                             ),
                           ],
                         ),

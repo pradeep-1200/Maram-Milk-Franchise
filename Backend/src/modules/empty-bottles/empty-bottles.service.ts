@@ -58,7 +58,7 @@ export const getEmptyBottleStatus = async (date: string) => {
 
       // Only milk bottles are expected to be returned empty. 
       // The frontend uses "expectedEmptyBottles" for total UI count.
-      if (inventoryItem.section === 'Milk' && inventoryItem.material === 'Glass') {
+      if (inventoryItem.section === 'Milk' && inventoryItem.material === 'Bottle') {
         expectedEmptyBottles += expected;
       }
 

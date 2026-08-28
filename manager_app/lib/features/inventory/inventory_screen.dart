@@ -198,13 +198,22 @@ class InventoryScreen extends ConsumerWidget {
           final Map<String, List<InventoryItemState>> groupedItems = {};
           final List<String> sectionKeys = [];
           for (var item in loadedState.items) {
-            final section = item.section ?? 'Other';
+            final section = item.section == 'Snacks / Grocery' ? 'Grocery' : (item.section ?? 'Other');
             if (!groupedItems.containsKey(section)) {
               groupedItems[section] = [];
               sectionKeys.add(section);
             }
             groupedItems[section]!.add(item);
           }
+          
+          final sectionOrder = ['Milk', 'Dairy', 'Oils', 'Sweeteners', 'Grocery'];
+          sectionKeys.sort((a, b) {
+            int indexA = sectionOrder.indexOf(a);
+            int indexB = sectionOrder.indexOf(b);
+            if (indexA == -1) indexA = 999;
+            if (indexB == -1) indexB = 999;
+            return indexA.compareTo(indexB);
+          });
 
           IconData getSectionIcon(String section) {
             switch (section) {
@@ -212,7 +221,7 @@ class InventoryScreen extends ConsumerWidget {
               case 'Dairy': return Icons.cookie;
               case 'Oils': return Icons.opacity;
               case 'Sweeteners': return Icons.spa;
-              case 'Snacks / Grocery': return Icons.shopping_bag;
+              case 'Grocery': return Icons.shopping_bag;
               default: return Icons.inventory_2;
             }
           }

@@ -38,7 +38,7 @@ class _MilkAllocationSheetState extends ConsumerState<MilkAllocationSheet> {
       case 'Dairy': return Icons.cookie;
       case 'Oils': return Icons.opacity;
       case 'Sweeteners': return Icons.spa;
-      case 'Snacks / Grocery': return Icons.shopping_bag;
+      case 'Grocery': return Icons.shopping_bag;
       default: return Icons.inventory_2;
     }
   }
@@ -55,16 +55,19 @@ class _MilkAllocationSheetState extends ConsumerState<MilkAllocationSheet> {
     // Group by section
     final Map<String, List<InventoryItemState>> sectionedItems = {};
     for (final item in allItems) {
-      final section = item.section ?? 'Other';
+      final section = item.section == 'Snacks / Grocery' ? 'Grocery' : (item.section ?? 'Other');
       sectionedItems.putIfAbsent(section, () => []).add(item);
     }
     
-    // Sort sections (Milk first)
+    // Sort sections
+    final sectionOrder = ['Milk', 'Dairy', 'Oils', 'Sweeteners', 'Grocery'];
     final sections = sectionedItems.keys.toList()
       ..sort((a, b) {
-        if (a == 'Milk') return -1;
-        if (b == 'Milk') return 1;
-        return a.compareTo(b);
+        int indexA = sectionOrder.indexOf(a);
+        int indexB = sectionOrder.indexOf(b);
+        if (indexA == -1) indexA = 999;
+        if (indexB == -1) indexB = 999;
+        return indexA.compareTo(indexB);
       });
 
     // Calculate total Milk volume

@@ -15,21 +15,23 @@ const newCatalog = [
   { section: 'Sweeteners', name: 'Honey', unit: '350gm', material: 'Bottle' },
   { section: 'Sweeteners', name: 'Cane Sugar', unit: '500gm', material: 'Packet' },
   { section: 'Sweeteners', name: 'Karupatti', unit: '1kg', material: 'Packet' },
-  { section: 'Snacks / Grocery', name: 'Appalam', unit: '200gm', material: 'Packet' },
+  { section: 'Grocery', name: 'Appalam', unit: '200gm', material: 'Packet' },
 ];
 
 async function main() {
-  console.log('Wiping all existing InventoryDailyRecord entries...');
-  await prisma.inventoryDailyRecord.deleteMany({});
-  
-  console.log('Wiping all existing InventoryItem entries...');
-  await prisma.inventoryItem.deleteMany({});
-  
-  console.log('Seeding new product catalog...');
+  console.log('Seeding new product catalog without deleting existing...');
   for (const item of newCatalog) {
-    await prisma.inventoryItem.create({
-      data: item,
+    const existing = await prisma.inventoryItem.findFirst({
+      where: { name: item.name, material: item.material, unit: item.unit }
     });
+    if (!existing) {
+      await prisma.inventoryItem.create({
+        data: item,
+      });
+      console.log(`Created ${item.name}`);
+    } else {
+      console.log(`Skipped ${item.name} (already exists)`);
+    }
   }
   
   console.log('Done!');

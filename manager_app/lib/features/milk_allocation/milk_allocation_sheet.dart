@@ -31,6 +31,7 @@ class MilkAllocationSheet extends ConsumerStatefulWidget {
 
 class _MilkAllocationSheetState extends ConsumerState<MilkAllocationSheet> {
   bool _isSubmitting = false;
+  bool _showSummary = false;
   late final String _allocationKey;
 
   @override
@@ -137,54 +138,61 @@ class _MilkAllocationSheetState extends ConsumerState<MilkAllocationSheet> {
                   ],
                 ),
               ),
-              if (!widget.isInStepFlow)
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => context.pop(),
-                ),
-            ],
+                if (!widget.isInStepFlow && !_showSummary)
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => context.pop(),
+                  )
+                else if (_showSummary)
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: () => setState(() => _showSummary = false),
+                  ),
+              ],
+            ),
           ),
-        ),
-        const Divider(height: 1),
-        
-        // Products List
-        Expanded(
-          child: ListView.builder(
-            controller: widget.scrollController,
-            padding: const EdgeInsets.only(bottom: 80),
-            itemCount: sections.length,
-            itemBuilder: (context, index) {
-              final section = sections[index];
-              final items = sectionedItems[section]!;
-              final sectionIcon = _getIconForSection(section);
-              
-              return ExpansionTile(
-                initiallyExpanded: section == 'Milk',
-                leading: Icon(sectionIcon, color: theme.colorScheme.primary),
-                title: Text(
-                  section,
-                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                children: items.map((item) {
-                  final qty = routeAllocation.items[item.id] ?? 0;
-                  final prevQty = prevAllocations[item.id] ?? 0;
-                  final maxLimit = (item.currentStock.toInt()) + prevQty;
-                  
-                  return _ProductRow(
-                    icon: sectionIcon,
-                    title: item.name,
-                    subtitle: item.subtitle,
-                    quantity: qty,
-                    onDecrement: () => notifier.updateItem(_allocationKey, item.id, -1),
-                    onIncrement: () => notifier.updateItem(_allocationKey, item.id, 1, maxLimit: maxLimit),
-                    onSetValue: (v) => notifier.setItem(_allocationKey, item.id, v, maxLimit: maxLimit),
-                    maxLimit: maxLimit,
-                  );
-                }).toList(),
-              );
-            },
+          const Divider(height: 1),
+          
+          // Products List
+          Expanded(
+            child: _showSummary
+                ? _buildSummaryList(context, routeAllocation, allItems)
+                : ListView.builder(
+                    controller: widget.scrollController,
+                    padding: const EdgeInsets.only(bottom: 80),
+                    itemCount: sections.length,
+                    itemBuilder: (context, index) {
+                      final section = sections[index];
+                      final items = sectionedItems[section]!;
+                      final sectionIcon = _getIconForSection(section);
+                      
+                      return ExpansionTile(
+                        initiallyExpanded: section == 'Milk',
+                        leading: Icon(sectionIcon, color: theme.colorScheme.primary),
+                        title: Text(
+                          section,
+                          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        children: items.map((item) {
+                          final qty = routeAllocation.items[item.id] ?? 0;
+                          final prevQty = prevAllocations[item.id] ?? 0;
+                          final maxLimit = (item.currentStock.toInt()) + prevQty;
+                          
+                          return _ProductRow(
+                            icon: sectionIcon,
+                            title: item.name,
+                            subtitle: item.subtitle,
+                            quantity: qty,
+                            onDecrement: () => notifier.updateItem(_allocationKey, item.id, -1),
+                            onIncrement: () => notifier.updateItem(_allocationKey, item.id, 1, maxLimit: maxLimit),
+                            onSetValue: (v) => notifier.setItem(_allocationKey, item.id, v, maxLimit: maxLimit),
+                            maxLimit: maxLimit,
+                          );
+                        }).toList(),
+                      );
+                    },
+                  ),
           ),
-        ),
         
         // Bottom Area (Total & Action)
         Container(
@@ -220,9 +228,25 @@ class _MilkAllocationSheetState extends ConsumerState<MilkAllocationSheet> {
               ),
               const SizedBox(height: AppConstants.spacing8),
               AppButton(
-                text: 'Confirm & Next',
+                text: _showSummary ? 'Confirm & Next' : 'Next',
                 isLoading: _isSubmitting,
                 onPressed: _isSubmitting ? null : () async {
+                  if (!_showSummary) {
+                    // Check if at least one item is allocated to show summary
+                    final totalQty = routeAllocation.items.values.fold<int>(0, (a, b) => a + b);
+                    if (totalQty == 0) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Please allocate at least one product.'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+                    setState(() => _showSummary = true);
+                    return;
+                  }
+
                   setState(() => _isSubmitting = true);
 
                   try {
@@ -275,6 +299,43 @@ class _MilkAllocationSheetState extends ConsumerState<MilkAllocationSheet> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildSummaryList(BuildContext context, RouteMilkAllocation routeAllocation, List<InventoryItemState> allItems) {
+    final theme = Theme.of(context);
+    final allocatedItems = allItems.where((item) => (routeAllocation.items[item.id] ?? 0) > 0).toList();
+
+    return ListView.separated(
+      controller: widget.scrollController,
+      padding: const EdgeInsets.only(bottom: 80, top: 16),
+      itemCount: allocatedItems.length,
+      separatorBuilder: (_, __) => const Divider(),
+      itemBuilder: (context, index) {
+        final item = allocatedItems[index];
+        final qty = routeAllocation.items[item.id]!;
+        final icon = _getIconForSection(item.section);
+
+        return ListTile(
+          leading: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primaryContainer.withAlpha(100),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: theme.colorScheme.onSurfaceVariant),
+          ),
+          title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+          subtitle: Text(item.subtitle),
+          trailing: Text(
+            qty.toString(),
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        );
+      },
     );
   }
 

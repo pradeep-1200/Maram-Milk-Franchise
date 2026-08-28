@@ -12,5 +12,7 @@ inventoryRouter.post('/admin-stock', inventoryController.addAdminStock);
 // TEMPORARY_MANUAL_STOCK_ENTRY
 inventoryRouter.put('/manager-stock', inventoryController.setManagerStock);
 
+inventoryRouter.post('/report-broken', inventoryController.reportBrokenStock);
+
 
 export default inventoryRouter;

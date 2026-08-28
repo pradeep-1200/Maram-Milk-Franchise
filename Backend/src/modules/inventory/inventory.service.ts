@@ -54,6 +54,7 @@ export const getInventoryForDate = async (date: string) => {
           currentStock: carriedExpected, // Default to expected until manager edits
           carriedOverStock: carriedExpected,
           newStockAdded: 0,
+          brokenStock: 0,
         },
       });
     }
@@ -69,6 +70,7 @@ export const getInventoryForDate = async (date: string) => {
       currentStock: record.currentStock,
       carriedOverStock: record.carriedOverStock,
       newStockAdded: record.newStockAdded,
+      brokenStock: record.brokenStock,
       litresPerUnit: parseUnitToLitres(item.unit),
     });
   }
@@ -161,4 +163,41 @@ export const setManagerStock = async (date: string, inventoryItemId: string, new
   });
 
   return record;
+};
+
+/**
+ * Report broken stock. Blocks if count exceeds available.
+ * Uses atomic decrements to avoid race conditions.
+ */
+export const reportBrokenStock = async (date: string, inventoryItemId: string, brokenCount: number) => {
+  // Ensure the record is generated first (carry forward logic)
+  const items = await getInventoryForDate(date);
+  const currentRecord = items.find(i => i.inventoryItemId === inventoryItemId);
+  
+  if (!currentRecord) {
+    throw new Error('Inventory record not found');
+  }
+
+  if (brokenCount <= 0) {
+    throw new Error('Broken count must be greater than zero');
+  }
+
+  // VALIDATION: Cannot report more broken stock than is currently available
+  if (brokenCount > currentRecord.currentStock) {
+    throw new Error(`Cannot report ${brokenCount} broken items. Only ${currentRecord.currentStock} in stock.`);
+  }
+
+  // Atomic update using increment/decrement
+  const updatedRecord = await prisma.inventoryDailyRecord.update({
+    where: {
+      inventoryItemId_date: { inventoryItemId, date },
+    },
+    data: {
+      brokenStock: { increment: brokenCount },
+      expectedStock: { decrement: brokenCount },
+      currentStock: { decrement: brokenCount },
+    },
+  });
+
+  return updatedRecord;
 };

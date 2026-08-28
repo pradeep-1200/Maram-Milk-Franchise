@@ -27,3 +27,8 @@ export const managerStockSchema = z.object({
   newStockAdded: z.number().min(0),
 });
 
+export const brokenStockSchema = z.object({
+  inventoryItemId: z.string().uuid(),
+  brokenCount: z.number().min(1, 'Broken count must be at least 1'),
+});
+

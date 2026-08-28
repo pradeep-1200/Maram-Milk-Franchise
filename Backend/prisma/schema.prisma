@@ -121,6 +121,7 @@ model InventoryDailyRecord {
   updatedAt        DateTime      @updatedAt
   carriedOverStock Float?
   newStockAdded    Float?
+  brokenStock      Float         @default(0)
   inventoryItem    InventoryItem @relation(fields: [inventoryItemId], references: [id])
 
   @@unique([inventoryItemId, date])

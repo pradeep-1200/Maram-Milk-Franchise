@@ -63,6 +63,7 @@ export const getInventoryForDate = async (date: string) => {
       name: item.name,
       unit: item.unit,
       material: item.material,
+      section: item.section,
       recordId: record.id,
       expectedStock: record.expectedStock,
       currentStock: record.currentStock,

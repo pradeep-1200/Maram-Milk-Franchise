@@ -266,7 +266,7 @@ class InventoryScreen extends ConsumerWidget {
   }
 }
 
-class _InventoryRow extends StatelessWidget {
+class _InventoryRow extends ConsumerWidget {
   final InventoryItemState item;
 
   const _InventoryRow({
@@ -274,8 +274,86 @@ class _InventoryRow extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+
+    Future<void> showReportBrokenDialog() async {
+      final controller = TextEditingController();
+      bool isSubmitting = false;
+
+      await showDialog(
+        context: context,
+        builder: (context) => StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Report Broken Stock'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('How many ${item.name} are broken or damaged today?'),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: controller,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      hintText: 'Enter quantity',
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSubmitting ? null : () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: isSubmitting
+                      ? null
+                      : () async {
+                          final count = int.tryParse(controller.text);
+                          if (count == null || count <= 0) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Please enter a valid number greater than 0')),
+                            );
+                            return;
+                          }
+
+                          setState(() => isSubmitting = true);
+                          try {
+                            await ref.read(inventoryProvider.notifier).reportBrokenStock(item.id, count);
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Broken stock reported successfully')),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(e.toString().replaceAll('Exception: ', '')),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          } finally {
+                            if (context.mounted) {
+                              setState(() => isSubmitting = false);
+                            }
+                          }
+                        },
+                  child: isSubmitting
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Text('Submit'),
+                ),
+              ],
+            );
+          }
+        ),
+      );
+    }
 
 
     return Container(
@@ -324,6 +402,13 @@ class _InventoryRow extends StatelessWidget {
                   ],
                 ),
               ),
+              if (item.currentStock > 0)
+                IconButton(
+                  icon: const Icon(Icons.broken_image_outlined),
+                  color: Colors.red.shade400,
+                  tooltip: 'Report Broken Stock',
+                  onPressed: showReportBrokenDialog,
+                ),
             ],
           ),
           const SizedBox(height: AppConstants.spacing16),
@@ -360,6 +445,11 @@ class _InventoryRow extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                  if (item.brokenStock > 0)
+                    Text(
+                      '(${item.brokenStock.toInt()} reported broken)',
+                      style: theme.textTheme.labelSmall?.copyWith(color: Colors.red.shade400),
+                    ),
                   if (item.litresPerUnit > 0)
                     Text(
                       '${(item.expectedQty * item.litresPerUnit).toStringAsFixed(1)} L total',

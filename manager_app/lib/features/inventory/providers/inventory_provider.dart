@@ -14,6 +14,7 @@ class InventoryItemState {
   final double carryOverQty;
   final double newStockAdded;
   final double currentStock;
+  final double brokenStock;
   final double litresPerUnit;
   final String? reason;
 
@@ -27,6 +28,7 @@ class InventoryItemState {
     this.carryOverQty = 0.0,
     this.newStockAdded = 0.0,
     this.currentStock = 0.0,
+    this.brokenStock = 0.0,
     this.litresPerUnit = 0.0,
     this.reason,
   });
@@ -49,6 +51,7 @@ class InventoryItemState {
       carryOverQty: carryOverQty,
       newStockAdded: newStockAdded ?? this.newStockAdded,
       currentStock: currentStock ?? this.currentStock,
+      brokenStock: brokenStock,
       litresPerUnit: litresPerUnit,
       reason: reason ?? this.reason,
     );
@@ -65,6 +68,7 @@ class InventoryItemState {
       carryOverQty: (json['carriedOverStock'] as num?)?.toDouble() ?? 0.0,
       newStockAdded: (json['newStockAdded'] as num?)?.toDouble() ?? 0.0,
       currentStock: (json['currentStock'] as num?)?.toDouble() ?? 0.0,
+      brokenStock: (json['brokenStock'] as num?)?.toDouble() ?? 0.0,
       litresPerUnit: (json['litresPerUnit'] as num?)?.toDouble() ?? 0.0,
     );
   }
@@ -135,6 +139,19 @@ class InventoryNotifier extends AsyncNotifier<InventoryState> {
     state = await AsyncValue.guard(() => fetchInventory());
   }
 
+  Future<void> reportBrokenStock(String inventoryItemId, int brokenCount) async {
+    final dio = ref.read(apiClientProvider);
+    await dio.post(
+      '/inventory/report-broken',
+      queryParameters: {'date': _getLocalToday()},
+      data: {
+        'inventoryItemId': inventoryItemId,
+        'brokenCount': brokenCount,
+      },
+    );
+    // Reload state after reporting
+    await reload();
+  }
 
 }
 

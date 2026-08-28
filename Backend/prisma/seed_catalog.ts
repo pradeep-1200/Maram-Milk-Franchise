@@ -9,7 +9,7 @@ const newCatalog = [
   { section: 'Dairy', name: 'Butter', unit: '250gm', material: 'Packet' },
   { section: 'Dairy', name: 'Cow Ghee 500gm', unit: '500gm', material: 'Bottle' },
   { section: 'Dairy', name: 'Cow Ghee 250gm', unit: '250gm', material: 'Bottle' },
-  { section: 'Oils', name: 'Coconut Oil', unit: '1L', material: 'Bottle' },
+  { section: 'Oils', name: 'Coconut Oil', unit: '500ml', material: 'Bottle' },
   { section: 'Oils', name: 'Groundnut Oil', unit: '1L', material: 'Bottle' },
   { section: 'Oils', name: 'Sesame Oil', unit: '1L', material: 'Bottle' },
   { section: 'Sweeteners', name: 'Honey', unit: '350gm', material: 'Bottle' },

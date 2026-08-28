@@ -20,7 +20,7 @@ class EmptyBottleSheet extends ConsumerWidget {
       orElse: () => throw Exception('Route not found'),
     );
     
-    final glassItems = status.items.where((i) => i.material == 'Glass').toList();
+    final glassItems = status.items.where((i) => i.section == 'Milk' && i.material == 'Bottle').toList();
 
     return Padding(
       padding: const EdgeInsets.only(

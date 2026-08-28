@@ -452,7 +452,7 @@ class DashboardScreen extends ConsumerWidget {
                           for (final route in assignedRoutes) {
                             if (route.deliveryCompleted == true) {
                               checkedRoutes++;
-                              final glassItems = route.items.where((i) => i.material == 'Glass');
+                              final glassItems = route.items.where((i) => i.section == 'Milk' && i.material == 'Bottle');
                               for (final item in glassItems) {
                                 totalCollected += item.collected;
                               }
@@ -499,7 +499,7 @@ class DashboardScreen extends ConsumerWidget {
                                                 '$totalCollected',
                                                 style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                                               ),
-                                              Text('Total Glass Bottles', style: theme.textTheme.bodySmall, overflow: TextOverflow.ellipsis),
+                                              Text('Total Empty Bottles', style: theme.textTheme.bodySmall, overflow: TextOverflow.ellipsis),
                                             ],
                                           ),
                                         ),

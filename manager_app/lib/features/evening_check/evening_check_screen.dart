@@ -571,7 +571,7 @@ class _EveningCheckSheetState extends ConsumerState<_EveningCheckSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final glassItems = widget.route.items.where((i) => i.material == 'Glass').toList();
+    final glassItems = widget.route.items.where((i) => i.section == 'Milk' && i.material == 'Bottle').toList();
 
     return SafeArea(
       child: Column(

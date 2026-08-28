@@ -31,6 +31,22 @@ class MilkAllocationSheet extends ConsumerStatefulWidget {
 
 class _MilkAllocationSheetState extends ConsumerState<MilkAllocationSheet> {
   bool _isSubmitting = false;
+  late final String _allocationKey;
+
+  @override
+  void initState() {
+    super.initState();
+    _allocationKey = '${widget.route.id}_${widget.dp.id}';
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final existingAlloc = widget.route.allocations.where((a) => a.dpId == widget.dp.id).firstOrNull;
+      if (existingAlloc != null) {
+        ref.read(milkAllocationProvider.notifier).initAllocation(_allocationKey, existingAlloc.items);
+      } else {
+        ref.read(milkAllocationProvider.notifier).initAllocation(_allocationKey, {});
+      }
+    });
+  }
 
   IconData _getIconForSection(String? section) {
     switch (section) {
@@ -45,7 +61,7 @@ class _MilkAllocationSheetState extends ConsumerState<MilkAllocationSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final routeAllocation = ref.watch(milkAllocationProvider.select((state) => state.allocations[widget.route.id] ?? const RouteMilkAllocation()));
+    final routeAllocation = ref.watch(milkAllocationProvider.select((state) => state.allocations[_allocationKey] ?? const RouteMilkAllocation()));
     final notifier = ref.read(milkAllocationProvider.notifier);
     final theme = Theme.of(context);
     
@@ -159,9 +175,9 @@ class _MilkAllocationSheetState extends ConsumerState<MilkAllocationSheet> {
                     title: item.name,
                     subtitle: item.subtitle,
                     quantity: qty,
-                    onDecrement: () => notifier.updateItem(widget.route.id, item.id, -1),
-                    onIncrement: () => notifier.updateItem(widget.route.id, item.id, 1, maxLimit: maxLimit),
-                    onSetValue: (v) => notifier.setItem(widget.route.id, item.id, v, maxLimit: maxLimit),
+                    onDecrement: () => notifier.updateItem(_allocationKey, item.id, -1),
+                    onIncrement: () => notifier.updateItem(_allocationKey, item.id, 1, maxLimit: maxLimit),
+                    onSetValue: (v) => notifier.setItem(_allocationKey, item.id, v, maxLimit: maxLimit),
                     maxLimit: maxLimit,
                   );
                 }).toList(),

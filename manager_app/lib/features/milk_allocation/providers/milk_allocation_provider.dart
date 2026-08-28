@@ -38,26 +38,26 @@ class MilkAllocationNotifier extends Notifier<MilkAllocationState> {
     return const MilkAllocationState();
   }
 
-  RouteMilkAllocation getAllocation(String routeId) {
-    return state.allocations[routeId] ?? const RouteMilkAllocation();
+  RouteMilkAllocation getAllocation(String key) {
+    return state.allocations[key] ?? const RouteMilkAllocation();
   }
 
-  void _updateAllocation(String routeId, RouteMilkAllocation Function(RouteMilkAllocation) updater) {
-    final current = getAllocation(routeId);
+  void _updateAllocation(String key, RouteMilkAllocation Function(RouteMilkAllocation) updater) {
+    final current = getAllocation(key);
     final updated = updater(current);
     final newAllocations = Map<String, RouteMilkAllocation>.from(state.allocations);
-    newAllocations[routeId] = updated;
+    newAllocations[key] = updated;
     state = state.copyWith(allocations: newAllocations);
   }
 
-  void initAllocation(String routeId, Map<String, int> initialItems) {
+  void initAllocation(String key, Map<String, int> initialItems) {
     final newAllocations = Map<String, RouteMilkAllocation>.from(state.allocations);
-    newAllocations[routeId] = RouteMilkAllocation(items: Map.from(initialItems));
+    newAllocations[key] = RouteMilkAllocation(items: Map.from(initialItems));
     state = state.copyWith(allocations: newAllocations);
   }
 
-  void updateItem(String routeId, String itemId, int diff, {int? maxLimit}) {
-    _updateAllocation(routeId, (a) {
+  void updateItem(String key, String itemId, int diff, {int? maxLimit}) {
+    _updateAllocation(key, (a) {
       final currentQty = a.items[itemId] ?? 0;
       final newQty = currentQty + diff;
       if (newQty < 0) return a;
@@ -69,8 +69,8 @@ class MilkAllocationNotifier extends Notifier<MilkAllocationState> {
     });
   }
 
-  void setItem(String routeId, String itemId, int value, {int? maxLimit}) {
-    _updateAllocation(routeId, (a) {
+  void setItem(String key, String itemId, int value, {int? maxLimit}) {
+    _updateAllocation(key, (a) {
       final clamped = value < 0 ? 0 : (maxLimit != null && value > maxLimit ? maxLimit : value);
       
       final newItems = Map<String, int>.from(a.items);

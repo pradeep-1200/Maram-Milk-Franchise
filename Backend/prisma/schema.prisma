@@ -184,7 +184,7 @@ model ManagerInventoryLog {
 
 model ShopSale {
   id        String         @id @default(uuid())
-  date      String         @unique // YYYY-MM-DD
+  date      String         // YYYY-MM-DD
   createdAt DateTime       @default(now())
   updatedAt DateTime       @default(now()) @updatedAt
   items     ShopSaleItem[]

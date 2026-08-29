@@ -75,18 +75,8 @@ export const createShopSale = async (
     }
 
     // 3. Create the Shop Sale record and items
-    // If shop sale already exists for today, we could upsert, but let's assume one big save or multiple sales per day.
-    // The previous code used `create`, but had `@unique` on `[date, product, managerId]`... wait, the old schema was just `date` for ShopSale but it didn't have `@unique` on `date`. Now I added `@unique` on `date`.
-    // Let's use upsert so they can update it, or if it's unique by date, upsert is best.
-    const shopSale = await tx.shopSale.upsert({
-      where: { date },
-      update: {},
-      create: { date }
-    });
-
-    // Delete existing items to replace with new ones
-    await tx.shopSaleItem.deleteMany({
-      where: { shopSaleId: shopSale.id }
+    const shopSale = await tx.shopSale.create({
+      data: { date }
     });
 
     if (items.length > 0) {

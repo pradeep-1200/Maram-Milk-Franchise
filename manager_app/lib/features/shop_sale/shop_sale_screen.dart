@@ -9,7 +9,6 @@ import '../../shared/app_button.dart';
 import '../../shared/async_value_widget.dart';
 import '../inventory/providers/inventory_provider.dart';
 import 'providers/shop_sale_provider.dart';
-import 'widgets/shop_sale_history_widget.dart';
 
 class ShopSaleScreen extends ConsumerStatefulWidget {
   const ShopSaleScreen({super.key});
@@ -19,30 +18,6 @@ class ShopSaleScreen extends ConsumerStatefulWidget {
 }
 
 class _ShopSaleScreenState extends ConsumerState<ShopSaleScreen> {
-  Future<DateTimeRange?> _selectCustomDateRange(ShopSaleState state) async {
-    final now = DateUtil.operatingDay;
-    return await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(now.year - 1),
-      lastDate: now,
-      initialDateRange: state.customDateRange ?? DateTimeRange(start: now.subtract(const Duration(days: 7)), end: now),
-    );
-  }
-
-  Future<DateTimeRange?> _selectCustomDate(ShopSaleState state) async {
-    final now = DateUtil.operatingDay;
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: state.customDateRange?.start ?? now,
-      firstDate: DateTime(now.year - 1),
-      lastDate: now,
-    );
-    if (picked != null) {
-      return DateTimeRange(start: picked, end: picked);
-    }
-    return null;
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -74,6 +49,14 @@ class _ShopSaleScreenState extends ConsumerState<ShopSaleScreen> {
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            onPressed: () => context.push('/shop-sale/history'),
+            tooltip: 'Sale History',
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: AppAsyncWidget<InventoryState>(
         value: inventoryStateAsync,
@@ -163,38 +146,6 @@ class _ShopSaleScreenState extends ConsumerState<ShopSaleScreen> {
                   );
                 })(),
 
-                const SizedBox(height: 32),
-                
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'History',
-                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    _DateFilterDropdown(
-                      state: saleState,
-                      onPeriodChanged: (period) async {
-                        if (period == 'custom_date') {
-                          final picked = await _selectCustomDate(saleState);
-                          if (picked != null) {
-                            saleNotifier.setCustomDateRange(picked);
-                          }
-                        } else if (period == 'custom_range') {
-                          final picked = await _selectCustomDateRange(saleState);
-                          if (picked != null) {
-                            saleNotifier.setCustomDateRange(picked);
-                          }
-                        } else {
-                          saleNotifier.setPeriod(period);
-                        }
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                const ShopSaleHistoryWidget(),
-                
                 const SizedBox(height: 80), // Padding for sticky bottom bar
               ],
             ),
@@ -254,68 +205,6 @@ class _ShopSaleScreenState extends ConsumerState<ShopSaleScreen> {
   }
 }
 
-class _DateFilterDropdown extends StatelessWidget {
-  final ShopSaleState state;
-  final Function(String) onPeriodChanged;
-
-  const _DateFilterDropdown({
-    required this.state,
-    required this.onPeriodChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
-    // Determine the current dropdown value based on state
-    String currentValue = 'today';
-    if (state.period == 'yesterday') currentValue = 'yesterday';
-    if (state.period == 'week') currentValue = 'week';
-    if (state.period == 'month') currentValue = 'month';
-    if (state.period == 'custom') {
-      if (state.customDateRange != null && state.customDateRange!.start == state.customDateRange!.end) {
-        currentValue = 'custom_date';
-      } else {
-        currentValue = 'custom_range';
-      }
-    }
-
-    return Container(
-      height: 36,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withAlpha(100),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: theme.colorScheme.outlineVariant.withAlpha(100)),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: currentValue,
-          icon: const Icon(Icons.arrow_drop_down, size: 20),
-          isDense: true,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.onSurface,
-          ),
-          items: const [
-            DropdownMenuItem(value: 'today', child: Text('Today')),
-            DropdownMenuItem(value: 'yesterday', child: Text('Yesterday')),
-            DropdownMenuItem(value: 'week', child: Text('This week')),
-            DropdownMenuItem(value: 'month', child: Text('This month')),
-            DropdownMenuItem(value: 'custom_date', child: Text('Custom date')),
-            DropdownMenuItem(value: 'custom_range', child: Text('Custom range')),
-          ],
-          onChanged: (val) {
-            if (val != null) {
-              onPeriodChanged(val);
-            }
-          },
-        ),
-      ),
-    );
-  }
-}
-
 class _SaleItemCard extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -335,27 +224,6 @@ class _SaleItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isError = quantity > currentStock;
-
-    IconData icon = Icons.local_drink;
-    Color iconColor = Colors.green;
-    Color bgColor = Colors.green.withAlpha(30);
-
-    if (subtitle.contains('Bottle') && subtitle.contains('500ml')) {
-      iconColor = Colors.blue;
-      bgColor = Colors.blue.withAlpha(30);
-    } else if (subtitle.contains('Packet')) {
-      icon = Icons.inventory_2;
-      iconColor = Colors.orange;
-      bgColor = Colors.orange.withAlpha(30);
-    } else if (title.contains('Oil')) {
-      icon = Icons.oil_barrel;
-      iconColor = Colors.amber;
-      bgColor = Colors.amber.withAlpha(30);
-    } else if (title.contains('Ghee')) {
-      icon = Icons.cookie;
-      iconColor = Colors.brown;
-      bgColor = Colors.brown.withAlpha(30);
-    }
 
     return Card(
       elevation: 0,

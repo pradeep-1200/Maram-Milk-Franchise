@@ -11,6 +11,7 @@ import '../../features/dispatch/dispatch_ready_screen.dart';
 import '../../features/dispatch/dispatch_summary_screen.dart';
 import '../../features/manager_inventory/manager_inventory_screen.dart';
 import '../../features/shop_sale/shop_sale_screen.dart';
+import '../../features/shop_sale/shop_sale_history_screen.dart';
 
 import '../../features/inventory/inventory_screen.dart';
 import '../../features/reports/reports_screen.dart';
@@ -166,6 +167,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       path: '/shop-sale',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => const ShopSaleScreen(),
+      routes: [
+        GoRoute(
+          path: 'history',
+          parentNavigatorKey: _rootNavigatorKey,
+          builder: (context, state) => const ShopSaleHistoryScreen(),
+        ),
+      ],
     ),
     GoRoute(
       path: '/staff-directory',

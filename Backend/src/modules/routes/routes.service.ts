@@ -106,7 +106,7 @@ export const updateRouteAllocation = async (
   dpId: string, 
   litresAllocated: number, 
   status: RouteAllocationStatus,
-  items: { inventoryItemId: string; quantity: number }[],
+  items?: { inventoryItemId: string; quantity: number }[],
   petrolAllowanceGiven?: number
 ) => {
   const result = await prisma.$transaction(async (tx) => {
@@ -124,14 +124,16 @@ export const updateRouteAllocation = async (
     }
 
     const itemDeltas = new Map<string, number>();
-    for (const item of items) {
-      const oldQty = oldItemMap.get(item.inventoryItemId) || 0;
-      const delta = item.quantity - oldQty;
-      if (delta !== 0) itemDeltas.set(item.inventoryItemId, delta);
-    }
-    for (const [oldId, oldQty] of oldItemMap.entries()) {
-      if (!items.find(i => i.inventoryItemId === oldId)) {
-        itemDeltas.set(oldId, -oldQty);
+    if (items !== undefined) {
+      for (const item of items) {
+        const oldQty = oldItemMap.get(item.inventoryItemId) || 0;
+        const delta = item.quantity - oldQty;
+        if (delta !== 0) itemDeltas.set(item.inventoryItemId, delta);
+      }
+      for (const [oldId, oldQty] of oldItemMap.entries()) {
+        if (!items.find(i => i.inventoryItemId === oldId)) {
+          itemDeltas.set(oldId, -oldQty);
+        }
       }
     }
 
@@ -181,18 +183,20 @@ export const updateRouteAllocation = async (
     });
 
     // Delete old items and insert new ones
-    await tx.routeAllocationItem.deleteMany({
-      where: { routeAllocationId: allocation.id }
-    });
-    
-    if (items.length > 0) {
-      await tx.routeAllocationItem.createMany({
-        data: items.map(i => ({
-          routeAllocationId: allocation.id,
-          inventoryItemId: i.inventoryItemId,
-          quantity: i.quantity
-        }))
+    if (items !== undefined) {
+      await tx.routeAllocationItem.deleteMany({
+        where: { routeAllocationId: allocation.id }
       });
+      
+      if (items.length > 0) {
+        await tx.routeAllocationItem.createMany({
+          data: items.map(i => ({
+            routeAllocationId: allocation.id,
+            inventoryItemId: i.inventoryItemId,
+            quantity: i.quantity
+          }))
+        });
+      }
     }
 
     // 4. Process Inventory decrements

@@ -94,18 +94,74 @@ class _ShopSaleScreenState extends ConsumerState<ShopSaleScreen> {
                 ),
                 const SizedBox(height: 16),
                 
-                ...loadedState.items.map((item) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12.0),
-                    child: _SaleItemCard(
-                      title: item.name,
-                      subtitle: item.subtitle,
-                      currentStock: item.currentStock.toInt(),
-                      quantity: saleState.currentQuantities[item.id] ?? 0,
-                      onChanged: (val) => saleNotifier.updateQuantity(item.id, val),
-                    ),
+                (() {
+                  final groupedItems = <String, List<dynamic>>{};
+                  final sectionKeys = <String>[];
+                  for (var item in loadedState.items) {
+                    final section = item.section == 'Snacks / Grocery' ? 'Grocery' : (item.section ?? 'Other');
+                    if (!groupedItems.containsKey(section)) {
+                      groupedItems[section] = [];
+                      sectionKeys.add(section);
+                    }
+                    groupedItems[section]!.add(item);
+                  }
+                  
+                  final sectionOrder = ['Milk', 'Dairy', 'Oils', 'Sweeteners', 'Grocery'];
+                  sectionKeys.sort((a, b) {
+                    int indexA = sectionOrder.indexOf(a);
+                    int indexB = sectionOrder.indexOf(b);
+                    if (indexA == -1) indexA = 999;
+                    if (indexB == -1) indexB = 999;
+                    return indexA.compareTo(indexB);
+                  });
+
+                  IconData getSectionIcon(String section) {
+                    switch (section) {
+                      case 'Milk': return Icons.local_drink;
+                      case 'Dairy': return Icons.cookie;
+                      case 'Oils': return Icons.opacity;
+                      case 'Sweeteners': return Icons.spa;
+                      case 'Grocery': return Icons.shopping_bag;
+                      default: return Icons.inventory_2;
+                    }
+                  }
+
+                  return Column(
+                    children: sectionKeys.map((section) {
+                      final items = groupedItems[section]!;
+                      return Theme(
+                        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                        child: ExpansionTile(
+                          initiallyExpanded: true,
+                          leading: Icon(getSectionIcon(section), color: theme.colorScheme.primary),
+                          title: Text(
+                            section,
+                            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: AppConstants.spacing16, vertical: 8.0),
+                              child: Column(
+                                children: items.map((item) {
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 12.0),
+                                    child: _SaleItemCard(
+                                      title: item.name,
+                                      subtitle: item.subtitle,
+                                      currentStock: item.currentStock.toInt(),
+                                      quantity: saleState.currentQuantities[item.id] ?? 0,
+                                      onChanged: (val) => saleNotifier.updateQuantity(item.id, val),
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            )
+                          ],
+                        ),
+                      );
+                    }).toList(),
                   );
-                }),
+                })(),
 
                 const SizedBox(height: 32),
                 

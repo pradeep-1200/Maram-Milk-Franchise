@@ -25,7 +25,9 @@ export const updateAllocation = async (req: Request, res: Response, next: NextFu
       return res.status(400).json({ error: { message: 'Allocated litres must be greater than 0 to assign a route.', code: 'INVALID_LITRES' } });
     }
 
-    const itemArray = Object.entries(items).map(([id, quantity]) => ({ inventoryItemId: id, quantity }));
+    const itemArray = items !== undefined 
+      ? Object.entries(items).map(([id, quantity]) => ({ inventoryItemId: id, quantity }))
+      : undefined;
     const allocation = await routesService.updateRouteAllocation(routeId, date, dpId, litresAllocated, status, itemArray, petrolAllowanceGiven);
     res.json(allocation);
   } catch (error: any) {

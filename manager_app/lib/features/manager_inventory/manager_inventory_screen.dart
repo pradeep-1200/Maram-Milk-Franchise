@@ -111,87 +111,143 @@ class _ManagerInventoryScreenState extends ConsumerState<ManagerInventoryScreen>
                       ),
                     ),
                     const SizedBox(height: AppConstants.spacing16),
-                    ...items.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final item = entry.value;
-                      String subtitle = item.subtitle;
+                    (() {
+                      final groupedItems = <String, List<dynamic>>{};
+                      final sectionKeys = <String>[];
+                      for (var item in items) {
+                        final section = item.section == 'Snacks / Grocery' ? 'Grocery' : (item.section ?? 'Other');
+                        if (!groupedItems.containsKey(section)) {
+                          groupedItems[section] = [];
+                          sectionKeys.add(section);
+                        }
+                        groupedItems[section]!.add(item);
+                      }
+                      
+                      final sectionOrder = ['Milk', 'Dairy', 'Oils', 'Sweeteners', 'Grocery'];
+                      sectionKeys.sort((a, b) {
+                        int indexA = sectionOrder.indexOf(a);
+                        int indexB = sectionOrder.indexOf(b);
+                        if (indexA == -1) indexA = 999;
+                        if (indexB == -1) indexB = 999;
+                        return indexA.compareTo(indexB);
+                      });
 
-                      IconData icon = Icons.local_drink;
-                      Color iconColor = Colors.green;
-                      Color bgColor = Colors.green.withAlpha(30);
-
-                      if (item.name.contains('Half')) {
-                        iconColor = Colors.blue;
-                        bgColor = Colors.blue.withAlpha(30);
-                      } else if (item.name.contains('Packet')) {
-                        icon = Icons.inventory_2;
-                        iconColor = Colors.orange;
-                        bgColor = Colors.orange.withAlpha(30);
+                      IconData getSectionIcon(String section) {
+                        switch (section) {
+                          case 'Milk': return Icons.local_drink;
+                          case 'Dairy': return Icons.cookie;
+                          case 'Oils': return Icons.opacity;
+                          case 'Sweeteners': return Icons.spa;
+                          case 'Grocery': return Icons.shopping_bag;
+                          default: return Icons.inventory_2;
+                        }
                       }
 
                       return Column(
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: bgColor,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Icon(icon, color: iconColor),
+                        children: sectionKeys.map((section) {
+                          final sectionItems = groupedItems[section]!;
+                          return Theme(
+                            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                            child: ExpansionTile(
+                              initiallyExpanded: true,
+                              leading: Icon(getSectionIcon(section), color: theme.colorScheme.primary),
+                              title: Text(
+                                section,
+                                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                               ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      item.name,
-                                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                                    ),
-                                    Text(
-                                      subtitle,
-                                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              SizedBox(
-                                width: 80,
-                                child: TextFormField(
-                                  controller: _controllers[item.id],
-                                  keyboardType: TextInputType.number,
-                                  textAlign: TextAlign.center,
-                                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                                  decoration: const InputDecoration(
-                                    isDense: true,
-                                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                                    border: OutlineInputBorder(),
-                                    hintText: '0',
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 0.0),
+                                  child: Column(
+                                    children: sectionItems.asMap().entries.map((entry) {
+                                      final index = entry.key;
+                                      final item = entry.value;
+                                      String subtitle = item.subtitle;
+
+                                      IconData icon = Icons.local_drink;
+                                      Color iconColor = Colors.green;
+                                      Color bgColor = Colors.green.withAlpha(30);
+
+                                      if (item.name.contains('Half')) {
+                                        iconColor = Colors.blue;
+                                        bgColor = Colors.blue.withAlpha(30);
+                                      } else if (item.name.contains('Packet')) {
+                                        icon = Icons.inventory_2;
+                                        iconColor = Colors.orange;
+                                        bgColor = Colors.orange.withAlpha(30);
+                                      }
+
+                                      return Column(
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.all(12),
+                                                decoration: BoxDecoration(
+                                                  color: bgColor,
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                                child: Icon(icon, color: iconColor),
+                                              ),
+                                              const SizedBox(width: 16),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      item.name,
+                                                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                                                    ),
+                                                    Text(
+                                                      subtitle,
+                                                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              SizedBox(
+                                                width: 80,
+                                                child: TextFormField(
+                                                  controller: _controllers[item.id],
+                                                  keyboardType: TextInputType.number,
+                                                  textAlign: TextAlign.center,
+                                                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                                                  decoration: const InputDecoration(
+                                                    isDense: true,
+                                                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                                    border: OutlineInputBorder(),
+                                                    hintText: '0',
+                                                  ),
+                                                  onChanged: (val) {
+                                                    final count = int.tryParse(val);
+                                                    if (count != null) {
+                                                      notifier.updateCount(item.id, count);
+                                                    } else if (val.isEmpty) {
+                                                      notifier.updateCount(item.id, 0);
+                                                    }
+                                                  },
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          if (index < sectionItems.length - 1)
+                                            const Padding(
+                                              padding: EdgeInsets.symmetric(vertical: 12.0),
+                                              child: Divider(height: 1),
+                                            )
+                                          else
+                                            const SizedBox(height: 16),
+                                        ],
+                                      );
+                                    }).toList(),
                                   ),
-                                  onChanged: (val) {
-                                    final count = int.tryParse(val);
-                                    if (count != null) {
-                                      notifier.updateCount(item.id, count);
-                                    } else if (val.isEmpty) {
-                                      notifier.updateCount(item.id, 0);
-                                    }
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                          if (index < items.length - 1)
-                            const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 12.0),
-                              child: Divider(height: 1),
-                            )
-                          else
-                            const SizedBox(height: 16),
-                        ],
+                                )
+                              ],
+                            ),
+                          );
+                        }).toList(),
                       );
-                    }).toList(),
+                    })(),
                     const SizedBox(height: AppConstants.spacing8),
                     if (state.error != null)
                       Padding(

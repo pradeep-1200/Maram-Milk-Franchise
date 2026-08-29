@@ -76,10 +76,10 @@ flutter_launcher_icons:
 
 flutter_native_splash:
   color: "#FFFFFF"
-  image: "assets/icon/transparent_1x1.png"
+  image: "assets/icon/app_icon.png"
   android_12:
     color: "#FFFFFF"
-    image: "assets/icon/transparent_1x1.png"
+    image: "assets/icon/app_icon.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -94,7 +94,6 @@ flutter:
 
   assets:
     - .env
-    - .env.production
     - assets/icon/
 
   # An image asset can refer to one or more resolution-specific "variants", see

@@ -22,7 +22,7 @@ class MaramManagerApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
     
     return MaterialApp.router(
-      title: 'Maram Manager',
+      title: 'Maram Milk Manager',
       theme: AppTheme.lightTheme,
       routerConfig: router,
       debugShowCheckedModeBanner: false,

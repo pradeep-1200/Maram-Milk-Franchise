@@ -368,15 +368,6 @@ class _SaleItemCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
         child: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: bgColor,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(icon, color: iconColor, size: 20),
-            ),
-            const SizedBox(width: 12),
             Expanded(
               child: Text(
                 '$title${subtitle.isNotEmpty ? ' • $subtitle' : ''}',
@@ -456,13 +447,20 @@ class _EditableStepperState extends State<_EditableStepper> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        IconButton(
-          icon: const Icon(Icons.remove_circle_outline),
-          color: widget.value > 0 ? theme.colorScheme.primary : Colors.grey,
-          onPressed: widget.value > 0 ? () => widget.onChanged(widget.value - 1) : null,
+        InkWell(
+          borderRadius: BorderRadius.circular(24),
+          onTap: widget.value > 0 ? () => widget.onChanged(widget.value - 1) : null,
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Icon(
+              Icons.remove_circle_outline,
+              color: widget.value > 0 ? theme.colorScheme.primary : Colors.grey,
+              size: 24,
+            ),
+          ),
         ),
         SizedBox(
-          width: 50,
+          width: 44,
           child: TextFormField(
             controller: _controller,
             keyboardType: TextInputType.number,
@@ -473,8 +471,8 @@ class _EditableStepperState extends State<_EditableStepper> {
             ),
             decoration: InputDecoration(
               isDense: true,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
             ),
             onChanged: (val) {
               final numValue = int.tryParse(val);
@@ -486,10 +484,17 @@ class _EditableStepperState extends State<_EditableStepper> {
             },
           ),
         ),
-        IconButton(
-          icon: const Icon(Icons.add_circle_outline),
-          color: theme.colorScheme.primary,
-          onPressed: () => widget.onChanged(widget.value + 1),
+        InkWell(
+          borderRadius: BorderRadius.circular(24),
+          onTap: () => widget.onChanged(widget.value + 1),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Icon(
+              Icons.add_circle_outline,
+              color: theme.colorScheme.primary,
+              size: 24,
+            ),
+          ),
         ),
       ],
     );

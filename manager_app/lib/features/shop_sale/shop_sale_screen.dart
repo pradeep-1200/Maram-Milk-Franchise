@@ -358,36 +358,49 @@ class _SaleItemCard extends StatelessWidget {
     }
 
     return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 0,
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: theme.colorScheme.outlineVariant.withAlpha(50)),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: bgColor,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(icon, color: iconColor),
+              child: Icon(icon, color: iconColor, size: 20),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                  Text(subtitle, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-                  const SizedBox(height: 2),
-                  Text('Available: $currentStock', 
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: currentStock == 0 ? Colors.red : theme.colorScheme.onSurfaceVariant
-                    )
-                  ),
-                ],
+              child: Text(
+                '$title${subtitle.isNotEmpty ? ' • $subtitle' : ''}',
+                style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: currentStock == 0 ? Colors.red.withAlpha(30) : theme.colorScheme.secondaryContainer,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                'Av: $currentStock',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: currentStock == 0 ? Colors.red : theme.colorScheme.onSecondaryContainer,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
             _EditableStepper(
               value: quantity,
               isError: isError,

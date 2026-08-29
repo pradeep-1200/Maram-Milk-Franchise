@@ -18,6 +18,15 @@ export const getRoutesWithAllocation = async (date: string) => {
     },
   });
 
+  const todaysBottleLogs = await prisma.emptyBottleLog.findMany({
+    where: { date },
+    include: {
+      items: {
+        include: { inventoryItem: true }
+      }
+    }
+  });
+
   // Calculate expectedEmptyBottles per DP from previous EmptyBottleLog
   const dpIds = [...new Set(allocations.map(a => a.dpId))];
   const dpCarryOver = new Map<string, number>();
@@ -58,14 +67,27 @@ export const getRoutesWithAllocation = async (date: string) => {
     let expectedEmptyBottles = 0;
     for (const alloc of routeAllocations) {
       // Add DP carry over
-      expectedEmptyBottles += dpCarryOver.get(alloc.dpId) || 0;
+      let dpExpected = dpCarryOver.get(alloc.dpId) || 0;
       
       // Add today's allocations for this DP
       for (const item of alloc.items) {
         if (item.inventoryItem.section === 'Milk' && item.inventoryItem.material === 'Bottle') {
-          expectedEmptyBottles += item.quantity;
+          dpExpected += item.quantity;
         }
       }
+
+      // Subtract today's collected bottles for this DP
+      const todaysLogForDp = todaysBottleLogs.find(log => log.dpId === alloc.dpId);
+      if (todaysLogForDp) {
+        for (const item of todaysLogForDp.items) {
+          if (item.inventoryItem.section === 'Milk' && item.inventoryItem.material === 'Bottle') {
+            dpExpected -= (item.collected || 0);
+          }
+        }
+      }
+
+      // Ensure expected is never negative for this DP, then add to route total
+      expectedEmptyBottles += Math.max(0, dpExpected);
     }
 
     return {

@@ -70,9 +70,9 @@ export const getDpPerformance = async (range: 'today'|'yesterday'|'week'|'month'
         for (const item of routeBottleLog.items) {
           const unit = item.inventoryItem.unit.toLowerCase();
           let litresPerUnit = 0;
-          if (unit.includes('1l')) litresPerUnit = 1;
-          else if (unit.includes('500ml')) litresPerUnit = 0.5;
-          else if (unit.includes('250ml')) litresPerUnit = 0.25;
+          if (unit === '1l') litresPerUnit = 1;
+          else if (unit === '500ml') litresPerUnit = 0.5;
+          else if (unit === '250ml') litresPerUnit = 0.25;
           
           if (item.inventoryItem.section === 'Milk' && item.actualDelivered) {
             actualLitres += (item.actualDelivered * litresPerUnit);
@@ -90,8 +90,24 @@ export const getDpPerformance = async (range: 'today'|'yesterday'|'week'|'month'
     const totalRecordedDays = dpAttendance.length;
     const attendanceRatio = `${presentCount} of ${totalRecordedDays}`;
 
+    let total1LBottles = 0;
+    let totalHalfLBottles = 0;
+    
     const totalBottles = dpBottles.reduce((sum, b) => {
-      return sum + b.items.reduce((s, i) => s + (i.collected ?? 0), 0);
+      let bSum = 0;
+      for (const i of b.items) {
+        const collected = i.collected ?? 0;
+        bSum += collected;
+        
+        const unit = i.inventoryItem.unit.toLowerCase();
+        const material = i.inventoryItem.material?.toLowerCase();
+        
+        if (material === 'bottle') {
+          if (unit === '1l') total1LBottles += collected;
+          else if (unit === '500ml') totalHalfLBottles += collected;
+        }
+      }
+      return sum + bSum;
     }, 0);
 
     const attendancePercent = totalRecordedDays > 0 ? (presentCount / totalRecordedDays) : 0;
@@ -108,6 +124,8 @@ export const getDpPerformance = async (range: 'today'|'yesterday'|'week'|'month'
       attendanceRatio,
       attendancePercent,
       totalBottles,
+      total1LBottles,
+      totalHalfLBottles,
       totalPetrolAllowance,
     };
   });

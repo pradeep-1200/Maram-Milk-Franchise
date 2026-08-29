@@ -168,54 +168,73 @@ class _ManagerInventoryScreenState extends ConsumerState<ManagerInventoryScreen>
                                       Color iconColor = Colors.green;
                                       Color bgColor = Colors.green.withAlpha(30);
 
-                                      if (item.name.contains('Half')) {
-                                        iconColor = Colors.blue;
-                                        bgColor = Colors.blue.withAlpha(30);
-                                      } else if (item.name.contains('Packet')) {
+                                      if (section == 'Milk') {
+                                        if (subtitle.contains('Bottle') && subtitle.contains('500ml')) {
+                                          iconColor = Colors.blue;
+                                          bgColor = Colors.blue.withAlpha(30);
+                                        } else if (subtitle.contains('Packet')) {
+                                          icon = Icons.inventory_2;
+                                          iconColor = Colors.orange;
+                                          bgColor = Colors.orange.withAlpha(30);
+                                        }
+                                      } else if (section == 'Dairy') {
+                                        icon = Icons.cookie;
+                                        iconColor = Colors.brown;
+                                        bgColor = Colors.brown.withAlpha(30);
+                                      } else if (section == 'Oils') {
+                                        icon = Icons.opacity;
+                                        iconColor = Colors.amber;
+                                        bgColor = Colors.amber.withAlpha(30);
+                                      } else if (section == 'Sweeteners') {
+                                        icon = Icons.spa;
+                                        iconColor = Colors.purple;
+                                        bgColor = Colors.purple.withAlpha(30);
+                                      } else {
                                         icon = Icons.inventory_2;
-                                        iconColor = Colors.orange;
-                                        bgColor = Colors.orange.withAlpha(30);
+                                        iconColor = Colors.grey;
+                                        bgColor = Colors.grey.withAlpha(30);
                                       }
 
-                                      return Column(
-                                        children: [
-                                          Row(
+                                      return Card(
+                                        elevation: 0,
+                                        margin: const EdgeInsets.symmetric(vertical: 4),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                          side: BorderSide(color: theme.colorScheme.outlineVariant.withAlpha(50)),
+                                        ),
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                                          child: Row(
                                             children: [
                                               Container(
-                                                padding: const EdgeInsets.all(12),
+                                                padding: const EdgeInsets.all(8),
                                                 decoration: BoxDecoration(
                                                   color: bgColor,
                                                   borderRadius: BorderRadius.circular(8),
                                                 ),
-                                                child: Icon(icon, color: iconColor),
+                                                child: Icon(icon, color: iconColor, size: 20),
                                               ),
-                                              const SizedBox(width: 16),
+                                              const SizedBox(width: 12),
                                               Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      item.name,
-                                                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                                                    ),
-                                                    Text(
-                                                      subtitle,
-                                                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                                                    ),
-                                                  ],
+                                                child: Text(
+                                                  '${item.name}${subtitle.isNotEmpty ? ' • $subtitle' : ''}',
+                                                  style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
                                                 ),
                                               ),
+                                              const SizedBox(width: 8),
                                               SizedBox(
-                                                width: 80,
+                                                width: 70,
                                                 child: TextFormField(
                                                   controller: _controllers[item.id],
                                                   keyboardType: TextInputType.number,
                                                   textAlign: TextAlign.center,
-                                                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                                                  decoration: const InputDecoration(
+                                                  style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                                                  decoration: InputDecoration(
                                                     isDense: true,
-                                                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                                                    border: OutlineInputBorder(),
+                                                    contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                                                     hintText: '0',
                                                   ),
                                                   onChanged: (val) {
@@ -230,14 +249,7 @@ class _ManagerInventoryScreenState extends ConsumerState<ManagerInventoryScreen>
                                               ),
                                             ],
                                           ),
-                                          if (index < sectionItems.length - 1)
-                                            const Padding(
-                                              padding: EdgeInsets.symmetric(vertical: 12.0),
-                                              child: Divider(height: 1),
-                                            )
-                                          else
-                                            const SizedBox(height: 16),
-                                        ],
+                                        ),
                                       );
                                     }).toList(),
                                   ),

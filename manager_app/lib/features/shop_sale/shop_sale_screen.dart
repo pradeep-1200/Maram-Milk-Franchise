@@ -369,26 +369,29 @@ class _SaleItemCard extends StatelessWidget {
         child: Row(
           children: [
             Expanded(
-              child: Text(
-                '$title${subtitle.isNotEmpty ? ' • $subtitle' : ''}',
-                style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: currentStock == 0 ? Colors.red.withAlpha(30) : theme.colorScheme.secondaryContainer,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                'Av: $currentStock',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: currentStock == 0 ? Colors.red : theme.colorScheme.onSecondaryContainer,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '$title${subtitle.isNotEmpty ? ' • $subtitle' : ''}',
+                    style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: currentStock == 0 ? Colors.red.withAlpha(30) : theme.colorScheme.secondaryContainer,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'Av: $currentStock',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: currentStock == 0 ? Colors.red : theme.colorScheme.onSecondaryContainer,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(width: 8),

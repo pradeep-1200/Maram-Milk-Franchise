@@ -26,12 +26,13 @@ import '../../features/evening_check/evening_check_screen.dart';
 
 import '../../features/milk_allocation/milk_allocation_screen.dart';
 import '../../features/petrol_allowance/petrol_allowance_screen.dart';
-
+final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
+    observers: [routeObserver],
     initialLocation: '/',
     routes: [
     GoRoute(

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:manager_app/core/utils/date_util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,9 +7,9 @@ import '../../shared/app_button.dart';
 import '../../shared/async_value_widget.dart';
 import 'providers/manager_inventory_provider.dart';
 import '../inventory/providers/inventory_provider.dart';
-
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../../core/router/app_router.dart';
 
 class ManagerInventoryScreen extends ConsumerStatefulWidget {
   const ManagerInventoryScreen({super.key});
@@ -17,11 +18,73 @@ class ManagerInventoryScreen extends ConsumerStatefulWidget {
   ConsumerState<ManagerInventoryScreen> createState() => _ManagerInventoryScreenState();
 }
 
-class _ManagerInventoryScreenState extends ConsumerState<ManagerInventoryScreen> {
+class _ManagerInventoryScreenState extends ConsumerState<ManagerInventoryScreen> with WidgetsBindingObserver, RouteAware {
   final Map<String, TextEditingController> _controllers = {};
+  Timer? _timer;
+  DateTime? _lastFetchTime;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _startTimer();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context)!);
+  }
+
+  @override
+  void didPopNext() {
+    // Called when the top route is popped off, revealing this route.
+    _reload(force: true);
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 60), (_) {
+      _reload();
+    });
+  }
+
+  void _stopTimer() {
+    _timer?.cancel();
+    _timer = null;
+  }
+
+  Future<void> _reload({bool force = false}) async {
+    final now = DateTime.now();
+    if (!force && _lastFetchTime != null && now.difference(_lastFetchTime!).inSeconds < 5) {
+      return; // Debounce
+    }
+    _lastFetchTime = now;
+    
+    // Trigger reloads
+    ref.read(inventoryProvider.notifier).reload();
+    ref.read(managerInventoryProvider.notifier).reload();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _startTimer();
+      _reload();
+    } else if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      _stopTimer();
+    }
+  }
 
   @override
   void dispose() {
+    _stopTimer();
+    WidgetsBinding.instance.removeObserver(this);
+    routeObserver.unsubscribe(this);
+    try {
+      ref.read(managerInventoryProvider.notifier).clearUnsavedEdits();
+    } catch (_) {}
+    
     for (var controller in _controllers.values) {
       controller.dispose();
     }
@@ -71,16 +134,20 @@ class _ManagerInventoryScreenState extends ConsumerState<ManagerInventoryScreen>
             if (!_controllers.containsKey(item.id)) {
               _controllers[item.id] = TextEditingController();
             }
-            final val = (state.counts[item.id] ?? state.counts[item.name])?.toString() ?? '';
-            
-            if (_controllers[item.id]!.text.isEmpty && val.isNotEmpty) {
-              _controllers[item.id]!.text = val;
+            if (!state.dirtyFields.contains(item.id)) {
+              final val = (state.counts[item.id] ?? state.counts[item.name])?.toString() ?? '';
+              if (_controllers[item.id]!.text != val) {
+                _controllers[item.id]!.text = val;
+              }
             }
           }
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(AppConstants.spacing16),
-            child: Card(
+          return RefreshIndicator(
+            onRefresh: () => _reload(force: true),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(AppConstants.spacing16),
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Card(
               elevation: 2,
               margin: EdgeInsets.zero,
               shape: RoundedRectangleBorder(
@@ -111,6 +178,69 @@ class _ManagerInventoryScreenState extends ConsumerState<ManagerInventoryScreen>
                       ),
                     ),
                     const SizedBox(height: AppConstants.spacing16),
+                    if (state.loadingMessage != null)
+                      Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: 16, height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: theme.colorScheme.onPrimaryContainer),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                state.loadingMessage!,
+                                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onPrimaryContainer),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (state.error != null && state.counts.isEmpty)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.errorContainer,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: theme.colorScheme.error.withAlpha(128)),
+                        ),
+                        child: Column(
+                          children: [
+                            Icon(Icons.error_outline, color: theme.colorScheme.error, size: 48),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Failed to load inventory data.',
+                              style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onErrorContainer),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              state.error!,
+                              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onErrorContainer),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 16),
+                            FilledButton.icon(
+                              onPressed: () => notifier.reload(),
+                              icon: const Icon(Icons.refresh),
+                              label: const Text('Tap to Retry'),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: theme.colorScheme.error,
+                                foregroundColor: theme.colorScheme.onError,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
                     (() {
                       final groupedItems = <String, List<dynamic>>{};
                       final sectionKeys = <String>[];
@@ -261,7 +391,7 @@ class _ManagerInventoryScreenState extends ConsumerState<ManagerInventoryScreen>
                       );
                     })(),
                     const SizedBox(height: AppConstants.spacing8),
-                    if (state.error != null)
+                    if (state.error != null && state.counts.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8.0),
                         child: Text(
@@ -296,7 +426,7 @@ class _ManagerInventoryScreenState extends ConsumerState<ManagerInventoryScreen>
                 ),
               ),
             ),
-          );
+          ));
         },
       ),
     );

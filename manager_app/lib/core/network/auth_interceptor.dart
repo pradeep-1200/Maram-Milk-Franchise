@@ -8,9 +8,8 @@ class AuthInterceptor extends Interceptor {
   AuthInterceptor(this.ref);
 
   @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
-    final storage = ref.read(secureStorageProvider);
-    final token = await storage.read(key: 'jwt_token');
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    final token = ref.read(authProvider.notifier).currentToken;
     
     // Don't add auth token for the login endpoint
     if (token != null && !options.path.contains('/auth/login')) {

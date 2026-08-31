@@ -32,15 +32,21 @@ class AuthNotifier extends Notifier<AuthState> {
   @override
   AuthState build() => const AuthState();
 
+  String? _cachedToken;
+  String? get currentToken => _cachedToken;
+
   Future<String?> getToken() async {
+    if (_cachedToken != null) return _cachedToken;
     final storage = ref.read(secureStorageProvider);
-    return await storage.read(key: _tokenKey);
+    _cachedToken = await storage.read(key: _tokenKey);
+    return _cachedToken;
   }
 
   Future<void> checkInitialAuth() async {
     final storage = ref.read(secureStorageProvider);
     final token = await storage.read(key: _tokenKey);
     if (token != null) {
+      _cachedToken = token;
       final name = await storage.read(key: _profileNameKey);
       final role = await storage.read(key: _profileRoleKey);
       final branch = await storage.read(key: _profileBranchKey);
@@ -74,6 +80,7 @@ class AuthNotifier extends Notifier<AuthState> {
         final profile = ManagerProfile.fromJson(manager);
 
         final storage = ref.read(secureStorageProvider);
+        _cachedToken = token;
         await storage.write(key: _tokenKey, value: token);
         await storage.write(key: _profileNameKey, value: profile.name);
         await storage.write(key: _profileRoleKey, value: profile.role);
@@ -108,6 +115,7 @@ class AuthNotifier extends Notifier<AuthState> {
     _isLoggingOut = true;
     
     final storage = ref.read(secureStorageProvider);
+    _cachedToken = null;
     await storage.deleteAll();
     state = const AuthState();
     

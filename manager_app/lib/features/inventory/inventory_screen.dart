@@ -226,8 +226,10 @@ class InventoryScreen extends ConsumerWidget {
             }
           }
 
-          return ListView.builder(
-            padding: const EdgeInsets.only(
+          return RefreshIndicator(
+            onRefresh: () => notifier.reload(),
+            child: ListView.builder(
+              padding: const EdgeInsets.only(
               bottom: AppConstants.spacing16,
             ),
             itemCount: sectionKeys.length,
@@ -259,7 +261,7 @@ class InventoryScreen extends ConsumerWidget {
                 ),
               );
             },
-          );
+          ));
         },
       ),
     );

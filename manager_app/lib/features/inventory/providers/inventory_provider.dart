@@ -135,7 +135,6 @@ class InventoryNotifier extends AsyncNotifier<InventoryState> {
   }
 
   Future<void> reload() async {
-    state = const AsyncValue.loading();
     state = await AsyncValue.guard(() => fetchInventory());
   }
 

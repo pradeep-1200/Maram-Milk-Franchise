@@ -41,7 +41,6 @@ class _PetrolAllowanceSheetState extends ConsumerState<PetrolAllowanceSheet> {
     // Initialize state with the actual given amount if editing, or fallback to fixed allowance
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final allocation = widget.route.allocations.where((a) => a.dpId == widget.dp.id).firstOrNull;
-      print('PA Popup Open -> allocation.petrolAllowanceGiven: ${allocation?.petrolAllowanceGiven}, route.fixedPetrolAllowance: ${widget.route.fixedPetrolAllowance}, dp.petrolBalance: ${widget.dp.petrolBalance}');
       final initialAmount = allocation?.petrolAllowanceGiven ?? widget.route.fixedPetrolAllowance;
       ref.read(petrolAllowanceProvider.notifier).init(initialAmount);
     });

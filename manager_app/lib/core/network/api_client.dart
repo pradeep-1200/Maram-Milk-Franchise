@@ -15,15 +15,16 @@ final apiClientProvider = Provider<Dio>((ref) {
   );
 
   dio.interceptors.addAll([
-    LogInterceptor(
-      request: true,
-      requestHeader: true,
-      requestBody: true,
-      responseHeader: true,
-      responseBody: true,
-      error: true,
-      logPrint: (obj) => debugPrint(obj.toString()),
-    ),
+    if (kDebugMode)
+      LogInterceptor(
+        request: true,
+        requestHeader: true,
+        requestBody: true,
+        responseHeader: true,
+        responseBody: true,
+        error: true,
+        logPrint: (obj) => debugPrint(obj.toString()),
+      ),
     AuthInterceptor(ref),
     ErrorInterceptor(ref),
   ]);

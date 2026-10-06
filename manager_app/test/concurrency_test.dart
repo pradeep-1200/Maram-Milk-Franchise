@@ -6,7 +6,7 @@ void main() {
   test('Concurrent requests test', () async {
     final dio = Dio(
       BaseOptions(
-        baseUrl: 'https://maram-milk-backend-hmz7.onrender.com/api/v1',
+        baseUrl: 'https://maram-milk-backend-production.onrender.com/api/v1',
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 10),
       ),

@@ -11,7 +11,7 @@ async function run() {
   });
   
   const route = await prisma.route.create({
-    data: { name: 'Test Route', zone: 'Test Zone', litres: 10, defaultPetrolAllowance: 50 }
+    data: { name: 'Test Route', litres: 10, defaultPetrolAllowance: 50 }
   });
 
   const date = new Date().toISOString().split('T')[0];

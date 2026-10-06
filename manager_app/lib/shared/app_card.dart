@@ -8,6 +8,7 @@ class AppCard extends StatelessWidget {
   final bool isPrimary;
   final Color? accentColor;
   final Color? backgroundColor;
+  final BoxBorder? customBorder;
 
   const AppCard({
     super.key,
@@ -17,6 +18,7 @@ class AppCard extends StatelessWidget {
     this.isPrimary = false,
     this.accentColor,
     this.backgroundColor,
+    this.customBorder,
   });
 
   @override
@@ -45,7 +47,7 @@ class AppCard extends StatelessWidget {
         color: cardBg,
         borderRadius: BorderRadius.circular(AppConstants.cardRadius),
         boxShadow: shadows,
-        border: AppConstants.cardBorder,
+        border: customBorder ?? AppConstants.cardBorder,
       ),
       child: Material(
         color: Colors.transparent,

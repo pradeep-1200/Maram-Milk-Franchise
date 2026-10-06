@@ -36,12 +36,12 @@ async function seedAndVerify() {
     data: { dpCode: 'DP-M', name: 'Mixed Routes', mobileNumber: '333', isActive: true }
   });
 
-  const route1 = await prisma.route.create({ data: { name: 'Route A', zone: 'Zone 1' }});
-  const route2 = await prisma.route.create({ data: { name: 'Route B', zone: 'Zone 2' }});
-  const route3 = await prisma.route.create({ data: { name: 'Route C', zone: 'Zone 3' }});
-  const route4 = await prisma.route.create({ data: { name: 'Route D', zone: 'Zone 4' }});
-  const route5 = await prisma.route.create({ data: { name: 'Route E', zone: 'Zone 5' }});
-  const route6 = await prisma.route.create({ data: { name: 'Route F', zone: 'Zone 6' }});
+  const route1 = await prisma.route.create({ data: { name: 'Route A' }});
+  const route2 = await prisma.route.create({ data: { name: 'Route B' }});
+  const route3 = await prisma.route.create({ data: { name: 'Route C' }});
+  const route4 = await prisma.route.create({ data: { name: 'Route D' }});
+  const route5 = await prisma.route.create({ data: { name: 'Route E' }});
+  const route6 = await prisma.route.create({ data: { name: 'Route F' }});
 
   // --- Insert Data ---
   

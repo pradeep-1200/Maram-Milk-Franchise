@@ -32,7 +32,6 @@ abstract class DeliveryRoute with _$DeliveryRoute {
   const factory DeliveryRoute({
     @JsonKey(name: 'routeId') required String id,
     @JsonKey(name: 'routeName') required String name,
-    @JsonKey(name: 'zone') required String area,
     required int customerCount,
     @JsonKey(name: 'defaultLitres') required double milkQuantity,
     @Default(0) int expectedEmptyBottles,

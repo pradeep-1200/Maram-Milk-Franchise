@@ -22,7 +22,7 @@ async function verifyManualTest() {
     data: { dpCode: 'DP-TEST', name: 'Test DP', mobileNumber: '111', isActive: true }
   });
 
-  const route1 = await prisma.route.create({ data: { name: 'Route A', zone: 'Zone 1' }});
+  const route1 = await prisma.route.create({ data: { name: 'Route A' }});
 
   // Calculate dates
   const now = new Date();

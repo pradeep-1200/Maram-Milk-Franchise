@@ -326,7 +326,7 @@ as String?,
 /// @nodoc
 mixin _$DeliveryRoute {
 
-@JsonKey(name: 'routeId') String get id;@JsonKey(name: 'routeName') String get name;@JsonKey(name: 'zone') String get area; int get customerCount;@JsonKey(name: 'defaultLitres') double get milkQuantity; int get expectedEmptyBottles; int get fixedPetrolAllowance; List<RouteAllocation> get allocations;
+@JsonKey(name: 'routeId') String get id;@JsonKey(name: 'routeName') String get name; int get customerCount;@JsonKey(name: 'defaultLitres') double get milkQuantity; int get expectedEmptyBottles; int get fixedPetrolAllowance; List<RouteAllocation> get allocations;
 /// Create a copy of DeliveryRoute
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -339,16 +339,16 @@ $DeliveryRouteCopyWith<DeliveryRoute> get copyWith => _$DeliveryRouteCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is DeliveryRoute&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.area, area) || other.area == area)&&(identical(other.customerCount, customerCount) || other.customerCount == customerCount)&&(identical(other.milkQuantity, milkQuantity) || other.milkQuantity == milkQuantity)&&(identical(other.expectedEmptyBottles, expectedEmptyBottles) || other.expectedEmptyBottles == expectedEmptyBottles)&&(identical(other.fixedPetrolAllowance, fixedPetrolAllowance) || other.fixedPetrolAllowance == fixedPetrolAllowance)&&const DeepCollectionEquality().equals(other.allocations, allocations));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is DeliveryRoute&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.customerCount, customerCount) || other.customerCount == customerCount)&&(identical(other.milkQuantity, milkQuantity) || other.milkQuantity == milkQuantity)&&(identical(other.expectedEmptyBottles, expectedEmptyBottles) || other.expectedEmptyBottles == expectedEmptyBottles)&&(identical(other.fixedPetrolAllowance, fixedPetrolAllowance) || other.fixedPetrolAllowance == fixedPetrolAllowance)&&const DeepCollectionEquality().equals(other.allocations, allocations));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,area,customerCount,milkQuantity,expectedEmptyBottles,fixedPetrolAllowance,const DeepCollectionEquality().hash(allocations));
+int get hashCode => Object.hash(runtimeType,id,name,customerCount,milkQuantity,expectedEmptyBottles,fixedPetrolAllowance,const DeepCollectionEquality().hash(allocations));
 
 @override
 String toString() {
-  return 'DeliveryRoute(id: $id, name: $name, area: $area, customerCount: $customerCount, milkQuantity: $milkQuantity, expectedEmptyBottles: $expectedEmptyBottles, fixedPetrolAllowance: $fixedPetrolAllowance, allocations: $allocations)';
+  return 'DeliveryRoute(id: $id, name: $name, customerCount: $customerCount, milkQuantity: $milkQuantity, expectedEmptyBottles: $expectedEmptyBottles, fixedPetrolAllowance: $fixedPetrolAllowance, allocations: $allocations)';
 }
 
 
@@ -359,7 +359,7 @@ abstract mixin class $DeliveryRouteCopyWith<$Res>  {
   factory $DeliveryRouteCopyWith(DeliveryRoute value, $Res Function(DeliveryRoute) _then) = _$DeliveryRouteCopyWithImpl;
 @useResult
 $Res call({
-@JsonKey(name: 'routeId') String id,@JsonKey(name: 'routeName') String name,@JsonKey(name: 'zone') String area, int customerCount,@JsonKey(name: 'defaultLitres') double milkQuantity, int expectedEmptyBottles, int fixedPetrolAllowance, List<RouteAllocation> allocations
+@JsonKey(name: 'routeId') String id,@JsonKey(name: 'routeName') String name, int customerCount,@JsonKey(name: 'defaultLitres') double milkQuantity, int expectedEmptyBottles, int fixedPetrolAllowance, List<RouteAllocation> allocations
 });
 
 
@@ -376,11 +376,10 @@ class _$DeliveryRouteCopyWithImpl<$Res>
 
 /// Create a copy of DeliveryRoute
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? area = null,Object? customerCount = null,Object? milkQuantity = null,Object? expectedEmptyBottles = null,Object? fixedPetrolAllowance = null,Object? allocations = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? customerCount = null,Object? milkQuantity = null,Object? expectedEmptyBottles = null,Object? fixedPetrolAllowance = null,Object? allocations = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
-as String,area: null == area ? _self.area : area // ignore: cast_nullable_to_non_nullable
 as String,customerCount: null == customerCount ? _self.customerCount : customerCount // ignore: cast_nullable_to_non_nullable
 as int,milkQuantity: null == milkQuantity ? _self.milkQuantity : milkQuantity // ignore: cast_nullable_to_non_nullable
 as double,expectedEmptyBottles: null == expectedEmptyBottles ? _self.expectedEmptyBottles : expectedEmptyBottles // ignore: cast_nullable_to_non_nullable
@@ -471,10 +470,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'routeId')  String id, @JsonKey(name: 'routeName')  String name, @JsonKey(name: 'zone')  String area,  int customerCount, @JsonKey(name: 'defaultLitres')  double milkQuantity,  int expectedEmptyBottles,  int fixedPetrolAllowance,  List<RouteAllocation> allocations)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'routeId')  String id, @JsonKey(name: 'routeName')  String name,  int customerCount, @JsonKey(name: 'defaultLitres')  double milkQuantity,  int expectedEmptyBottles,  int fixedPetrolAllowance,  List<RouteAllocation> allocations)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _DeliveryRoute() when $default != null:
-return $default(_that.id,_that.name,_that.area,_that.customerCount,_that.milkQuantity,_that.expectedEmptyBottles,_that.fixedPetrolAllowance,_that.allocations);case _:
+return $default(_that.id,_that.name,_that.customerCount,_that.milkQuantity,_that.expectedEmptyBottles,_that.fixedPetrolAllowance,_that.allocations);case _:
   return orElse();
 
 }
@@ -492,10 +491,10 @@ return $default(_that.id,_that.name,_that.area,_that.customerCount,_that.milkQua
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'routeId')  String id, @JsonKey(name: 'routeName')  String name, @JsonKey(name: 'zone')  String area,  int customerCount, @JsonKey(name: 'defaultLitres')  double milkQuantity,  int expectedEmptyBottles,  int fixedPetrolAllowance,  List<RouteAllocation> allocations)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'routeId')  String id, @JsonKey(name: 'routeName')  String name,  int customerCount, @JsonKey(name: 'defaultLitres')  double milkQuantity,  int expectedEmptyBottles,  int fixedPetrolAllowance,  List<RouteAllocation> allocations)  $default,) {final _that = this;
 switch (_that) {
 case _DeliveryRoute():
-return $default(_that.id,_that.name,_that.area,_that.customerCount,_that.milkQuantity,_that.expectedEmptyBottles,_that.fixedPetrolAllowance,_that.allocations);case _:
+return $default(_that.id,_that.name,_that.customerCount,_that.milkQuantity,_that.expectedEmptyBottles,_that.fixedPetrolAllowance,_that.allocations);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -512,10 +511,10 @@ return $default(_that.id,_that.name,_that.area,_that.customerCount,_that.milkQua
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'routeId')  String id, @JsonKey(name: 'routeName')  String name, @JsonKey(name: 'zone')  String area,  int customerCount, @JsonKey(name: 'defaultLitres')  double milkQuantity,  int expectedEmptyBottles,  int fixedPetrolAllowance,  List<RouteAllocation> allocations)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'routeId')  String id, @JsonKey(name: 'routeName')  String name,  int customerCount, @JsonKey(name: 'defaultLitres')  double milkQuantity,  int expectedEmptyBottles,  int fixedPetrolAllowance,  List<RouteAllocation> allocations)?  $default,) {final _that = this;
 switch (_that) {
 case _DeliveryRoute() when $default != null:
-return $default(_that.id,_that.name,_that.area,_that.customerCount,_that.milkQuantity,_that.expectedEmptyBottles,_that.fixedPetrolAllowance,_that.allocations);case _:
+return $default(_that.id,_that.name,_that.customerCount,_that.milkQuantity,_that.expectedEmptyBottles,_that.fixedPetrolAllowance,_that.allocations);case _:
   return null;
 
 }
@@ -527,12 +526,11 @@ return $default(_that.id,_that.name,_that.area,_that.customerCount,_that.milkQua
 @JsonSerializable()
 
 class _DeliveryRoute implements DeliveryRoute {
-  const _DeliveryRoute({@JsonKey(name: 'routeId') required this.id, @JsonKey(name: 'routeName') required this.name, @JsonKey(name: 'zone') required this.area, required this.customerCount, @JsonKey(name: 'defaultLitres') required this.milkQuantity, this.expectedEmptyBottles = 0, this.fixedPetrolAllowance = 80, final  List<RouteAllocation> allocations = const []}): _allocations = allocations;
+  const _DeliveryRoute({@JsonKey(name: 'routeId') required this.id, @JsonKey(name: 'routeName') required this.name, required this.customerCount, @JsonKey(name: 'defaultLitres') required this.milkQuantity, this.expectedEmptyBottles = 0, this.fixedPetrolAllowance = 80, final  List<RouteAllocation> allocations = const []}): _allocations = allocations;
   factory _DeliveryRoute.fromJson(Map<String, dynamic> json) => _$DeliveryRouteFromJson(json);
 
 @override@JsonKey(name: 'routeId') final  String id;
 @override@JsonKey(name: 'routeName') final  String name;
-@override@JsonKey(name: 'zone') final  String area;
 @override final  int customerCount;
 @override@JsonKey(name: 'defaultLitres') final  double milkQuantity;
 @override@JsonKey() final  int expectedEmptyBottles;
@@ -558,16 +556,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DeliveryRoute&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.area, area) || other.area == area)&&(identical(other.customerCount, customerCount) || other.customerCount == customerCount)&&(identical(other.milkQuantity, milkQuantity) || other.milkQuantity == milkQuantity)&&(identical(other.expectedEmptyBottles, expectedEmptyBottles) || other.expectedEmptyBottles == expectedEmptyBottles)&&(identical(other.fixedPetrolAllowance, fixedPetrolAllowance) || other.fixedPetrolAllowance == fixedPetrolAllowance)&&const DeepCollectionEquality().equals(other._allocations, _allocations));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DeliveryRoute&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.customerCount, customerCount) || other.customerCount == customerCount)&&(identical(other.milkQuantity, milkQuantity) || other.milkQuantity == milkQuantity)&&(identical(other.expectedEmptyBottles, expectedEmptyBottles) || other.expectedEmptyBottles == expectedEmptyBottles)&&(identical(other.fixedPetrolAllowance, fixedPetrolAllowance) || other.fixedPetrolAllowance == fixedPetrolAllowance)&&const DeepCollectionEquality().equals(other._allocations, _allocations));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,area,customerCount,milkQuantity,expectedEmptyBottles,fixedPetrolAllowance,const DeepCollectionEquality().hash(_allocations));
+int get hashCode => Object.hash(runtimeType,id,name,customerCount,milkQuantity,expectedEmptyBottles,fixedPetrolAllowance,const DeepCollectionEquality().hash(_allocations));
 
 @override
 String toString() {
-  return 'DeliveryRoute(id: $id, name: $name, area: $area, customerCount: $customerCount, milkQuantity: $milkQuantity, expectedEmptyBottles: $expectedEmptyBottles, fixedPetrolAllowance: $fixedPetrolAllowance, allocations: $allocations)';
+  return 'DeliveryRoute(id: $id, name: $name, customerCount: $customerCount, milkQuantity: $milkQuantity, expectedEmptyBottles: $expectedEmptyBottles, fixedPetrolAllowance: $fixedPetrolAllowance, allocations: $allocations)';
 }
 
 
@@ -578,7 +576,7 @@ abstract mixin class _$DeliveryRouteCopyWith<$Res> implements $DeliveryRouteCopy
   factory _$DeliveryRouteCopyWith(_DeliveryRoute value, $Res Function(_DeliveryRoute) _then) = __$DeliveryRouteCopyWithImpl;
 @override @useResult
 $Res call({
-@JsonKey(name: 'routeId') String id,@JsonKey(name: 'routeName') String name,@JsonKey(name: 'zone') String area, int customerCount,@JsonKey(name: 'defaultLitres') double milkQuantity, int expectedEmptyBottles, int fixedPetrolAllowance, List<RouteAllocation> allocations
+@JsonKey(name: 'routeId') String id,@JsonKey(name: 'routeName') String name, int customerCount,@JsonKey(name: 'defaultLitres') double milkQuantity, int expectedEmptyBottles, int fixedPetrolAllowance, List<RouteAllocation> allocations
 });
 
 
@@ -595,11 +593,10 @@ class __$DeliveryRouteCopyWithImpl<$Res>
 
 /// Create a copy of DeliveryRoute
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? area = null,Object? customerCount = null,Object? milkQuantity = null,Object? expectedEmptyBottles = null,Object? fixedPetrolAllowance = null,Object? allocations = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? customerCount = null,Object? milkQuantity = null,Object? expectedEmptyBottles = null,Object? fixedPetrolAllowance = null,Object? allocations = null,}) {
   return _then(_DeliveryRoute(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
-as String,area: null == area ? _self.area : area // ignore: cast_nullable_to_non_nullable
 as String,customerCount: null == customerCount ? _self.customerCount : customerCount // ignore: cast_nullable_to_non_nullable
 as int,milkQuantity: null == milkQuantity ? _self.milkQuantity : milkQuantity // ignore: cast_nullable_to_non_nullable
 as double,expectedEmptyBottles: null == expectedEmptyBottles ? _self.expectedEmptyBottles : expectedEmptyBottles // ignore: cast_nullable_to_non_nullable

@@ -54,7 +54,6 @@ _DeliveryRoute _$DeliveryRouteFromJson(
 ) => _DeliveryRoute(
   id: json['routeId'] as String,
   name: json['routeName'] as String,
-  area: json['zone'] as String,
   customerCount: (json['customerCount'] as num).toInt(),
   milkQuantity: (json['defaultLitres'] as num).toDouble(),
   expectedEmptyBottles: (json['expectedEmptyBottles'] as num?)?.toInt() ?? 0,
@@ -70,7 +69,6 @@ Map<String, dynamic> _$DeliveryRouteToJson(_DeliveryRoute instance) =>
     <String, dynamic>{
       'routeId': instance.id,
       'routeName': instance.name,
-      'zone': instance.area,
       'customerCount': instance.customerCount,
       'defaultLitres': instance.milkQuantity,
       'expectedEmptyBottles': instance.expectedEmptyBottles,

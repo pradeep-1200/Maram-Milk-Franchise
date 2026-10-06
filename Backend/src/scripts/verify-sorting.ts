@@ -23,12 +23,12 @@ async function verifySortingTest() {
   const dpY = await prisma.deliveryPerson.create({ data: { dpCode: 'DP-Y', name: 'DP Y', mobileNumber: '2', isActive: true } });
   const dpZ = await prisma.deliveryPerson.create({ data: { dpCode: 'DP-Z', name: 'DP Z', mobileNumber: '3', isActive: true } });
 
-  const route1 = await prisma.route.create({ data: { name: 'Route A', zone: 'Zone 1' }});
-  const route2 = await prisma.route.create({ data: { name: 'Route B', zone: 'Zone 1' }});
-  const route3 = await prisma.route.create({ data: { name: 'Route C', zone: 'Zone 1' }});
-  const route4 = await prisma.route.create({ data: { name: 'Route D', zone: 'Zone 1' }});
-  const route5 = await prisma.route.create({ data: { name: 'Route E', zone: 'Zone 1' }});
-  const route6 = await prisma.route.create({ data: { name: 'Route F', zone: 'Zone 1' }});
+  const route1 = await prisma.route.create({ data: { name: 'Route A' }});
+  const route2 = await prisma.route.create({ data: { name: 'Route B' }});
+  const route3 = await prisma.route.create({ data: { name: 'Route C' }});
+  const route4 = await prisma.route.create({ data: { name: 'Route D' }});
+  const route5 = await prisma.route.create({ data: { name: 'Route E' }});
+  const route6 = await prisma.route.create({ data: { name: 'Route F' }});
 
   const now = new Date();
   const dateStr = getISTDateString(now);

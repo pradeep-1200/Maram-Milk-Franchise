@@ -238,147 +238,107 @@ class _RouteCard extends ConsumerWidget {
 
     return AppCard(
       onTap: isAssigned ? onAssignTapped : null,
+      customBorder: Border.all(
+        color: isAssigned ? Colors.green.shade700 : Colors.red.shade600,
+        width: 1.5,
+      ),
       padding: const EdgeInsets.symmetric(horizontal: AppConstants.spacing16, vertical: 12.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    route.name,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                    maxLines: 1,
+                    softWrap: false,
+                  ),
+                ),
+              ),
+              if (isAssigned && (route.deliveryCompleted || route.hasIncompleteDeliveries)) ...[
+                const SizedBox(width: AppConstants.spacing8),
+                Tooltip(
+                  message: route.deliveryCompleted ? 'Check completed' : 'Delivery incomplete',
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.delivery_dining, 
+                        size: 22, 
+                        color: route.deliveryCompleted ? Colors.green : Colors.red,
+                      ),
+                      const SizedBox(width: 2),
+                      Icon(
+                        route.deliveryCompleted ? Icons.check : Icons.close, 
+                        size: 22, 
+                        color: route.deliveryCompleted ? Colors.green : Colors.red,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+          if (route.allocations.any((a) => a.isPetrolAllowanceComplete || a.petrolAllowanceGiven != null)) ...[
+            const SizedBox(height: 2),
+            ...route.allocations.where((a) => a.isPetrolAllowanceComplete || a.petrolAllowanceGiven != null).map((a) {
+              final expected = route.fixedPetrolAllowance;
+              final given = a.petrolAllowanceGiven ?? 0;
+              
+              String statusText;
+              Color statusColor;
+              
+              if (given < expected) {
+                statusText = 'Shortage: ₹${(expected - given).toStringAsFixed(0)}';
+                statusColor = Colors.orange;
+              } else if (given > expected) {
+                statusText = 'Extra: ₹${(given - expected).toStringAsFixed(0)}';
+                statusColor = Colors.blue;
+              } else {
+                statusText = 'Fully Paid';
+                statusColor = Colors.green;
+              }
+
+              return Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 4,
                   children: [
                     Text(
-                      route.name,
-                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                      overflow: TextOverflow.ellipsis,
+                      '${a.dpName}: Exp ₹${expected.toStringAsFixed(0)} / Given ₹${given.toStringAsFixed(0)} /',
+                      style: theme.textTheme.bodySmall?.copyWith(fontSize: 10),
                     ),
-                    Text(
-                      route.area,
-                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                      overflow: TextOverflow.ellipsis,
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: statusColor.withAlpha(25),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: statusColor),
+                      ),
+                      child: Text(
+                        statusText,
+                        style: TextStyle(
+                          color: statusColor,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(width: AppConstants.spacing8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: (isAssigned ? Colors.green : Colors.red).withAlpha(25),
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: isAssigned ? Colors.green : Colors.red),
-                    ),
-                    child: Text(
-                      isAssigned ? 'ASSIGNED' : 'UNASSIGNED',
-                      style: TextStyle(
-                        color: isAssigned ? Colors.green : Colors.red,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  if (route.allocations.any((a) => a.isPetrolAllowanceComplete || a.petrolAllowanceGiven != null)) ...[
-                    const SizedBox(height: 4),
-                    ...route.allocations.where((a) => a.isPetrolAllowanceComplete || a.petrolAllowanceGiven != null).map((a) {
-                      final expected = route.fixedPetrolAllowance;
-                      final given = a.petrolAllowanceGiven ?? 0;
-                      
-                      String statusText;
-                      Color statusColor;
-                      
-                      if (given < expected) {
-                        statusText = 'Shortage: ₹${(expected - given).toStringAsFixed(0)}';
-                        statusColor = Colors.orange;
-                      } else if (given > expected) {
-                        statusText = 'Extra: ₹${(given - expected).toStringAsFixed(0)}';
-                        statusColor = Colors.blue;
-                      } else {
-                        statusText = 'Fully Paid';
-                        statusColor = Colors.green;
-                      }
-
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 2),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Flexible(
-                              child: Text(
-                                '${a.dpName}: Exp ₹${expected.toStringAsFixed(0)} / Given ₹${given.toStringAsFixed(0)} / ',
-                                style: theme.textTheme.bodySmall?.copyWith(fontSize: 10),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: statusColor.withAlpha(25),
-                                borderRadius: BorderRadius.circular(4),
-                                border: Border.all(color: statusColor),
-                              ),
-                              child: Text(
-                                statusText,
-                                style: TextStyle(
-                                  color: statusColor,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
-                  ],
-                  if (isAssigned) ...[
-                    if (route.deliveryCompleted) ...[
-                      const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.green.withAlpha(25),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: Colors.green),
-                        ),
-                        child: const Text(
-                          'CHECK COMPLETED',
-                          style: TextStyle(
-                            color: Colors.green,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ] else if (route.hasIncompleteDeliveries) ...[
-                      const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.red.withAlpha(25),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: Colors.red),
-                        ),
-                        child: const Text(
-                          'DELIVERY INCOMPLETE',
-                          style: TextStyle(
-                            color: Colors.red,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ],
-              ),
-            ],
-          ),
+              );
+            }),
+          ],
           const SizedBox(height: AppConstants.spacing8),
           Row(
             children: [

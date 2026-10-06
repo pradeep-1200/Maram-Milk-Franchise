@@ -38,20 +38,19 @@ async function main() {
 
   // 2. Routes
   const routesData = [
-    { name: 'Alwarpet', defaultPetrolAllowance: 60, zone: 'Zone A', customerCount: 0, litres: 0 },
-    { name: 'Egmore', defaultPetrolAllowance: 80, zone: 'Zone A', customerCount: 0, litres: 0 },
-    { name: 'Mandaveli 1', defaultPetrolAllowance: 50, zone: 'Zone A', customerCount: 0, litres: 0 },
-    { name: 'Mandaveli 2', defaultPetrolAllowance: 50, zone: 'Zone A', customerCount: 0, litres: 0 },
-    { name: 'MRC Ngr', defaultPetrolAllowance: 60, zone: 'Zone A', customerCount: 0, litres: 0 },
-    { name: 'Mylapore 1', defaultPetrolAllowance: 60, zone: 'Zone A', customerCount: 0, litres: 0 },
-    { name: 'Mylapore 2', defaultPetrolAllowance: 70, zone: 'Zone A', customerCount: 0, litres: 0 },
-    { name: 'Nungambakkam', defaultPetrolAllowance: 80, zone: 'Zone A', customerCount: 0, litres: 0 },
-    { name: 'Royapettah', defaultPetrolAllowance: 50, zone: 'Zone A', customerCount: 0, litres: 0 },
-    { name: 'T-Nagar', defaultPetrolAllowance: 60, zone: 'Zone A', customerCount: 0, litres: 0 },
-    { name: 'Teynampet', defaultPetrolAllowance: 70, zone: 'Zone A', customerCount: 0, litres: 0 },
-    { name: 'Triplicane', defaultPetrolAllowance: 50, zone: 'Zone A', customerCount: 0, litres: 0 },
-    { name: 'West Mambalam 1', defaultPetrolAllowance: 50, zone: 'Zone A', customerCount: 0, litres: 0 },
-    { name: 'West Mambalam 2', defaultPetrolAllowance: 80, zone: 'Zone A', customerCount: 0, litres: 0 },
+    { name: 'Alwarpet', defaultPetrolAllowance: 60, customerCount: 0, litres: 0 },
+    { name: 'Egmore', defaultPetrolAllowance: 80, customerCount: 0, litres: 0 },
+    { name: 'Mandaveli 1', defaultPetrolAllowance: 50, customerCount: 0, litres: 0 },
+    { name: 'Mandaveli 2', defaultPetrolAllowance: 50, customerCount: 0, litres: 0 },
+    { name: 'MRC Ngr', defaultPetrolAllowance: 60, customerCount: 0, litres: 0 },
+    { name: 'Mylapore 1', defaultPetrolAllowance: 60, customerCount: 0, litres: 0 },
+    { name: 'Mylapore 2', defaultPetrolAllowance: 70, customerCount: 0, litres: 0 },
+    { name: 'Nungambakkam', defaultPetrolAllowance: 80, customerCount: 0, litres: 0 },
+    { name: 'Royapettah', defaultPetrolAllowance: 50, customerCount: 0, litres: 0 },
+    { name: 'T-Nagar', defaultPetrolAllowance: 60, customerCount: 0, litres: 0 },
+    { name: 'Teynampet', defaultPetrolAllowance: 70, customerCount: 0, litres: 0 },
+    { name: 'Triplicane', defaultPetrolAllowance: 50, customerCount: 0, litres: 0 },
+    { name: 'West Mambalam 1', defaultPetrolAllowance: 50, customerCount: 0, litres: 0 },
   ];
 
   for (const r of routesData) {

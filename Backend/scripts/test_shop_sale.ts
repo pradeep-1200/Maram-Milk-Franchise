@@ -28,7 +28,7 @@ async function runTest() {
       data: { id: dpId, name: 'Test DP', dpCode: 'DP-TEST', mobileNumber: '123' }
     });
     await prisma.route.create({
-      data: { id: routeId, name: 'Test Route', zone: 'Test Zone' }
+      data: { id: routeId, name: 'Test Route' }
     });
 
     // Initial state: 10 bottles for ALL items to prevent mismatch

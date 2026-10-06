@@ -93,7 +93,6 @@ export const getRoutesWithAllocation = async (date: string) => {
     return {
       routeId: route.id,
       routeName: route.name,
-      zone: route.zone,
       customerCount: route.customerCount,
       defaultLitres: route.litres,
       fixedPetrolAllowance: route.defaultPetrolAllowance,

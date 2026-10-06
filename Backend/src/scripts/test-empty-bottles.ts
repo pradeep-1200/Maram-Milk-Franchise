@@ -9,7 +9,7 @@ async function main() {
 
   // 1. Create a dummy route and dp
   const route = await prisma.route.create({
-    data: { id: testRouteId, name: 'Test Route', zone: 'Test Zone' }
+    data: { id: testRouteId, name: 'Test Route' }
   });
   const dp = await prisma.deliveryPerson.create({
     data: { id: testDpId, dpCode: 'T' + Date.now(), name: 'Test DP', mobileNumber: '1234567890' }

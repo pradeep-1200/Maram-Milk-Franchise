@@ -18,10 +18,10 @@ async function run() {
 
   // 2. Create two mock routes
   const route1 = await prisma.route.create({
-    data: { name: 'Route A', zone: 'Test Zone', defaultPetrolAllowance: 40 }
+    data: { name: 'Route A', defaultPetrolAllowance: 40 }
   });
   const route2 = await prisma.route.create({
-    data: { name: 'Route B', zone: 'Test Zone', defaultPetrolAllowance: 60 }
+    data: { name: 'Route B', defaultPetrolAllowance: 60 }
   });
 
   const todayStr = getISTDateString(new Date());

@@ -30,10 +30,10 @@ async function runTest() {
 
   // 2. Create 2 known routes
   const route1 = await prisma.route.create({
-    data: { name: 'Unit Route 1', zone: 'Test Zone' }
+    data: { name: 'Unit Route 1' }
   });
   const route2 = await prisma.route.create({
-    data: { name: 'Unit Route 2', zone: 'Test Zone' }
+    data: { name: 'Unit Route 2' }
   });
 
   // 3. Assign the 2 routes to the DP on the known day.

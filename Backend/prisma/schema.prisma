@@ -57,7 +57,6 @@ model DeliveryPerson {
 model Route {
   id                     String              @id @default(uuid())
   name                   String
-  zone                   String
   customerCount          Int                 @default(0)
   litres                 Float               @default(0)
   assignedDpId           String?

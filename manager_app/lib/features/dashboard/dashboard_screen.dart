@@ -542,6 +542,27 @@ class DashboardScreen extends ConsumerWidget {
                         }
                       ),
                     ),
+                    const SizedBox(height: AppConstants.spacing24),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.list_alt, size: 20, color: theme.colorScheme.primary),
+                            const SizedBox(width: AppConstants.spacing8),
+                            Text(
+                              "Today's Milk Allocation",
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppConstants.spacing16),
+                    const _TodayMilkAllocationSection(),
                   ],
                 ),
               ),
@@ -712,6 +733,7 @@ class _ReloadStatsButtonState extends ConsumerState<_ReloadStatsButton> {
     });
 
     ref.invalidate(attendanceProvider);
+    ref.invalidate(routeProvider);
 
     Future.delayed(const Duration(seconds: 10), () {
       if (mounted) {
@@ -744,6 +766,180 @@ class _ReloadStatsButtonState extends ConsumerState<_ReloadStatsButton> {
         icon: Icon(Icons.refresh, size: 18, color: iconColor),
         onPressed: _isCoolingDown ? null : _handleTap,
       ),
+    );
+  }
+}
+
+class _AllocationRowData {
+  final String dpName;
+  final String routeName;
+  final double litres;
+
+  _AllocationRowData({
+    required this.dpName,
+    required this.routeName,
+    required this.litres,
+  });
+}
+
+class _TodayMilkAllocationSection extends ConsumerWidget {
+  const _TodayMilkAllocationSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final routeStateAsync = ref.watch(routeProvider);
+
+    return routeStateAsync.when(
+      loading: () => const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24.0),
+          child: CircularProgressIndicator(),
+        ),
+      ),
+      error: (error, _) => AppCard(
+        padding: const EdgeInsets.all(AppConstants.spacing16),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline, color: Colors.red),
+              const SizedBox(height: 8),
+              Text('Failed to load allocations', style: theme.textTheme.bodySmall),
+              TextButton(
+                onPressed: () => ref.invalidate(routeProvider),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      ),
+      data: (routeState) {
+        final rows = <_AllocationRowData>[];
+        for (final route in routeState.routes) {
+          for (final allocation in route.allocations) {
+            if (allocation.dpId.isNotEmpty && allocation.dpName != null) {
+              rows.add(_AllocationRowData(
+                dpName: allocation.dpName!,
+                routeName: route.name,
+                litres: allocation.litresAllocated,
+              ));
+            }
+          }
+        }
+
+        if (rows.isEmpty) {
+          return AppCard(
+            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+            child: Center(
+              child: Text(
+                'No allocations yet today',
+                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+            ),
+          );
+        }
+
+        rows.sort((a, b) {
+          final dpCompare = a.dpName.compareTo(b.dpName);
+          if (dpCompare != 0) return dpCompare;
+          return a.routeName.compareTo(b.routeName);
+        });
+
+        final totalLitres = rows.fold(0.0, (sum, row) => sum + row.litres);
+
+        return AppCard(
+          padding: const EdgeInsets.all(AppConstants.spacing16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      'DP',
+                      style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurfaceVariant),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      'Route',
+                      style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurfaceVariant),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 1,
+                    child: Text(
+                      'Milk (Ltr)',
+                      textAlign: TextAlign.right,
+                      style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurfaceVariant),
+                    ),
+                  ),
+                ],
+              ),
+              const Divider(height: 16),
+              ...rows.map((row) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            row.dpName,
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                        ),
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            row.routeName,
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                        ),
+                        Expanded(
+                          flex: 1,
+                          child: Text(
+                            '${row.litres.toStringAsFixed(1)} Ltr',
+                            textAlign: TextAlign.right,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )),
+              const Divider(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 4,
+                    child: Text(
+                      'Total',
+                      style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 1,
+                    child: Text(
+                      '${totalLitres.toStringAsFixed(1)} Ltr',
+                      textAlign: TextAlign.right,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

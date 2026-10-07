@@ -90,6 +90,10 @@ export const getDpPerformance = async (range: 'today'|'yesterday'|'week'|'month'
     const totalRecordedDays = dpAttendance.length;
     const attendanceRatio = `${presentCount} of ${totalRecordedDays}`;
 
+    const presentDays = dpAttendance.filter(a => a.status === 'PRESENT' || a.status === 'STANDBY').length;
+    const absentDays = dpAttendance.filter(a => a.status === 'ABSENT').length;
+    const totalDays = totalRecordedDays;
+
     let total1LBottles = 0;
     let totalHalfLBottles = 0;
     
@@ -127,6 +131,9 @@ export const getDpPerformance = async (range: 'today'|'yesterday'|'week'|'month'
       total1LBottles,
       totalHalfLBottles,
       totalPetrolAllowance,
+      totalDays,
+      presentDays,
+      absentDays,
     };
   });
 
@@ -134,7 +141,7 @@ export const getDpPerformance = async (range: 'today'|'yesterday'|'week'|'month'
     if (sortBy === 'litres') return b.totalLitres - a.totalLitres;
     if (sortBy === 'routes') return b.totalRoutes - a.totalRoutes;
     if (sortBy === 'bottles') return b.totalBottles - a.totalBottles;
-    if (sortBy === 'attendance') return b.attendancePercent - a.attendancePercent;
+    if (sortBy === 'attendance') return b.presentDays - a.presentDays;
     return 0;
   });
 

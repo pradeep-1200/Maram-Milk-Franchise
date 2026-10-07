@@ -87,7 +87,7 @@ class _DpPerformanceScreenState extends ConsumerState<DpPerformanceScreen> {
 
     try {
       List<List<dynamic>> rows = [
-        ['Rank', 'DP Name', 'DP Code', 'Total Litres', 'Total Routes', 'Attendance', 'Bottles Collected (Full L)', 'Bottles Collected (Half L)', 'Total Bottles Collected', 'Petrol Allowance']
+        ['Rank', 'DP Name', 'DP Code', 'Total Litres', 'Total Routes', 'Total Days', 'Present', 'Absent', 'Bottles Collected (Full L)', 'Bottles Collected (Half L)', 'Total Bottles Collected', 'Petrol Allowance']
       ];
 
       for (int i = 0; i < state.filteredReports.length; i++) {
@@ -98,7 +98,9 @@ class _DpPerformanceScreenState extends ConsumerState<DpPerformanceScreen> {
           dp.dpCode,
           dp.totalLitres,
           dp.totalRoutes,
-          dp.attendanceRatio,
+          dp.totalDays,
+          dp.presentDays,
+          dp.absentDays,
           dp.total1LBottles,
           dp.totalHalfLBottles,
           dp.totalBottles,
@@ -249,7 +251,7 @@ class _DpPerformanceScreenState extends ConsumerState<DpPerformanceScreen> {
                             items: const [
                               DropdownMenuItem(value: DpSortOption.litres, child: Text('Litres', overflow: TextOverflow.ellipsis)),
                               DropdownMenuItem(value: DpSortOption.routes, child: Text('Routes', overflow: TextOverflow.ellipsis)),
-                              DropdownMenuItem(value: DpSortOption.attendance, child: Text('Attd', overflow: TextOverflow.ellipsis)),
+                              DropdownMenuItem(value: DpSortOption.attendance, child: Text('Present', overflow: TextOverflow.ellipsis)),
                               DropdownMenuItem(value: DpSortOption.bottles, child: Text('Bottles Collected', overflow: TextOverflow.ellipsis)),
                             ],
                             onChanged: (val) {
@@ -422,22 +424,28 @@ class _DpPerformanceCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     
-                    // Metrics Row (4 columns)
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          SizedBox(width: 60, child: _CompactMetric(label: 'Litres', value: '${dp.totalLitres}L', isHighlighted: isLitresSorted)),
-                          const SizedBox(width: 12),
-                          SizedBox(width: 60, child: _CompactMetric(label: 'Routes', value: '${dp.totalRoutes}', isHighlighted: isRoutesSorted)),
-                          const SizedBox(width: 12),
-                          SizedBox(width: 70, child: _CompactMetric(label: 'Attd', value: dp.attendanceRatio, isHighlighted: isAttendanceSorted)),
-                          const SizedBox(width: 12),
-                          _CompactMetric(label: 'Bottles Collected', value: 'F(${dp.total1LBottles})+H(${dp.totalHalfLBottles})', isHighlighted: isBottlesSorted),
-                          const SizedBox(width: 12),
-                          _CompactMetric(label: 'Petrol Allowance', value: '₹${dp.totalPetrolAllowance}', isHighlighted: false),
-                        ],
-                      ),
+                    // Metrics Row (2 rows)
+                    Column(
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(flex: 2, child: _CompactMetric(label: 'Litres', value: '${dp.totalLitres}L', isHighlighted: isLitresSorted)),
+                            Expanded(flex: 2, child: _CompactMetric(label: 'Routes', value: '${dp.totalRoutes}', isHighlighted: isRoutesSorted)),
+                            Expanded(flex: 3, child: _CompactMetric(label: 'Bottles', value: 'F(${dp.total1LBottles})+H(${dp.totalHalfLBottles})', isHighlighted: isBottlesSorted)),
+                            Expanded(flex: 2, child: _CompactMetric(label: 'Petrol', value: '₹${dp.totalPetrolAllowance}', isHighlighted: false)),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(child: _CompactMetric(label: 'Total Days', value: '${dp.totalDays}', isHighlighted: false)),
+                            Expanded(child: _CompactMetric(label: 'Present', value: '${dp.presentDays}', isHighlighted: isAttendanceSorted, valueColor: Colors.green)),
+                            Expanded(child: _CompactMetric(label: 'Absent', value: '${dp.absentDays}', isHighlighted: false, valueColor: Colors.red)),
+                          ],
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -454,11 +462,13 @@ class _CompactMetric extends StatelessWidget {
   final String label;
   final String value;
   final bool isHighlighted;
+  final Color? valueColor;
 
   const _CompactMetric({
     required this.label,
     required this.value,
     required this.isHighlighted,
+    this.valueColor,
   });
 
   @override
@@ -469,8 +479,6 @@ class _CompactMetric extends StatelessWidget {
       children: [
         Text(
           label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
           style: theme.textTheme.labelSmall?.copyWith(
             fontSize: 10,
             color: isHighlighted ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
@@ -479,12 +487,10 @@ class _CompactMetric extends StatelessWidget {
         ),
         Text(
           value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
           style: theme.textTheme.bodyMedium?.copyWith(
             fontWeight: FontWeight.bold,
             fontSize: 13,
-            color: isHighlighted ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+            color: valueColor ?? (isHighlighted ? theme.colorScheme.primary : theme.colorScheme.onSurface),
           ),
         ),
       ],

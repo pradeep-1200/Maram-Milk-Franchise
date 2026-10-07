@@ -79,16 +79,6 @@ class DashboardScreen extends ConsumerWidget {
                             ],
                           ),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.storefront, color: Colors.blue),
-                          onPressed: () => context.push('/shop-sale'),
-                          tooltip: 'Shop Sale',
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.inventory_rounded, color: Colors.orange),
-                          onPressed: () => context.push('/manager-inventory'),
-                          tooltip: 'Manager Inventory',
-                        ),
                       ],
                     ),
                     const SizedBox(height: 24),
@@ -116,7 +106,7 @@ class DashboardScreen extends ConsumerWidget {
                         
                         return Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.all(AppConstants.spacing24),
+                          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
                           decoration: BoxDecoration(
                             color: theme.colorScheme.primary,
                             borderRadius: BorderRadius.circular(AppConstants.cardRadius),
@@ -129,27 +119,20 @@ class DashboardScreen extends ConsumerWidget {
                                 children: [
                                   Text(
                                     greeting,
-                                    style: theme.textTheme.headlineSmall?.copyWith(
+                                    style: theme.textTheme.titleLarge?.copyWith(
                                       fontWeight: FontWeight.bold,
                                       color: theme.colorScheme.onPrimary,
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  Icon(icon, color: theme.colorScheme.onPrimary, size: 28),
+                                  Icon(icon, color: theme.colorScheme.onPrimary, size: 24),
                                 ],
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 4),
                               Text(
                                 DateFormat('MMM d, yyyy • EEEE').format(DateUtil.operatingDay),
-                                style: theme.textTheme.titleSmall?.copyWith(
-                                  color: theme.colorScheme.onPrimary.withAlpha(220),
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                "Ready to manage today's deliveries!",
                                 style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.onPrimary,
+                                  color: theme.colorScheme.onPrimary.withAlpha(220),
                                 ),
                               ),
                             ],
@@ -163,14 +146,34 @@ class DashboardScreen extends ConsumerWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          "Today's Stats",
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
+                        Flexible(
+                          child: Text(
+                            "Today's Stats",
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
                           ),
                         ),
-                        const _ReloadStatsButton(),
+                        Row(
+                          children: [
+                            _ShortcutIconButton(
+                              icon: Icons.storefront,
+                              color: Colors.blue,
+                              tooltip: 'Shop Sale',
+                              onTap: () => context.push('/shop-sale'),
+                            ),
+                            const SizedBox(width: 8),
+                            _ShortcutIconButton(
+                              icon: Icons.inventory_rounded,
+                              color: Colors.orange,
+                              tooltip: 'Manager Inventory',
+                              onTap: () => context.push('/manager-inventory'),
+                            ),
+                            const SizedBox(width: 8),
+                            const _ReloadStatsButton(),
+                          ],
+                        ),
                       ],
                     ),
                     const SizedBox(height: AppConstants.spacing16),
@@ -765,6 +768,40 @@ class _ReloadStatsButtonState extends ConsumerState<_ReloadStatsButton> {
         padding: EdgeInsets.zero,
         icon: Icon(Icons.refresh, size: 18, color: iconColor),
         onPressed: _isCoolingDown ? null : _handleTap,
+      ),
+    );
+  }
+}
+
+class _ShortcutIconButton extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+  final String tooltip;
+
+  const _ShortcutIconButton({
+    required this.icon,
+    required this.color,
+    required this.onTap,
+    required this.tooltip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: AppConstants.cardShadow,
+        border: AppConstants.cardBorder,
+      ),
+      child: IconButton(
+        padding: EdgeInsets.zero,
+        icon: Icon(icon, size: 18, color: color),
+        onPressed: onTap,
+        tooltip: tooltip,
       ),
     );
   }

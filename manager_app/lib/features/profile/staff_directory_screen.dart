@@ -9,6 +9,7 @@ import '../../shared/async_value_widget.dart';
 import '../../shared/dp_avatar.dart';
 import 'providers/staff_provider.dart';
 import '../attendance/models/delivery_person.dart';
+import '../authentication/providers/auth_provider.dart';
 
 class StaffDirectoryScreen extends ConsumerStatefulWidget {
   const StaffDirectoryScreen({super.key});
@@ -32,6 +33,7 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final staffState = ref.watch(staffProvider);
+    final isReadOnly = ref.watch(authProvider).isReadOnly;
 
     return Scaffold(
       appBar: AppBar(
@@ -47,7 +49,7 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
         ),
         title: const Text('Staff Directory', style: TextStyle(fontWeight: FontWeight.bold)),
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: isReadOnly ? null : FloatingActionButton(
         onPressed: () => context.push('/staff-directory/add'),
         child: const Icon(Icons.add),
       ),
@@ -81,12 +83,19 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
                     ),
                   );
                 }
+                final sortedPersons = List<DeliveryPerson>.from(persons)
+                  ..sort((a, b) {
+                    if (a.isActive && !b.isActive) return -1;
+                    if (!a.isActive && b.isActive) return 1;
+                    return 0; // maintain default sort
+                  });
+                
                 return ListView.separated(
                   padding: const EdgeInsets.symmetric(horizontal: AppConstants.spacing16, vertical: 8.0),
-                  itemCount: persons.length,
+                  itemCount: sortedPersons.length,
                   separatorBuilder: (_, __) => const SizedBox(height: AppConstants.spacing8),
                   itemBuilder: (context, index) {
-                    final dp = persons[index];
+                    final dp = sortedPersons[index];
                     return _StaffDirectoryCard(person: dp);
                   },
                 );
@@ -108,61 +117,88 @@ class _StaffDirectoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return AppCard(
-      onTap: () => context.push('/staff-directory/${person.id}'),
-      padding: const EdgeInsets.symmetric(horizontal: AppConstants.spacing16, vertical: 12.0),
-      child: Row(
-        children: [
-          DpAvatar(
-            photoUrl: person.photoUrl,
-            name: person.name,
-            radius: 24,
-          ),
-          const SizedBox(width: AppConstants.spacing16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  person.name,
-                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Text(
-                      person.employeeId,
-                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                    ),
-                    if (person.zone?.isNotEmpty ?? false) ...[
-                      const SizedBox(width: 8),
+    return Opacity(
+      opacity: person.isActive ? 1.0 : 0.6,
+      child: AppCard(
+        onTap: () => context.push('/staff-directory/${person.id}'),
+        padding: const EdgeInsets.symmetric(horizontal: AppConstants.spacing16, vertical: 12.0),
+        child: Row(
+          children: [
+            DpAvatar(
+              photoUrl: person.photoUrl,
+              name: person.name,
+              radius: 24,
+            ),
+            const SizedBox(width: AppConstants.spacing16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
                       Flexible(
-                        child: Container(
+                        child: Text(
+                          person.name,
+                          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (!person.isActive) ...[
+                        const SizedBox(width: 8),
+                        Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: theme.colorScheme.secondaryContainer,
+                            color: theme.colorScheme.errorContainer,
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
-                            person.zone ?? '',
+                            'Inactive',
                             style: TextStyle(
-                              color: theme.colorScheme.onSecondaryContainer,
+                              color: theme.colorScheme.onErrorContainer,
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
                             ),
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                      ),
+                      ],
                     ],
-                  ],
-                ),
-              ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Text(
+                        person.employeeId,
+                        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                      ),
+                      if (person.zone?.isNotEmpty ?? false) ...[
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.secondaryContainer,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              person.zone ?? '',
+                              style: TextStyle(
+                                color: theme.colorScheme.onSecondaryContainer,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-          Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
-        ],
+            Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
+          ],
+        ),
       ),
     );
   }

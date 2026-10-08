@@ -9,6 +9,7 @@ import 'providers/dashboard_provider.dart';
 import '../routes/providers/route_provider.dart';
 import '../evening_check/providers/evening_check_provider.dart';
 import '../attendance/providers/attendance_provider.dart';
+import '../authentication/providers/auth_provider.dart';
 
 import 'package:intl/intl.dart';
 
@@ -19,6 +20,11 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(dashboardProvider);
     final theme = Theme.of(context);
+    final authState = ref.watch(authProvider);
+    final isReadOnly = authState.isReadOnly;
+    final userName = authState.profile?.name ?? 'Manager';
+    final userRole = authState.profile?.role ?? 'MANAGER';
+    final userBranch = authState.profile?.branchName ?? 'Royapettah Branch';
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -54,7 +60,7 @@ class DashboardScreen extends ConsumerWidget {
                               radius: 20,
                               backgroundColor: theme.colorScheme.primaryContainer,
                               foregroundColor: theme.colorScheme.onPrimaryContainer,
-                              child: const Text('I', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                              child: Text(userName.isNotEmpty ? userName[0].toUpperCase() : 'M', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                             ),
                           ),
                         ),
@@ -63,15 +69,31 @@ class DashboardScreen extends ConsumerWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                'Imran',
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: theme.colorScheme.onSurface,
-                                ),
+                              Row(
+                                children: [
+                                  Text(
+                                    userName,
+                                    style: theme.textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.colorScheme.onSurface,
+                                    ),
+                                  ),
+                                  if (isReadOnly) ...[
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.orange.withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(4),
+                                        border: Border.all(color: Colors.orange.withOpacity(0.5)),
+                                      ),
+                                      child: const Text('View only', style: TextStyle(fontSize: 10, color: Colors.orange, fontWeight: FontWeight.bold)),
+                                    ),
+                                  ],
+                                ],
                               ),
                               Text(
-                                'Manager • Royapettah Branch',
+                                '${userRole == 'ADMIN' ? 'Administrator' : 'Manager'} • $userBranch',
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: theme.colorScheme.onSurfaceVariant,
                                 ),
@@ -243,7 +265,7 @@ class DashboardScreen extends ConsumerWidget {
                         if (state.unassignedRoutes > 0)
                           Expanded(
                             child: GestureDetector(
-                              onTap: () => context.push('/routes'),
+                              onTap: isReadOnly ? null : () => context.push('/routes'),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
@@ -588,7 +610,7 @@ class DashboardScreen extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () => context.push('/dispatch'),
+                      onPressed: isReadOnly ? null : () => context.push('/dispatch'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: theme.colorScheme.primary,
                         foregroundColor: theme.colorScheme.onPrimary,
@@ -620,7 +642,7 @@ class DashboardScreen extends ConsumerWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () => context.push('/evening-check'),
+                      onPressed: isReadOnly ? null : () => context.push('/evening-check'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: theme.colorScheme.surfaceContainerHighest,
                         foregroundColor: theme.colorScheme.onSurface,

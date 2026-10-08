@@ -1,3 +1,4 @@
+import '../authentication/providers/auth_provider.dart';
 import 'dart:async';
 import 'package:manager_app/core/utils/date_util.dart';
 import 'package:flutter/material.dart';
@@ -93,6 +94,7 @@ class _ManagerInventoryScreenState extends ConsumerState<ManagerInventoryScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isReadOnly = ref.watch(authProvider).isReadOnly;
     final inventoryStateAsync = ref.watch(inventoryProvider);
     final state = ref.watch(managerInventoryProvider);
     final notifier = ref.read(managerInventoryProvider.notifier);
@@ -358,6 +360,7 @@ class _ManagerInventoryScreenState extends ConsumerState<ManagerInventoryScreen>
                                                 width: 70,
                                                 child: TextFormField(
                                                   controller: _controllers[item.id],
+                                                  readOnly: isReadOnly,
                                                   keyboardType: TextInputType.number,
                                                   textAlign: TextAlign.center,
                                                   style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
@@ -367,7 +370,7 @@ class _ManagerInventoryScreenState extends ConsumerState<ManagerInventoryScreen>
                                                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                                                     hintText: '0',
                                                   ),
-                                                  onChanged: (val) {
+                                                  onChanged: isReadOnly ? null : (val) {
                                                     final count = int.tryParse(val);
                                                     if (count != null) {
                                                       notifier.updateCount(item.id, count);
@@ -404,7 +407,7 @@ class _ManagerInventoryScreenState extends ConsumerState<ManagerInventoryScreen>
                       child: AppButton(
                         text: state.isSaved ? 'Saved' : 'Save Physical Count',
                         icon: Icon(Icons.check, color: theme.colorScheme.onPrimary, size: 20),
-                        onPressed: (state.isLoading || state.counts.isEmpty) ? null : () async {
+                        onPressed: (isReadOnly || state.isLoading || state.counts.isEmpty) ? null : () async {
                           try {
                             await notifier.submitCounts();
                             if (context.mounted) {

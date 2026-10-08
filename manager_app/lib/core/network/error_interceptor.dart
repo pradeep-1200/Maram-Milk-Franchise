@@ -13,6 +13,11 @@ class ErrorInterceptor extends Interceptor {
       // Idempotent logout and redirect handled by authProvider
       ref.read(authProvider.notifier).logout();
     }
+    
+    if (err.response?.statusCode == 403 && ref.read(authProvider).isReadOnly) {
+      err.response?.data = {'error': {'message': 'View only access'}};
+    }
+    
     super.onError(err, handler);
   }
 }

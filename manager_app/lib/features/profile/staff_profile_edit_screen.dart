@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -191,8 +192,9 @@ class _StaffProfileEditScreenState extends ConsumerState<StaffProfileEditScreen>
         }
       } catch (e) {
         if (mounted) {
+          String errorMessage = e.toString().replaceAll(RegExp(r'^Exception:\s*'), '');
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Error saving profile: $e")),
+            SnackBar(content: Text(errorMessage)),
           );
         }
       } finally {
@@ -284,7 +286,17 @@ class _StaffProfileEditScreenState extends ConsumerState<StaffProfileEditScreen>
                     AppTextField(controller: _employeeIdController, labelText: 'DP ID (System Generated)', readOnly: true),
                     const SizedBox(height: 12),
                   ],
-                AppTextField(controller: _mobileController, labelText: 'Phone Number *', keyboardType: TextInputType.phone, validator: (v) => v == null || v.isEmpty ? 'Required' : null),
+                AppTextField(
+                  controller: _mobileController, 
+                  labelText: 'Phone Number *', 
+                  keyboardType: TextInputType.phone, 
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Required';
+                    if (v.length != 10) return 'Enter a 10-digit phone number';
+                    return null;
+                  }
+                ),
                 const SizedBox(height: 12),
                 AppTextField(controller: _addressController, labelText: 'Address'),
                 const SizedBox(height: 12),
@@ -294,13 +306,40 @@ class _StaffProfileEditScreenState extends ConsumerState<StaffProfileEditScreen>
                 const SizedBox(height: 12),
                 AppTextField(controller: _parentNameController, labelText: 'Parent\'s Name & Address'),
                 const SizedBox(height: 12),
-                AppTextField(controller: _parentMobileController, labelText: 'Parent\'s/Spouse Mobile', keyboardType: TextInputType.phone),
+                AppTextField(
+                  controller: _parentMobileController, 
+                  labelText: 'Parent\'s/Spouse Mobile', 
+                  keyboardType: TextInputType.phone,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
+                  validator: (v) {
+                    if (v != null && v.isNotEmpty && v.length != 10) return 'Enter a 10-digit phone number';
+                    return null;
+                  }
+                ),
                 const SizedBox(height: 12),
                 AppTextField(controller: _currentAddressController, labelText: 'Alternative Address'),
                 const SizedBox(height: 12),
-                AppTextField(controller: _altMobileController, labelText: 'Alternative Mobile', keyboardType: TextInputType.phone),
+                AppTextField(
+                  controller: _altMobileController, 
+                  labelText: 'Alternative Mobile', 
+                  keyboardType: TextInputType.phone,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
+                  validator: (v) {
+                    if (v != null && v.isNotEmpty && v.length != 10) return 'Enter a 10-digit phone number';
+                    return null;
+                  }
+                ),
                 const SizedBox(height: 12),
-                AppTextField(controller: _whatsappController, labelText: 'WhatsApp Number', keyboardType: TextInputType.phone),
+                AppTextField(
+                  controller: _whatsappController, 
+                  labelText: 'WhatsApp Number', 
+                  keyboardType: TextInputType.phone,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
+                  validator: (v) {
+                    if (v != null && v.isNotEmpty && v.length != 10) return 'Enter a 10-digit phone number';
+                    return null;
+                  }
+                ),
               ],
             ),
             const SizedBox(height: AppConstants.spacing24),

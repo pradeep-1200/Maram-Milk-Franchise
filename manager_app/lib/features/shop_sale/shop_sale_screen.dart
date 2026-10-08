@@ -1,3 +1,4 @@
+import '../authentication/providers/auth_provider.dart';
 import 'package:manager_app/core/utils/date_util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,6 +25,7 @@ class _ShopSaleScreenState extends ConsumerState<ShopSaleScreen> {
     final inventoryStateAsync = ref.watch(inventoryProvider);
     final saleState = ref.watch(shopSaleProvider);
     final saleNotifier = ref.read(shopSaleProvider.notifier);
+    final isReadOnly = ref.watch(authProvider).isReadOnly;
 
     return Scaffold(
       appBar: AppBar(
@@ -133,7 +135,7 @@ class _ShopSaleScreenState extends ConsumerState<ShopSaleScreen> {
                                       subtitle: item.subtitle,
                                       currentStock: item.currentStock.toInt(),
                                       quantity: saleState.currentQuantities[item.id] ?? 0,
-                                      onChanged: (val) => saleNotifier.updateQuantity(item.id, val),
+                                      onChanged: isReadOnly ? null : (val) => saleNotifier.updateQuantity(item.id, val),
                                     ),
                                   );
                                 }).toList(),
@@ -167,7 +169,7 @@ class _ShopSaleScreenState extends ConsumerState<ShopSaleScreen> {
           ),
           child: AppButton(
             text: 'Complete Sale',
-            onPressed: saleState.isLoading ? null : () async {
+            onPressed: (isReadOnly || saleState.isLoading) ? null : () async {
               try {
                 await saleNotifier.submitSale();
                 if (context.mounted) {
@@ -210,7 +212,7 @@ class _SaleItemCard extends StatelessWidget {
   final String subtitle;
   final int currentStock;
   final int quantity;
-  final Function(int) onChanged;
+  final Function(int)? onChanged;
 
   const _SaleItemCard({
     required this.title,
@@ -277,7 +279,7 @@ class _SaleItemCard extends StatelessWidget {
 
 class _EditableStepper extends StatefulWidget {
   final int value;
-  final Function(int) onChanged;
+  final Function(int)? onChanged;
   final bool isError;
 
   const _EditableStepper({required this.value, required this.onChanged, required this.isError});
@@ -320,7 +322,7 @@ class _EditableStepperState extends State<_EditableStepper> {
       children: [
         InkWell(
           borderRadius: BorderRadius.circular(24),
-          onTap: widget.value > 0 ? () => widget.onChanged(widget.value - 1) : null,
+          onTap: (widget.value > 0 && widget.onChanged != null) ? () => widget.onChanged!(widget.value - 1) : null,
           child: Padding(
             padding: const EdgeInsets.all(8.0),
             child: Icon(
@@ -334,6 +336,7 @@ class _EditableStepperState extends State<_EditableStepper> {
           width: 44,
           child: TextFormField(
             controller: _controller,
+            readOnly: widget.onChanged == null,
             keyboardType: TextInputType.number,
             textAlign: TextAlign.center,
             style: theme.textTheme.titleMedium?.copyWith(
@@ -345,19 +348,19 @@ class _EditableStepperState extends State<_EditableStepper> {
               contentPadding: const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
             ),
-            onChanged: (val) {
+            onChanged: widget.onChanged == null ? null : (val) {
               final numValue = int.tryParse(val);
               if (numValue != null) {
-                widget.onChanged(numValue);
+                widget.onChanged!(numValue);
               } else if (val.isEmpty) {
-                widget.onChanged(0);
+                widget.onChanged!(0);
               }
             },
           ),
         ),
         InkWell(
           borderRadius: BorderRadius.circular(24),
-          onTap: () => widget.onChanged(widget.value + 1),
+          onTap: widget.onChanged == null ? null : () => widget.onChanged!(widget.value + 1),
           child: Padding(
             padding: const EdgeInsets.all(8.0),
             child: Icon(

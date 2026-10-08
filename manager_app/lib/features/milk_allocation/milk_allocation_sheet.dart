@@ -8,6 +8,7 @@ import '../attendance/models/delivery_person.dart';
 import '../petrol_allowance/petrol_allowance_sheet.dart';
 import 'providers/milk_allocation_provider.dart';
 import '../routes/providers/route_provider.dart';
+import '../authentication/providers/auth_provider.dart';
 import '../inventory/providers/inventory_provider.dart';
 import 'package:dio/dio.dart';
 
@@ -62,6 +63,7 @@ class _MilkAllocationSheetState extends ConsumerState<MilkAllocationSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final isReadOnly = ref.watch(authProvider).isReadOnly;
     final routeAllocation = ref.watch(milkAllocationProvider.select((state) => state.allocations[_allocationKey] ?? const RouteMilkAllocation()));
     final notifier = ref.read(milkAllocationProvider.notifier);
     final theme = Theme.of(context);
@@ -269,7 +271,7 @@ class _MilkAllocationSheetState extends ConsumerState<MilkAllocationSheet> {
 
                     if (context.mounted) {
                       if (widget.isInStepFlow) {
-                        context.push('/dispatch/petrol-allowance');
+                        if (!isReadOnly) context.push('/dispatch/petrol-allowance');
                       } else {
                         context.pop();
                         _showPetrolAllowanceSheet(context, widget.route, widget.dp);

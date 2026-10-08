@@ -1,3 +1,4 @@
+import '../authentication/providers/auth_provider.dart';
 import 'package:manager_app/core/utils/date_util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,6 +22,7 @@ class MilkAllocationScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isReadOnly = ref.watch(authProvider).isReadOnly;
     final theme = Theme.of(context);
     final routeState = ref.watch(routeProvider).value ?? const RouteState();
     final attendanceState = ref.watch(attendanceProvider).value ?? const AttendanceState();
@@ -72,7 +74,7 @@ class MilkAllocationScreen extends ConsumerWidget {
             icon: const Icon(Icons.arrow_forward),
             tooltip: 'Next: Petrol Allowance',
             onPressed: () {
-              context.push('/dispatch/petrol-allowance');
+              if (!isReadOnly) context.push('/dispatch/petrol-allowance');
             },
           ),
           const SizedBox(width: 8),

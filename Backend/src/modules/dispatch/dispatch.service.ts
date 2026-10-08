@@ -8,8 +8,12 @@ export const getOrCreateDispatchDay = async (date: string) => {
   return dispatchDay;
 };
 
+export const getDispatchDayReadOnly = async (date: string) => {
+  return await prisma.dispatchDay.findUnique({ where: { date } });
+};
+
 export const checkAndUpdateAttendanceCompletion = async (date: string) => {
-  const totalDps = await prisma.deliveryPerson.count();
+  const totalDps = await prisma.deliveryPerson.count({ where: { isActive: true } });
   const markedAttendanceCount = await prisma.attendanceRecord.count({
     where: { date },
   });

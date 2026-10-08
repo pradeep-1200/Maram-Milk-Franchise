@@ -35,32 +35,75 @@ class StaffNotifier extends AsyncNotifier<List<DeliveryPerson>> {
   }
 
   Future<DeliveryPerson?> addStaffWithResponse(DeliveryPerson dp) async {
-    final dio = ref.read(apiClientProvider);
-    final data = dp.toJson();
-    data.remove('_id'); // Backend generates ID
-    data.remove('dpCode'); // Backend generates dpCode
-    
-    // Remove nulls and empty strings
-    data.removeWhere((key, value) => value == null || value == '');
+    try {
+      final dio = ref.read(apiClientProvider);
+      final data = dp.toJson();
+      data.remove('_id'); // Backend generates ID
+      data.remove('dpCode'); // Backend generates dpCode
+      
+      // Remove nulls and empty strings
+      data.removeWhere((key, value) => value == null || value == '');
 
-    final response = await dio.post('/delivery-persons', data: data);
-    ref.invalidateSelf();
-    return DeliveryPerson.fromJson(response.data);
+      final response = await dio.post('/delivery-persons', data: data);
+      ref.invalidateSelf();
+      return DeliveryPerson.fromJson(response.data);
+    } on DioException catch (e) {
+      _handleDioError(e);
+      rethrow; // _handleDioError should throw, but if it doesn't we rethrow
+    }
   }
 
   Future<void> updateStaff(String id, DeliveryPerson dp) async {
-    final dio = ref.read(apiClientProvider);
-    final data = dp.toJson();
-    data.remove('_id');
-    data.remove('dpCode');
-    data.remove('photoUrl');
-    data.remove('aadharCopyUrl');
-    data.remove('licenseCopyUrl');
-    
-    data.removeWhere((key, value) => value == null || value == '');
+    try {
+      final dio = ref.read(apiClientProvider);
+      final data = dp.toJson();
+      data.remove('_id');
+      data.remove('dpCode');
+      data.remove('photoUrl');
+      data.remove('aadharCopyUrl');
+      data.remove('licenseCopyUrl');
+      
+      data.removeWhere((key, value) => value == null || value == '');
 
-    await dio.put('/delivery-persons/$id', data: data);
-    ref.invalidateSelf();
+      await dio.put('/delivery-persons/$id', data: data);
+      ref.invalidateSelf();
+    } on DioException catch (e) {
+      _handleDioError(e);
+      rethrow;
+    }
+  }
+
+  Future<void> deactivateStaff(String id) async {
+    try {
+      final dio = ref.read(apiClientProvider);
+      await dio.post('/delivery-persons/$id/deactivate');
+      ref.invalidateSelf();
+    } on DioException catch (e) {
+      _handleDioError(e);
+      rethrow;
+    }
+  }
+
+  Future<void> reactivateStaff(String id) async {
+    try {
+      final dio = ref.read(apiClientProvider);
+      await dio.post('/delivery-persons/$id/reactivate');
+      ref.invalidateSelf();
+    } on DioException catch (e) {
+      _handleDioError(e);
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> getDeletePreview(String id) async {
+    try {
+      final dio = ref.read(apiClientProvider);
+      final response = await dio.get('/delivery-persons/$id/delete-preview');
+      return response.data;
+    } on DioException catch (e) {
+      _handleDioError(e);
+      rethrow;
+    }
   }
 
   Future<void> deleteStaff(String id) async {
@@ -69,14 +112,19 @@ class StaffNotifier extends AsyncNotifier<List<DeliveryPerson>> {
       await dio.delete('/delivery-persons/$id');
       ref.invalidateSelf();
     } on DioException catch (e) {
-      if (e.response != null && e.response?.data != null) {
-        final data = e.response?.data as Map<String, dynamic>;
-        if (data['error'] != null && data['error']['message'] != null) {
-          throw Exception(data['error']['message']);
-        }
-      }
+      _handleDioError(e);
       rethrow;
     }
+  }
+
+  void _handleDioError(DioException e) {
+    if (e.response != null && e.response?.data != null) {
+      final data = e.response?.data;
+      if (data is Map && data['error'] != null && data['error']['message'] != null) {
+        throw Exception(data['error']['message']);
+      }
+    }
+    throw Exception('A network or server error occurred');
   }
 
   Future<String> uploadFile(String dpId, String filePath, String type) async {

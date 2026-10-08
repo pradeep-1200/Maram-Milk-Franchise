@@ -13,6 +13,9 @@ dpRouter.post('/', dpController.createDeliveryPerson);
 dpRouter.get('/:id', dpController.getDeliveryPerson);
 dpRouter.put('/:id', dpController.updateDeliveryPerson);
 dpRouter.delete('/:id', dpController.deleteDeliveryPerson);
+dpRouter.get('/:id/delete-preview', dpController.getDeletePreview);
+dpRouter.post('/:id/deactivate', dpController.deactivateDeliveryPerson);
+dpRouter.post('/:id/reactivate', dpController.reactivateDeliveryPerson);
 
 // File uploads (expecting form-data with key 'file')
 dpRouter.post('/:id/photo', upload.single('file'), dpController.uploadPhoto);

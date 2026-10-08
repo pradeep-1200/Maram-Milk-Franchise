@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../../config/db';
 import { z } from 'zod';
-import { getOrCreateDispatchDay } from './dispatch.service';
+import { getOrCreateDispatchDay, getDispatchDayReadOnly } from './dispatch.service';
 
 const dateSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD'),
@@ -10,12 +10,27 @@ const dateSchema = z.object({
 export const getDispatchSummary = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { date } = dateSchema.parse(req.query);
+    const role = (req as any).manager?.role;
 
     // Get the base dispatch day stats
-    const dispatchDay = await getOrCreateDispatchDay(date);
+    let dispatchDay;
+    if (role === 'ADMIN') {
+      dispatchDay = await getDispatchDayReadOnly(date);
+      if (!dispatchDay) {
+        dispatchDay = {
+          date,
+          attendanceCompletedAt: null,
+          inventoryCompletedAt: null,
+          routesCompletedAt: null,
+          petrolAllowanceTotal: 0,
+        };
+      }
+    } else {
+      dispatchDay = await getOrCreateDispatchDay(date);
+    }
 
     // 1. Attendance Stats
-    const totalDps = await prisma.deliveryPerson.count();
+    const totalDps = await prisma.deliveryPerson.count({ where: { isActive: true } });
     const attendanceRecords = await prisma.attendanceRecord.findMany({ where: { date } });
     
     // We need route allocations to compute standby dynamically

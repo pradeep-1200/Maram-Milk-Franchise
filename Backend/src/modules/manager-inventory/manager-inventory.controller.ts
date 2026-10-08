@@ -57,8 +57,13 @@ export const getManagerInventory = async (req: Request, res: Response, next: Nex
       return res.status(401).json({ message: 'Unauthorized' });
     }
     
+    const role = (req as any).manager?.role;
+    
+    // Admins see all logs (branch-wide) for the date, whereas standard managers see their own
+    const whereClause = role === 'ADMIN' ? { date } : { date, managerId };
+
     const results = await prisma.managerInventoryLog.findMany({
-      where: { date, managerId },
+      where: whereClause,
     });
     res.json(results);
   } catch (error) {

@@ -4,7 +4,7 @@ import { Prisma } from '@prisma/client';
 import { getISTDateString } from '../../utils/date';
 
 export const getDeliveryPersons = async (search?: string) => {
-  let where: Prisma.DeliveryPersonWhereInput = { isActive: true };
+  let where: Prisma.DeliveryPersonWhereInput = {};
   if (search) {
     where = {
       ...where,
@@ -30,18 +30,17 @@ export const getDeliveryPersonById = async (id: string) => {
 export const createDeliveryPerson = async (data: Omit<Prisma.DeliveryPersonCreateInput, 'dpCode'>) => {
   return await prisma.$transaction(
     async (tx) => {
-      const maxDp = await tx.deliveryPerson.findFirst({
-        orderBy: { dpCode: 'desc' },
-        select: { dpCode: true },
-      });
-
-      let nextNumber = 1001;
-      if (maxDp && maxDp.dpCode.startsWith('DP')) {
-        const currentNumber = parseInt(maxDp.dpCode.replace('DP', ''), 10);
-        if (!isNaN(currentNumber)) {
-          nextNumber = currentNumber + 1;
+      const allDps = await tx.deliveryPerson.findMany({ select: { dpCode: true } });
+      let maxNumber = 0;
+      for (const dp of allDps) {
+        if (dp.dpCode.startsWith('DP')) {
+          const currentNumber = parseInt(dp.dpCode.replace('DP', ''), 10);
+          if (!isNaN(currentNumber) && currentNumber > maxNumber) {
+            maxNumber = currentNumber;
+          }
         }
       }
+      const nextNumber = maxNumber > 0 ? maxNumber + 1 : 1001;
       const dpCode = `DP${nextNumber}`;
 
       return await tx.deliveryPerson.create({
@@ -64,7 +63,7 @@ export const updateDeliveryPerson = async (id: string, data: Prisma.DeliveryPers
   });
 };
 
-export const deleteDeliveryPerson = async (id: string) => {
+export const deactivateDeliveryPerson = async (id: string) => {
   const today = getISTDateString(new Date());
 
   const activeAllocation = await prisma.routeAllocation.findFirst({
@@ -76,11 +75,53 @@ export const deleteDeliveryPerson = async (id: string) => {
   });
 
   if (activeAllocation) {
-    throw { statusCode: 400, code: 'HAS_ACTIVE_ROUTE', message: 'Delivery Person has an active route assignment for today. Unassign their route before deleting.' };
+    throw { statusCode: 400, code: 'HAS_ACTIVE_ROUTE', message: 'Delivery Person has an active route assignment for today. Unassign their route before deactivating.' };
   }
 
   return await prisma.deliveryPerson.update({
     where: { id },
     data: { isActive: false },
+  });
+};
+
+export const reactivateDeliveryPerson = async (id: string) => {
+  return await prisma.deliveryPerson.update({
+    where: { id },
+    data: { isActive: true },
+  });
+};
+
+export const getDeletePreview = async (id: string) => {
+  const attendanceRecords = await prisma.attendanceRecord.count({ where: { dpId: id } });
+  const routeAllocations = await prisma.routeAllocation.count({ where: { dpId: id } });
+  const ledgerEntries = await prisma.ledgerTransaction.count({ where: { dpId: id } });
+  const bottleLogs = await prisma.emptyBottleLog.count({ where: { dpId: id } });
+
+  return {
+    attendanceRecords,
+    routeAllocations,
+    ledgerEntries,
+    bottleLogs,
+  };
+};
+
+export const hardDeleteDeliveryPerson = async (id: string) => {
+  return await prisma.$transaction(async (tx) => {
+    // Unassign routes
+    await tx.route.updateMany({
+      where: { assignedDpId: id },
+      data: { assignedDpId: null },
+    });
+
+    // Delete related records
+    await tx.attendanceRecord.deleteMany({ where: { dpId: id } });
+    await tx.routeAllocation.deleteMany({ where: { dpId: id } }); 
+    await tx.ledgerTransaction.deleteMany({ where: { dpId: id } });
+    await tx.emptyBottleLog.deleteMany({ where: { dpId: id } }); 
+
+    // Finally delete DP
+    return await tx.deliveryPerson.delete({
+      where: { id },
+    });
   });
 };

@@ -1,3 +1,4 @@
+import '../authentication/providers/auth_provider.dart';
 import 'package:manager_app/core/utils/date_util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -217,7 +218,7 @@ class _DPCard extends ConsumerWidget {
     required IconData icon,
     required Color color,
     required bool isSelected,
-    required VoidCallback onTap,
+    required VoidCallback? onTap,
   }) {
     return InkWell(
       onTap: onTap,
@@ -240,6 +241,7 @@ class _DPCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isReadOnly = ref.watch(authProvider).isReadOnly;
     final theme = Theme.of(context);
 
     // A DP whose status is STANDBY is implicitly Present (present + no route).
@@ -322,7 +324,7 @@ class _DPCard extends ConsumerWidget {
                 icon: Icons.close,
                 color: Colors.red,
                 isSelected: person.status == AttendanceStatus.absent,
-                onTap: () {
+                onTap: isReadOnly ? null : () {
                   ref.read(attendanceProvider.notifier).markAttendance(person.dpId, AttendanceStatus.absent);
                 },
               ),
@@ -336,7 +338,7 @@ class _DPCard extends ConsumerWidget {
                 color: Colors.green,
                 isSelected: person.status == AttendanceStatus.present ||
                     person.status == AttendanceStatus.standby,
-                onTap: () {
+                onTap: isReadOnly ? null : () {
                   ref.read(attendanceProvider.notifier).markAttendance(person.dpId, AttendanceStatus.present);
                 },
               ),

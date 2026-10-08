@@ -9,6 +9,7 @@ import '../../shared/async_value_widget.dart';
 import 'providers/staff_provider.dart';
 import '../attendance/models/delivery_person.dart';
 import '../routes/providers/route_provider.dart';
+import '../authentication/providers/auth_provider.dart';
 
 class StaffProfileScreen extends ConsumerWidget {
   final String dpId;
@@ -32,19 +33,110 @@ class StaffProfileScreen extends ConsumerWidget {
 
       if (filePath != null) {
         if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Uploading $type...')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Uploading ...')));
         await ref.read(staffProvider.notifier).uploadFile(dpId, filePath, type);
         if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$type uploaded successfully!')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(' uploaded successfully!')));
       }
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Upload failed: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Upload failed: ')));
     }
+  }
+
+  Future<void> _showDeletePreviewDialog(BuildContext context, WidgetRef ref, String dpId, String dpName, bool isReadOnly) async {
+    if (isReadOnly) return;
+    
+    final previewFuture = ref.read(staffProvider.notifier).getDeletePreview(dpId);
+    final router = GoRouter.of(context);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        bool isDeleting = false;
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return FutureBuilder<Map<String, dynamic>>(
+              future: previewFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const AlertDialog(
+                    content: SizedBox(height: 100, child: Center(child: CircularProgressIndicator())),
+                  );
+                }
+                if (snapshot.hasError) {
+                  return AlertDialog(
+                    title: const Text('Error'),
+                    content: Text(snapshot.error.toString()),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+                    ],
+                  );
+                }
+
+                final data = snapshot.data ?? {};
+                return AlertDialog(
+                  title: const Text('Delete Permanently?', style: TextStyle(color: Colors.red)),
+                  content: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Delete $dpName permanently? This will delete all records related to this delivery person, including attendance, route allocations, ledger transactions and bottle logs. This cannot be undone.', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 16),
+                        if (data['attendanceRecords'] != null && data['attendanceRecords'] > 0)
+                          Text('• Attendance Records: ${data['attendanceRecords']}'),
+                        if (data['routeAllocations'] != null && data['routeAllocations'] > 0)
+                          Text('• Route Allocations: ${data['routeAllocations']}'),
+                        if (data['ledgerEntries'] != null && data['ledgerEntries'] > 0)
+                          Text('• Ledger Transactions: ${data['ledgerEntries']}'),
+                        if (data['bottleLogs'] != null && data['bottleLogs'] > 0)
+                          Text('• Empty Bottle Logs: ${data['bottleLogs']}'),
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: isDeleting ? null : () => Navigator.pop(context),
+                      child: const Text('Cancel'),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                      onPressed: isDeleting ? null : () async {
+                        setState(() => isDeleting = true);
+                        try {
+                          await ref.read(staffProvider.notifier).deleteStaff(dpId);
+                          if (context.mounted) {
+                            Navigator.pop(context); // Close dialog
+                            router.pop(); // Go back from profile using captured router
+                            scaffoldMessenger.showSnackBar(const SnackBar(content: Text('Delivery person deleted permanently.')));
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            setState(() => isDeleting = false);
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                          }
+                        }
+                      },
+                      child: isDeleting 
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : const Text('Delete Permanently'),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isReadOnly = ref.watch(authProvider).isReadOnly;
     final theme = Theme.of(context);
     final staffState = ref.watch(staffProvider);
 
@@ -80,44 +172,75 @@ class StaffProfileScreen extends ConsumerWidget {
             actions: [
               IconButton(
                 icon: const Icon(Icons.delete, color: Colors.red),
-                onPressed: () async {
-                  final confirm = await showDialog<bool>(
+                onPressed: isReadOnly ? null : () async {
+                  final action = await showDialog<String>(
                     context: context,
                     builder: (context) => AlertDialog(
-                      title: const Text('Delete Delivery Person?'),
-                      content: const Text('Are you sure you want to delete this delivery person? This action will mark them as inactive.'),
+                      title: const Text('Manage Delivery Person'),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ListTile(
+                            leading: const Icon(Icons.person_off, color: Colors.orange),
+                            title: const Text('Deactivate'),
+                            subtitle: const Text('Hide from lists but keep records.'),
+                            onTap: () => Navigator.pop(context, 'deactivate'),
+                          ),
+                          ListTile(
+                            leading: const Icon(Icons.delete_forever, color: Colors.red),
+                            title: const Text('Delete Permanently'),
+                            subtitle: const Text('Wipe all data and history.'),
+                            onTap: () => Navigator.pop(context, 'delete'),
+                          ),
+                        ],
+                      ),
                       actions: [
                         TextButton(
-                          onPressed: () => Navigator.pop(context, false),
+                          onPressed: () => Navigator.pop(context, null),
                           child: const Text('Cancel'),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          child: const Text('Delete', style: TextStyle(color: Colors.red)),
                         ),
                       ],
                     ),
                   );
 
-                  if (confirm == true && context.mounted) {
-                    try {
-                      await ref.read(staffProvider.notifier).deleteStaff(dp.id);
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Delivery person deleted successfully.')));
-                        context.pop();
-                      }
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                  if (action == 'deactivate' && context.mounted) {
+                    bool? confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Deactivate Delivery Person?'),
+                        content: const Text('This will hide them from lists but keep their records.'),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white),
+                            onPressed: () => Navigator.pop(context, true), 
+                            child: const Text('Deactivate')
+                          ),
+                        ],
+                      ),
+                    );
+                    
+                    if (confirm == true && context.mounted) {
+                      try {
+                        await ref.read(staffProvider.notifier).deactivateStaff(dp.id);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Delivery person deactivated successfully.')));
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                        }
                       }
                     }
+                  } else if (action == 'delete' && context.mounted) {
+                    _showDeletePreviewDialog(context, ref, dp.id, dp.name, isReadOnly);
                   }
                 },
               ),
             ],
           ),
           floatingActionButton: FloatingActionButton(
-            onPressed: () => context.push('/staff-directory/${dp.id}/edit'),
+            onPressed: isReadOnly ? null : () => context.push('/staff-directory//edit'),
             child: const Icon(Icons.edit),
           ),
           body: ListView(
@@ -128,23 +251,75 @@ class StaffProfileScreen extends ConsumerWidget {
               bottom: 100,
             ),
             children: [
+              if (!dp.isActive)
+                Container(
+                  margin: const EdgeInsets.only(bottom: AppConstants.spacing16),
+                  padding: const EdgeInsets.all(AppConstants.spacing16),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red.shade200),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'This delivery person is deactivated',
+                        style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: isReadOnly ? null : () async {
+                              try {
+                                await ref.read(staffProvider.notifier).reactivateStaff(dp.id);
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Delivery person reactivated.')));
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                                }
+                              }
+                            },
+                            child: const Text('Reactivate'),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                            onPressed: isReadOnly ? null : () => _showDeletePreviewDialog(context, ref, dp.id, dp.name, isReadOnly),
+                            child: const Text('Delete Permanently'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               AppCard(
                 padding: const EdgeInsets.all(AppConstants.spacing16),
                 child: Column(
                   children: [
                     dp.photoUrl != null && dp.photoUrl!.isNotEmpty
-                        ? InkWell(
-                            onTap: () => _uploadDocument(context, ref, 'photo'),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(50),
-                              child: Image.network(dp.photoUrl!, width: 100, height: 100, fit: BoxFit.cover),
+                        ? Opacity(
+                            opacity: isReadOnly ? 0.5 : 1.0,
+                            child: InkWell(
+                              onTap: isReadOnly ? null : () => _uploadDocument(context, ref, 'photo'),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(50),
+                                child: Image.network(dp.photoUrl!, width: 100, height: 100, fit: BoxFit.cover),
+                              ),
                             ),
                           )
-                        : _PlaceholderBox(
-                            icon: Icons.add_a_photo,
-                            label: 'Add photo',
-                            isAvatar: true,
-                            onTap: () => _uploadDocument(context, ref, 'photo'),
+                        : Opacity(
+                            opacity: isReadOnly ? 0.5 : 1.0,
+                            child: _PlaceholderBox(
+                              icon: Icons.add_a_photo,
+                              label: 'Add photo',
+                              isAvatar: true,
+                              onTap: isReadOnly ? null : () => _uploadDocument(context, ref, 'photo'),
+                            ),
                           ),
                     const SizedBox(height: AppConstants.spacing16),
                     Text(dp.name, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
@@ -183,37 +358,49 @@ class StaffProfileScreen extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: dp.aadharCopyUrl != null && dp.aadharCopyUrl!.isNotEmpty
-                            ? InkWell(
-                                onTap: () => _uploadDocument(context, ref, 'aadhar'),
-                                child: Container(
-                                  height: 100,
-                                  alignment: Alignment.center,
-                                  decoration: BoxDecoration(border: Border.all(color: theme.dividerColor), borderRadius: BorderRadius.circular(8)),
-                                  child: const Text('Aadhar Uploaded\nTap to replace', textAlign: TextAlign.center),
+                            ? Opacity(
+                                opacity: isReadOnly ? 0.5 : 1.0,
+                                child: InkWell(
+                                  onTap: isReadOnly ? null : () => _uploadDocument(context, ref, 'aadhar'),
+                                  child: Container(
+                                    height: 100,
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(border: Border.all(color: theme.dividerColor), borderRadius: BorderRadius.circular(8)),
+                                    child: const Text('Aadhar Uploaded\nTap to replace', textAlign: TextAlign.center),
+                                  ),
                                 ),
                               )
-                            : _PlaceholderBox(
-                                icon: Icons.upload_file,
-                                label: 'Upload Aadhar copy',
-                                onTap: () => _uploadDocument(context, ref, 'aadhar'),
+                            : Opacity(
+                                opacity: isReadOnly ? 0.5 : 1.0,
+                                child: _PlaceholderBox(
+                                  icon: Icons.upload_file,
+                                  label: 'Upload Aadhar copy',
+                                  onTap: isReadOnly ? null : () => _uploadDocument(context, ref, 'aadhar'),
+                                ),
                               ),
                       ),
                       const SizedBox(width: AppConstants.spacing16),
                       Expanded(
                         child: dp.licenseCopyUrl != null && dp.licenseCopyUrl!.isNotEmpty
-                            ? InkWell(
-                                onTap: () => _uploadDocument(context, ref, 'license'),
-                                child: Container(
-                                  height: 100,
-                                  alignment: Alignment.center,
-                                  decoration: BoxDecoration(border: Border.all(color: theme.dividerColor), borderRadius: BorderRadius.circular(8)),
-                                  child: const Text('License Uploaded\nTap to replace', textAlign: TextAlign.center),
+                            ? Opacity(
+                                opacity: isReadOnly ? 0.5 : 1.0,
+                                child: InkWell(
+                                  onTap: isReadOnly ? null : () => _uploadDocument(context, ref, 'license'),
+                                  child: Container(
+                                    height: 100,
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(border: Border.all(color: theme.dividerColor), borderRadius: BorderRadius.circular(8)),
+                                    child: const Text('License Uploaded\nTap to replace', textAlign: TextAlign.center),
+                                  ),
                                 ),
                               )
-                            : _PlaceholderBox(
-                                icon: Icons.upload_file,
-                                label: 'Upload license copy',
-                                onTap: () => _uploadDocument(context, ref, 'license'),
+                            : Opacity(
+                                opacity: isReadOnly ? 0.5 : 1.0,
+                                child: _PlaceholderBox(
+                                  icon: Icons.upload_file,
+                                  label: 'Upload license copy',
+                                  onTap: isReadOnly ? null : () => _uploadDocument(context, ref, 'license'),
+                                ),
                               ),
                       ),
                     ],
@@ -334,7 +521,7 @@ class _PlaceholderBox extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool isAvatar;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _PlaceholderBox({
     required this.icon,

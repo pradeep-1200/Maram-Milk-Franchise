@@ -1,3 +1,4 @@
+import '../authentication/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -23,6 +24,7 @@ class EmptyBottleListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isReadOnly = ref.watch(authProvider).isReadOnly;
     final theme = Theme.of(context);
     final statuses = ref.watch(eveningCheckProvider).value?.statuses ?? [];
     final assignedRoutes = statuses.where((r) => r.dpId != null).toList();
@@ -60,7 +62,7 @@ class EmptyBottleListScreen extends ConsumerWidget {
                   final isIncomplete = status.deliveryCompleted == false && status.status == 'Delivered';
 
                   return AppCard(
-                    onTap: () => _showEmptyBottleSheet(context, status.routeId),
+                    onTap: isReadOnly ? null : () => _showEmptyBottleSheet(context, status.routeId),
                     padding: const EdgeInsets.all(AppConstants.spacing16),
                     accentColor: isLogged ? Colors.green : Colors.orange,
                     child: Row(

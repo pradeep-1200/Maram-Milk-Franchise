@@ -21,6 +21,8 @@ class AuthState {
       error: clearError ? null : (error ?? this.error),
     );
   }
+
+  bool get isReadOnly => profile?.role == 'ADMIN';
 }
 
 class AuthNotifier extends Notifier<AuthState> {

@@ -1,3 +1,4 @@
+import '../authentication/providers/auth_provider.dart';
 import 'package:manager_app/core/utils/date_util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -32,6 +33,7 @@ class _RouteAllocationScreenState extends ConsumerState<RouteAllocationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isReadOnly = ref.watch(authProvider).isReadOnly;
     final state = ref.watch(routeProvider);
     final notifier = ref.read(routeProvider.notifier);
     final theme = Theme.of(context);
@@ -160,7 +162,7 @@ class _RouteAllocationScreenState extends ConsumerState<RouteAllocationScreen> {
                       final route = (state.value?.filteredRoutes ?? [])[index];
                       return _RouteCard(
                         route: route,
-                        onAssignTapped: () => _showAssignSheet(context, ref, route),
+                        onAssignTapped: isReadOnly ? null : () => _showAssignSheet(context, ref, route),
                       );
                     },
                   ),
@@ -224,7 +226,7 @@ class _FilterChip extends StatelessWidget {
 
 class _RouteCard extends ConsumerWidget {
   final DeliveryRoute route;
-  final VoidCallback onAssignTapped;
+  final VoidCallback? onAssignTapped;
 
   const _RouteCard({
     required this.route,
@@ -233,11 +235,12 @@ class _RouteCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isReadOnly = ref.watch(authProvider).isReadOnly;
     final theme = Theme.of(context);
     final isAssigned = route.assignedDpId != null;
 
     return AppCard(
-      onTap: isAssigned ? onAssignTapped : null,
+      onTap: (isAssigned && !isReadOnly) ? onAssignTapped : null,
       customBorder: Border.all(
         color: isAssigned ? Colors.green.shade700 : Colors.red.shade600,
         width: 1.5,
@@ -405,7 +408,7 @@ class _RouteCard extends ConsumerWidget {
                   child: TextButton.icon(
                     icon: Icon(Icons.edit, size: 20, color: theme.colorScheme.primary),
                     label: Text('Manage DPs', style: TextStyle(color: theme.colorScheme.primary)),
-                    onPressed: onAssignTapped,
+                    onPressed: isReadOnly ? null : onAssignTapped,
                   ),
                 ),
               ],
@@ -413,7 +416,7 @@ class _RouteCard extends ConsumerWidget {
           else
             AppButton(
               text: 'Assign Route',
-              onPressed: onAssignTapped,
+              onPressed: isReadOnly ? null : onAssignTapped,
             ),
         ],
       ),
@@ -521,6 +524,7 @@ class _AssignDpSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isReadOnly = ref.watch(authProvider).isReadOnly;
     final theme = Theme.of(context);
     final allRoutes = (ref.watch(routeProvider).value?.routes ?? []);
     
@@ -613,7 +617,7 @@ class _AssignDpSheet extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: route.deliveryCompleted == true ? null : () => _assign(context, ref, currentlyAssignedDp),
+                        onPressed: (route.deliveryCompleted == true || isReadOnly) ? null : () => _assign(context, ref, currentlyAssignedDp),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(horizontal: 0),
                           minimumSize: const Size(0, 36),
@@ -625,7 +629,7 @@ class _AssignDpSheet extends ConsumerWidget {
                     const SizedBox(width: AppConstants.spacing8),
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: route.deliveryCompleted == true ? null : () => _showUnassignConfirm(context, ref, currentlyAssignedDp.dpId),
+                        onPressed: (route.deliveryCompleted == true || isReadOnly) ? null : () => _showUnassignConfirm(context, ref, currentlyAssignedDp.dpId),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.red,
                           side: const BorderSide(color: Colors.red),
@@ -727,7 +731,7 @@ class _AssignDpSheet extends ConsumerWidget {
                 ),
                 subtitle: Text(dp.dpCode),
                 trailing: ElevatedButton(
-                  onPressed: () => _handleAssign(context, ref, dp, otherRoutes),
+                  onPressed: isReadOnly ? null : () => _handleAssign(context, ref, dp, otherRoutes),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: theme.colorScheme.primary,
                     foregroundColor: theme.colorScheme.onPrimary,

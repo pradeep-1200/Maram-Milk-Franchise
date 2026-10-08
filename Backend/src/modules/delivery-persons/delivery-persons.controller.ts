@@ -32,7 +32,8 @@ export const createDeliveryPerson = async (req: Request, res: Response, next: Ne
     res.status(201).json(newDp);
   } catch (error: any) {
     if (error.name === 'ZodError') {
-      return res.status(400).json({ error: { message: 'Validation failed', code: 'VALIDATION_ERROR', details: error.errors } });
+      const message = error.errors && error.errors.length > 0 ? error.errors[0].message : 'Validation failed';
+      return res.status(400).json({ error: { message, code: 'VALIDATION_ERROR', details: error.errors } });
     }
     next(error);
   }
@@ -45,15 +46,43 @@ export const updateDeliveryPerson = async (req: Request, res: Response, next: Ne
     res.json(updatedDp);
   } catch (error: any) {
     if (error.name === 'ZodError') {
-      return res.status(400).json({ error: { message: 'Validation failed', code: 'VALIDATION_ERROR', details: error.errors } });
+      const message = error.errors && error.errors.length > 0 ? error.errors[0].message : 'Validation failed';
+      return res.status(400).json({ error: { message, code: 'VALIDATION_ERROR', details: error.errors } });
     }
+    next(error);
+  }
+};
+
+export const getDeletePreview = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const preview = await dpService.getDeletePreview(req.params.id as string);
+    res.json(preview);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deactivateDeliveryPerson = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const dp = await dpService.deactivateDeliveryPerson(req.params.id as string);
+    res.json(dp);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const reactivateDeliveryPerson = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const dp = await dpService.reactivateDeliveryPerson(req.params.id as string);
+    res.json(dp);
+  } catch (error) {
     next(error);
   }
 };
 
 export const deleteDeliveryPerson = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const deletedDp = await dpService.deleteDeliveryPerson(req.params.id as string);
+    const deletedDp = await dpService.hardDeleteDeliveryPerson(req.params.id as string);
     res.json(deletedDp);
   } catch (error) {
     next(error);

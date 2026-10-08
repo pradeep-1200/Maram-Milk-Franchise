@@ -14,6 +14,7 @@ import '../../shared/async_value_widget.dart';
 import 'providers/inventory_provider.dart';
 import '../manager_inventory/providers/manager_inventory_provider.dart';
 import '../shell/providers/tab_history_provider.dart';
+import '../authentication/providers/auth_provider.dart';
 
 class InventoryScreen extends ConsumerWidget {
   final bool isDispatchContext;
@@ -277,6 +278,7 @@ class _InventoryRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isReadOnly = ref.watch(authProvider).isReadOnly;
     final theme = Theme.of(context);
 
     Future<void> showReportBrokenDialog() async {
@@ -409,7 +411,7 @@ class _InventoryRow extends ConsumerWidget {
                   icon: const Icon(Icons.broken_image_outlined),
                   color: Colors.red.shade400,
                   tooltip: 'Report Broken Stock',
-                  onPressed: showReportBrokenDialog,
+                  onPressed: isReadOnly ? null : showReportBrokenDialog,
                 ),
             ],
           ),

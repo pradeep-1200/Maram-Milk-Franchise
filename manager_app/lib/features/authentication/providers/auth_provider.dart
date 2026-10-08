@@ -4,6 +4,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/manager_profile.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/network/api_client.dart';
+import 'package:mime/mime.dart';
+import 'package:http_parser/http_parser.dart';
+import 'package:path/path.dart' as p;
 
 final secureStorageProvider = Provider((ref) => const FlutterSecureStorage());
 
@@ -30,6 +33,7 @@ class AuthNotifier extends Notifier<AuthState> {
   static const _profileNameKey = 'profile_name';
   static const _profileRoleKey = 'profile_role';
   static const _profileBranchKey = 'profile_branch';
+  static const _profilePhotoKey = 'profile_photo';
 
   @override
   AuthState build() => const AuthState();
@@ -52,12 +56,16 @@ class AuthNotifier extends Notifier<AuthState> {
       final name = await storage.read(key: _profileNameKey);
       final role = await storage.read(key: _profileRoleKey);
       final branch = await storage.read(key: _profileBranchKey);
+      final photoUrl = await storage.read(key: _profilePhotoKey);
       
       if (name != null && role != null && branch != null) {
         state = state.copyWith(
-          profile: ManagerProfile(name: name, role: role, branchName: branch),
+          profile: ManagerProfile(name: name, role: role, branchName: branch, photoUrl: photoUrl),
         );
         ref.read(routerProvider).go('/dashboard');
+        
+        // Fetch fresh profile in background
+        _fetchMe();
       } else {
         await logout();
       }
@@ -87,6 +95,11 @@ class AuthNotifier extends Notifier<AuthState> {
         await storage.write(key: _profileNameKey, value: profile.name);
         await storage.write(key: _profileRoleKey, value: profile.role);
         await storage.write(key: _profileBranchKey, value: profile.branchName);
+        if (profile.photoUrl != null) {
+          await storage.write(key: _profilePhotoKey, value: profile.photoUrl!);
+        } else {
+          await storage.delete(key: _profilePhotoKey);
+        }
 
         state = state.copyWith(isLoading: false, profile: profile);
         ref.read(routerProvider).go('/dashboard');
@@ -107,6 +120,57 @@ class AuthNotifier extends Notifier<AuthState> {
         }
       }
       state = state.copyWith(isLoading: false, error: errorMessage);
+    }
+  }
+
+  Future<void> _fetchMe() async {
+    try {
+      final dio = ref.read(apiClientProvider);
+      final response = await dio.get('/auth/me');
+      if (response.statusCode == 200 && response.data['manager'] != null) {
+        final profile = ManagerProfile.fromJson(response.data['manager']);
+        state = state.copyWith(profile: profile);
+        final storage = ref.read(secureStorageProvider);
+        if (profile.photoUrl != null) {
+          await storage.write(key: _profilePhotoKey, value: profile.photoUrl!);
+        } else {
+          await storage.delete(key: _profilePhotoKey);
+        }
+      }
+    } catch (e) {
+      // Ignore background fetch errors
+    }
+  }
+
+  Future<void> uploadPhoto(String filePath) async {
+    try {
+      final dio = ref.read(apiClientProvider);
+      final mimeType = lookupMimeType(filePath) ?? 'application/octet-stream';
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(
+          filePath,
+          filename: p.basename(filePath),
+          contentType: MediaType.parse(mimeType),
+        ),
+      });
+
+      final response = await dio.post(
+        '/auth/photo',
+        data: formData,
+        options: Options(contentType: 'multipart/form-data'),
+      );
+
+      if (response.statusCode == 200 && response.data['url'] != null) {
+        final newUrl = response.data['url'];
+        if (state.profile != null) {
+          final updatedProfile = state.profile!.copyWith(photoUrl: newUrl);
+          state = state.copyWith(profile: updatedProfile);
+          final storage = ref.read(secureStorageProvider);
+          await storage.write(key: _profilePhotoKey, value: newUrl);
+        }
+      }
+    } catch (e) {
+      rethrow;
     }
   }
 

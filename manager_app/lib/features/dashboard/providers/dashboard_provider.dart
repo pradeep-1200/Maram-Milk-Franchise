@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../attendance/providers/attendance_provider.dart';
 import '../../routes/providers/route_provider.dart';
+import '../../profile/providers/staff_provider.dart';
 
 class DashboardState {
   final int totalDPs;
@@ -10,6 +11,7 @@ class DashboardState {
   final int unassignedRoutes;
   final int totalRoutes;
   final int assignedRoutes;
+  final int inactiveDPs;
 
   const DashboardState({
     this.totalDPs = 0,
@@ -19,6 +21,7 @@ class DashboardState {
     this.unassignedRoutes = 0,
     this.totalRoutes = 0,
     this.assignedRoutes = 0,
+    this.inactiveDPs = 0,
   });
 
   DashboardState copyWith({
@@ -29,6 +32,7 @@ class DashboardState {
     int? unassignedRoutes,
     int? totalRoutes,
     int? assignedRoutes,
+    int? inactiveDPs,
   }) {
     return DashboardState(
       totalDPs: totalDPs ?? this.totalDPs,
@@ -38,6 +42,7 @@ class DashboardState {
       unassignedRoutes: unassignedRoutes ?? this.unassignedRoutes,
       totalRoutes: totalRoutes ?? this.totalRoutes,
       assignedRoutes: assignedRoutes ?? this.assignedRoutes,
+      inactiveDPs: inactiveDPs ?? this.inactiveDPs,
     );
   }
 }
@@ -45,6 +50,7 @@ class DashboardState {
 final dashboardProvider = Provider<DashboardState>((ref) {
   final attendanceState = ref.watch(attendanceProvider).value;
   final routeState = ref.watch(routeProvider).value;
+  final staffState = ref.watch(staffProvider).value;
 
   int totalDPs = 0;
   int present = 0;
@@ -68,6 +74,11 @@ final dashboardProvider = Provider<DashboardState>((ref) {
     unassignedRoutes = totalRoutes - assignedRoutes;
   }
 
+  int inactiveDPs = 0;
+  if (staffState != null) {
+    inactiveDPs = staffState.where((p) => !p.isActive).length;
+  }
+
   return DashboardState(
     totalDPs: totalDPs,
     present: present,
@@ -76,5 +87,6 @@ final dashboardProvider = Provider<DashboardState>((ref) {
     totalRoutes: totalRoutes,
     assignedRoutes: assignedRoutes,
     unassignedRoutes: unassignedRoutes,
+    inactiveDPs: inactiveDPs,
   );
 });

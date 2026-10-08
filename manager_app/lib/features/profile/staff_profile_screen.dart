@@ -78,32 +78,41 @@ class StaffProfileScreen extends ConsumerWidget {
 
                 final data = snapshot.data ?? {};
                 return AlertDialog(
-                  title: const Text('Delete Permanently?', style: TextStyle(color: Colors.red)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  title: const Text('Delete Permanently?', style: TextStyle(color: Colors.red, fontSize: 18, fontWeight: FontWeight.bold)),
+                  contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
                   content: SingleChildScrollView(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Delete $dpName permanently? This will delete all records related to this delivery person, including attendance, route allocations, ledger transactions and bottle logs. This cannot be undone.', style: const TextStyle(fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 16),
+                        Text('Delete $dpName permanently? This will delete all records related to this delivery person, including attendance, route allocations, ledger transactions and bottle logs. This cannot be undone.', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        const SizedBox(height: 12),
                         if (data['attendanceRecords'] != null && data['attendanceRecords'] > 0)
-                          Text('• Attendance Records: ${data['attendanceRecords']}'),
+                          Text('• Attendance Records: ${data['attendanceRecords']}', style: const TextStyle(fontSize: 14)),
                         if (data['routeAllocations'] != null && data['routeAllocations'] > 0)
-                          Text('• Route Allocations: ${data['routeAllocations']}'),
+                          Text('• Route Allocations: ${data['routeAllocations']}', style: const TextStyle(fontSize: 14)),
                         if (data['ledgerEntries'] != null && data['ledgerEntries'] > 0)
-                          Text('• Ledger Transactions: ${data['ledgerEntries']}'),
+                          Text('• Ledger Transactions: ${data['ledgerEntries']}', style: const TextStyle(fontSize: 14)),
                         if (data['bottleLogs'] != null && data['bottleLogs'] > 0)
-                          Text('• Empty Bottle Logs: ${data['bottleLogs']}'),
+                          Text('• Empty Bottle Logs: ${data['bottleLogs']}', style: const TextStyle(fontSize: 14)),
                       ],
                     ),
                   ),
+                  actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   actions: [
                     TextButton(
+                      style: TextButton.styleFrom(foregroundColor: Colors.green),
                       onPressed: isDeleting ? null : () => Navigator.pop(context),
                       child: const Text('Cancel'),
                     ),
                     ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(0, 40),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      ),
                       onPressed: isDeleting ? null : () async {
                         setState(() => isDeleting = true);
                         try {
@@ -122,7 +131,7 @@ class StaffProfileScreen extends ConsumerWidget {
                       },
                       child: isDeleting 
                           ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                          : const Text('Delete Permanently'),
+                          : const Text('Delete'),
                     ),
                   ],
                 );
@@ -176,26 +185,30 @@ class StaffProfileScreen extends ConsumerWidget {
                   final action = await showDialog<String>(
                     context: context,
                     builder: (context) => AlertDialog(
-                      title: const Text('Manage Delivery Person'),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      title: const Text('Manage Delivery Person', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      contentPadding: const EdgeInsets.only(top: 16, bottom: 0),
                       content: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           ListTile(
                             leading: const Icon(Icons.person_off, color: Colors.orange),
-                            title: const Text('Deactivate'),
-                            subtitle: const Text('Hide from lists but keep records.'),
+                            title: const Text('Deactivate', style: TextStyle(fontSize: 14)),
+                            subtitle: const Text('Hide from lists but keep records.', style: TextStyle(fontSize: 12)),
                             onTap: () => Navigator.pop(context, 'deactivate'),
                           ),
                           ListTile(
                             leading: const Icon(Icons.delete_forever, color: Colors.red),
-                            title: const Text('Delete Permanently'),
-                            subtitle: const Text('Wipe all data and history.'),
+                            title: const Text('Delete Permanently', style: TextStyle(fontSize: 14)),
+                            subtitle: const Text('Wipe all data and history.', style: TextStyle(fontSize: 12)),
                             onTap: () => Navigator.pop(context, 'delete'),
                           ),
                         ],
                       ),
+                      actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       actions: [
                         TextButton(
+                          style: TextButton.styleFrom(foregroundColor: Colors.green),
                           onPressed: () => Navigator.pop(context, null),
                           child: const Text('Cancel'),
                         ),
@@ -254,24 +267,40 @@ class StaffProfileScreen extends ConsumerWidget {
               if (!dp.isActive)
                 Container(
                   margin: const EdgeInsets.only(bottom: AppConstants.spacing16),
-                  padding: const EdgeInsets.all(AppConstants.spacing16),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.red.shade200),
                   ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Text(
-                        'This delivery person is deactivated',
-                        style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 16),
-                      ),
-                      const SizedBox(height: 8),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          TextButton(
+                          Icon(Icons.warning_amber_rounded, color: Colors.red.shade700, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'This delivery person is deactivated.',
+                              style: TextStyle(color: Colors.red.shade900, fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        alignment: WrapAlignment.end,
+                        children: [
+                          OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.green,
+                              side: const BorderSide(color: Colors.green),
+                              minimumSize: const Size(0, 40),
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                            ),
                             onPressed: isReadOnly ? null : () async {
                               try {
                                 await ref.read(staffProvider.notifier).reactivateStaff(dp.id);
@@ -284,13 +313,18 @@ class StaffProfileScreen extends ConsumerWidget {
                                 }
                               }
                             },
-                            child: const Text('Reactivate'),
+                            child: const Text('Reactivate', style: TextStyle(fontSize: 14)),
                           ),
-                          const SizedBox(width: 8),
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                          OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.red.shade700,
+                              side: BorderSide(color: Colors.red.shade700),
+                              backgroundColor: Colors.red.shade100,
+                              minimumSize: const Size(0, 40),
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                            ),
                             onPressed: isReadOnly ? null : () => _showDeletePreviewDialog(context, ref, dp.id, dp.name, isReadOnly),
-                            child: const Text('Delete Permanently'),
+                            child: const Text('Delete', style: TextStyle(fontSize: 14)),
                           ),
                         ],
                       ),

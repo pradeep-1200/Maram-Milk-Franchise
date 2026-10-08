@@ -10,6 +10,7 @@ abstract class ManagerProfile with _$ManagerProfile {
     @Default('') String name,
     @Default('Manager') String role,
     @Default('') String branchName,
+    String? photoUrl,
   }) = _ManagerProfile;
 
   factory ManagerProfile.fromJson(Map<String, dynamic> json) =>

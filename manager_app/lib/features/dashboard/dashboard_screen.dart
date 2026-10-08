@@ -12,6 +12,7 @@ import '../attendance/providers/attendance_provider.dart';
 import '../authentication/providers/auth_provider.dart';
 
 import 'package:intl/intl.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -25,6 +26,7 @@ class DashboardScreen extends ConsumerWidget {
     final userName = authState.profile?.name ?? 'Manager';
     final userRole = authState.profile?.role ?? 'MANAGER';
     final userBranch = authState.profile?.branchName ?? 'Royapettah Branch';
+    final photoUrl = authState.profile?.photoUrl;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -60,7 +62,12 @@ class DashboardScreen extends ConsumerWidget {
                               radius: 20,
                               backgroundColor: theme.colorScheme.primaryContainer,
                               foregroundColor: theme.colorScheme.onPrimaryContainer,
-                              child: Text(userName.isNotEmpty ? userName[0].toUpperCase() : 'M', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                              backgroundImage: photoUrl != null && photoUrl.isNotEmpty
+                                  ? CachedNetworkImageProvider(photoUrl)
+                                  : null,
+                              child: photoUrl == null || photoUrl.isEmpty
+                                  ? Text(userName.isNotEmpty ? userName[0].toUpperCase() : 'M', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18))
+                                  : null,
                             ),
                           ),
                         ),
@@ -205,10 +212,11 @@ class DashboardScreen extends ConsumerWidget {
                       children: [
                         Expanded(
                           child: _StatCard(
-                            title: 'Total DPs',
+                            title: 'Total Active DPs',
                             value: state.totalDPs.toString(),
                             icon: Icons.storefront,
                             iconColor: Colors.blue,
+                            inactiveCount: state.inactiveDPs,
                             onTap: () => context.push('/attendance'),
                           ),
                         ),
@@ -686,6 +694,7 @@ class _StatCard extends StatelessWidget {
   final String value;
   final IconData icon;
   final Color iconColor;
+  final int? inactiveCount;
   final VoidCallback onTap;
 
   const _StatCard({
@@ -693,6 +702,7 @@ class _StatCard extends StatelessWidget {
     required this.value,
     required this.icon,
     required this.iconColor,
+    this.inactiveCount,
     required this.onTap,
   });
 
@@ -734,6 +744,30 @@ class _StatCard extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
+          if (inactiveCount != null && inactiveCount! > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Row(
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: const BoxDecoration(
+                      color: Colors.grey,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '$inactiveCount inactive',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );

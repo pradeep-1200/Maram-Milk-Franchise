@@ -26,7 +26,7 @@ export const authGuard = async (req: Request, res: Response, next: NextFunction)
     if (manager.role === READ_ONLY_ROLE) {
       const isWrite = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method);
       const reqPath = req.originalUrl.split('?')[0];
-      const isAuthRoute = reqPath === '/api/v1/auth/login' || reqPath === '/api/v1/auth/logout';
+      const isAuthRoute = reqPath === '/api/v1/auth/login' || reqPath === '/api/v1/auth/logout' || reqPath === '/api/v1/auth/photo';
       if (isWrite && !isAuthRoute) {
         return res.status(403).json({ error: { message: 'View-only admins are not permitted to perform this action.', code: 'FORBIDDEN' } });
       }

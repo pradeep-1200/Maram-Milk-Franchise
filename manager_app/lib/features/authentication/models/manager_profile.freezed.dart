@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ManagerProfile {
 
- String get id; String get name; String get role; String get branchName;
+ String get id; String get name; String get role; String get branchName; String? get photoUrl;
 /// Create a copy of ManagerProfile
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $ManagerProfileCopyWith<ManagerProfile> get copyWith => _$ManagerProfileCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ManagerProfile&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.role, role) || other.role == role)&&(identical(other.branchName, branchName) || other.branchName == branchName));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ManagerProfile&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.role, role) || other.role == role)&&(identical(other.branchName, branchName) || other.branchName == branchName)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,role,branchName);
+int get hashCode => Object.hash(runtimeType,id,name,role,branchName,photoUrl);
 
 @override
 String toString() {
-  return 'ManagerProfile(id: $id, name: $name, role: $role, branchName: $branchName)';
+  return 'ManagerProfile(id: $id, name: $name, role: $role, branchName: $branchName, photoUrl: $photoUrl)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $ManagerProfileCopyWith<$Res>  {
   factory $ManagerProfileCopyWith(ManagerProfile value, $Res Function(ManagerProfile) _then) = _$ManagerProfileCopyWithImpl;
 @useResult
 $Res call({
- String id, String name, String role, String branchName
+ String id, String name, String role, String branchName, String? photoUrl
 });
 
 
@@ -65,13 +65,14 @@ class _$ManagerProfileCopyWithImpl<$Res>
 
 /// Create a copy of ManagerProfile
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? role = null,Object? branchName = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? role = null,Object? branchName = null,Object? photoUrl = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,role: null == role ? _self.role : role // ignore: cast_nullable_to_non_nullable
 as String,branchName: null == branchName ? _self.branchName : branchName // ignore: cast_nullable_to_non_nullable
-as String,
+as String,photoUrl: freezed == photoUrl ? _self.photoUrl : photoUrl // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -156,10 +157,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String role,  String branchName)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String role,  String branchName,  String? photoUrl)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ManagerProfile() when $default != null:
-return $default(_that.id,_that.name,_that.role,_that.branchName);case _:
+return $default(_that.id,_that.name,_that.role,_that.branchName,_that.photoUrl);case _:
   return orElse();
 
 }
@@ -177,10 +178,10 @@ return $default(_that.id,_that.name,_that.role,_that.branchName);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String role,  String branchName)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String role,  String branchName,  String? photoUrl)  $default,) {final _that = this;
 switch (_that) {
 case _ManagerProfile():
-return $default(_that.id,_that.name,_that.role,_that.branchName);case _:
+return $default(_that.id,_that.name,_that.role,_that.branchName,_that.photoUrl);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -197,10 +198,10 @@ return $default(_that.id,_that.name,_that.role,_that.branchName);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String role,  String branchName)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String role,  String branchName,  String? photoUrl)?  $default,) {final _that = this;
 switch (_that) {
 case _ManagerProfile() when $default != null:
-return $default(_that.id,_that.name,_that.role,_that.branchName);case _:
+return $default(_that.id,_that.name,_that.role,_that.branchName,_that.photoUrl);case _:
   return null;
 
 }
@@ -212,13 +213,14 @@ return $default(_that.id,_that.name,_that.role,_that.branchName);case _:
 @JsonSerializable()
 
 class _ManagerProfile implements ManagerProfile {
-  const _ManagerProfile({this.id = '', this.name = '', this.role = 'Manager', this.branchName = ''});
+  const _ManagerProfile({this.id = '', this.name = '', this.role = 'Manager', this.branchName = '', this.photoUrl});
   factory _ManagerProfile.fromJson(Map<String, dynamic> json) => _$ManagerProfileFromJson(json);
 
 @override@JsonKey() final  String id;
 @override@JsonKey() final  String name;
 @override@JsonKey() final  String role;
 @override@JsonKey() final  String branchName;
+@override final  String? photoUrl;
 
 /// Create a copy of ManagerProfile
 /// with the given fields replaced by the non-null parameter values.
@@ -233,16 +235,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ManagerProfile&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.role, role) || other.role == role)&&(identical(other.branchName, branchName) || other.branchName == branchName));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ManagerProfile&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.role, role) || other.role == role)&&(identical(other.branchName, branchName) || other.branchName == branchName)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,role,branchName);
+int get hashCode => Object.hash(runtimeType,id,name,role,branchName,photoUrl);
 
 @override
 String toString() {
-  return 'ManagerProfile(id: $id, name: $name, role: $role, branchName: $branchName)';
+  return 'ManagerProfile(id: $id, name: $name, role: $role, branchName: $branchName, photoUrl: $photoUrl)';
 }
 
 
@@ -253,7 +255,7 @@ abstract mixin class _$ManagerProfileCopyWith<$Res> implements $ManagerProfileCo
   factory _$ManagerProfileCopyWith(_ManagerProfile value, $Res Function(_ManagerProfile) _then) = __$ManagerProfileCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String name, String role, String branchName
+ String id, String name, String role, String branchName, String? photoUrl
 });
 
 
@@ -270,13 +272,14 @@ class __$ManagerProfileCopyWithImpl<$Res>
 
 /// Create a copy of ManagerProfile
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? role = null,Object? branchName = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? role = null,Object? branchName = null,Object? photoUrl = freezed,}) {
   return _then(_ManagerProfile(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,role: null == role ? _self.role : role // ignore: cast_nullable_to_non_nullable
 as String,branchName: null == branchName ? _self.branchName : branchName // ignore: cast_nullable_to_non_nullable
-as String,
+as String,photoUrl: freezed == photoUrl ? _self.photoUrl : photoUrl // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 

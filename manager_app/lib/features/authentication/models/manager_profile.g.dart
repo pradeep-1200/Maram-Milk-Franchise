@@ -12,6 +12,7 @@ _ManagerProfile _$ManagerProfileFromJson(Map<String, dynamic> json) =>
       name: json['name'] as String? ?? '',
       role: json['role'] as String? ?? 'Manager',
       branchName: json['branchName'] as String? ?? '',
+      photoUrl: json['photoUrl'] as String?,
     );
 
 Map<String, dynamic> _$ManagerProfileToJson(_ManagerProfile instance) =>
@@ -20,4 +21,5 @@ Map<String, dynamic> _$ManagerProfileToJson(_ManagerProfile instance) =>
       'name': instance.name,
       'role': instance.role,
       'branchName': instance.branchName,
+      'photoUrl': instance.photoUrl,
     };

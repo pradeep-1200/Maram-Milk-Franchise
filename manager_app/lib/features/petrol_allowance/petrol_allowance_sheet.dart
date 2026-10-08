@@ -9,6 +9,7 @@ import '../attendance/models/delivery_person.dart';
 import '../routes/providers/route_provider.dart';
 import '../profile/providers/staff_provider.dart';
 import 'providers/petrol_allowance_provider.dart';
+import '../authentication/providers/auth_provider.dart';
 
 class PetrolAllowanceSheet extends ConsumerStatefulWidget {
   final DeliveryRoute route;
@@ -76,6 +77,7 @@ class _PetrolAllowanceSheetState extends ConsumerState<PetrolAllowanceSheet> {
     final theme = Theme.of(context);
     final givenAmount = ref.watch(petrolAllowanceProvider);
     final notifier = ref.read(petrolAllowanceProvider.notifier);
+    final isReadOnly = ref.watch(authProvider).isReadOnly;
     
     final fixedPA = widget.route.fixedPetrolAllowance;
     final diff = givenAmount - fixedPA;
@@ -238,8 +240,8 @@ class _PetrolAllowanceSheetState extends ConsumerState<PetrolAllowanceSheet> {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.remove_circle_outline, size: 32),
-                      color: givenAmount > 0 ? theme.colorScheme.primary : theme.disabledColor,
-                      onPressed: givenAmount > 0 ? () => notifier.updateAmount(-10) : null,
+                      color: givenAmount > 0 && !isReadOnly ? theme.colorScheme.primary : theme.disabledColor,
+                      onPressed: givenAmount > 0 && !isReadOnly ? () => notifier.updateAmount(-10) : null,
                     ),
                     const SizedBox(width: AppConstants.spacing16),
                     _isEditing
@@ -263,7 +265,7 @@ class _PetrolAllowanceSheetState extends ConsumerState<PetrolAllowanceSheet> {
                             ),
                           )
                         : GestureDetector(
-                            onTap: () {
+                            onTap: isReadOnly ? null : () {
                               _amountController.text = givenAmount.toString();
                               setState(() {
                                 _isEditing = true;
@@ -281,8 +283,8 @@ class _PetrolAllowanceSheetState extends ConsumerState<PetrolAllowanceSheet> {
                     const SizedBox(width: AppConstants.spacing16),
                     IconButton(
                       icon: const Icon(Icons.add_circle, size: 32),
-                      color: theme.colorScheme.primary,
-                      onPressed: () => notifier.updateAmount(10),
+                      color: isReadOnly ? theme.disabledColor : theme.colorScheme.primary,
+                      onPressed: isReadOnly ? null : () => notifier.updateAmount(10),
                     ),
                   ],
                 ),
@@ -315,7 +317,7 @@ class _PetrolAllowanceSheetState extends ConsumerState<PetrolAllowanceSheet> {
                 AppButton(
                   text: 'Save & Complete',
                   isLoading: _isSubmitting,
-                  onPressed: (givenAmount >= 0 && !_isSubmitting) ? () async {
+                  onPressed: (givenAmount >= 0 && !_isSubmitting && !isReadOnly) ? () async {
                     setState(() => _isSubmitting = true);
                     try {
                       await ref.read(routeProvider.notifier).markPetrolAllowanceComplete(widget.route.id, widget.dp.id, givenAmount);

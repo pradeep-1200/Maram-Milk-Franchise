@@ -253,7 +253,7 @@ class StaffProfileScreen extends ConsumerWidget {
             ],
           ),
           floatingActionButton: FloatingActionButton(
-            onPressed: isReadOnly ? null : () => context.push('/staff-directory//edit'),
+            onPressed: (isReadOnly || dp.id.isEmpty) ? null : () => context.push('/staff-directory/${dp.id}/edit'),
             child: const Icon(Icons.edit),
           ),
           body: ListView(
